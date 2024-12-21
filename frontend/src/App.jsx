@@ -1,13 +1,15 @@
 import React, { useState } from "react";
 import {
-  Container,
+  Box,
   Stepper,
   Step,
   StepLabel,
-  Box,
   Button,
   Typography,
   Alert,
+  Paper,
+  Container,
+  useTheme,
 } from "@mui/material";
 
 import GradeInput from "../components/GradeInput";
@@ -16,6 +18,7 @@ import CategorySetup from "../components/CategorySetup";
 import Results from "../components/results/Results";
 
 const App = () => {
+  const theme = useTheme();
   // Step tracking
   const [activeStep, setActiveStep] = useState(0);
   const steps = [
@@ -34,6 +37,7 @@ const App = () => {
   const [parsedGrades, setParsedGrades] = useState(null);
   const [uncategorizedAssignments, setUncategorizedAssignments] = useState([]);
 
+  // What-if analysis states
   const [whatIfMode, setWhatIfMode] = useState(false);
   const [targetGrade, setTargetGrade] = useState("");
   const [hypotheticalScores, setHypotheticalScores] = useState({});
@@ -77,7 +81,7 @@ const App = () => {
       const allCategoriesValid =
         categories.length > 0 &&
         categories.every((cat) => cat.name && !isNaN(parseFloat(cat.weight))) &&
-        Math.abs(totalWeight - 100) < 0.01; // Using small epsilon for float comparison
+        Math.abs(totalWeight - 100) < 0.01;
 
       if (!allCategoriesValid) {
         setError(
@@ -101,7 +105,6 @@ const App = () => {
         return;
       }
 
-      // Fix the weight calculation here too
       const totalWeight = categories.reduce((sum, cat) => {
         const weight = parseFloat(cat.weight) || 0;
         return sum + weight;
@@ -120,7 +123,7 @@ const App = () => {
   const handleSetCategories = (newCategories) => {
     const processedCategories = newCategories.map((cat) => ({
       ...cat,
-      weight: parseFloat(cat.weight) || cat.weight, // Keep original if parsing fails
+      weight: parseFloat(cat.weight) || cat.weight,
     }));
     setCategories(processedCategories);
   };
@@ -256,92 +259,173 @@ const App = () => {
     }, 0);
   };
 
-  // Main render
   return (
-    <Container maxWidth="lg">
-      <Box sx={{ my: 4 }}>
-        <Typography variant="h4" component="h1" gutterBottom>
+    <Box
+      sx={{
+        width: "100vw", // Full viewport width
+        minHeight: "100vh",
+        display: "flex",
+        justifyContent: "center", // Center horizontally
+        bgcolor: "background.default",
+      }}
+    >
+      <Container
+        maxWidth="md" // Changed to md for better content width
+        sx={{
+          py: 4,
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center", // Center children
+        }}
+      >
+        {/* Header */}
+        <Typography
+          variant="h3"
+          component="h1"
+          align="center"
+          sx={{
+            fontWeight: 600,
+            color: "primary.main",
+            mb: 6,
+          }}
+        >
           Grade Calculator
         </Typography>
 
-        <Stepper activeStep={activeStep} sx={{ mb: 4 }}>
-          {steps.map((label) => (
-            <Step key={label}>
-              <StepLabel>{label}</StepLabel>
-            </Step>
-          ))}
-        </Stepper>
+        {/* Stepper */}
+        <Paper
+          elevation={2}
+          sx={{
+            p: 3,
+            borderRadius: 2,
+            width: "100%",
+            mb: 4,
+          }}
+        >
+          <Stepper activeStep={activeStep}>
+            {steps.map((label) => (
+              <Step key={label}>
+                <StepLabel>{label}</StepLabel>
+              </Step>
+            ))}
+          </Stepper>
+        </Paper>
 
+        {/* Error Alert */}
         {error && (
-          <Alert severity="error" sx={{ mb: 2 }}>
+          <Alert
+            severity="error"
+            sx={{
+              width: "100%",
+              mb: 4,
+              borderRadius: 2,
+            }}
+          >
             {error}
           </Alert>
         )}
 
-        {activeStep === 0 && (
-          <CategorySetup
-            categories={categories}
-            setCategories={handleSetCategories} // Use the new handler
-            error={error}
-            setError={setError}
-          />
-        )}
+        {/* Main Content */}
+        <Box sx={{ width: "100%", mb: 4 }}>
+          {activeStep === 0 && (
+            <CategorySetup
+              categories={categories}
+              setCategories={handleSetCategories}
+              error={error}
+              setError={setError}
+            />
+          )}
 
-        {activeStep === 1 && (
-          <GradeInput
-            rawGradeData={rawGradeData}
-            setRawGradeData={setRawGradeData}
-          />
-        )}
+          {activeStep === 1 && (
+            <GradeInput
+              rawGradeData={rawGradeData}
+              setRawGradeData={setRawGradeData}
+            />
+          )}
 
-        {activeStep === 2 && (
-          <CategoryReview
-            parsedGrades={parsedGrades}
-            uncategorizedAssignments={uncategorizedAssignments}
-            categories={categories}
-            handleDragEnd={handleDragEnd}
-          />
-        )}
+          {activeStep === 2 && (
+            <CategoryReview
+              parsedGrades={parsedGrades}
+              uncategorizedAssignments={uncategorizedAssignments}
+              categories={categories}
+              handleDragEnd={handleDragEnd}
+            />
+          )}
 
-        {activeStep === 3 && (
-          <Results
-            categories={categories}
-            parsedGrades={parsedGrades}
-            whatIfMode={whatIfMode}
-            setWhatIfMode={setWhatIfMode}
-            targetGrade={targetGrade}
-            setTargetGrade={setTargetGrade}
-            hypotheticalScores={hypotheticalScores}
-            setHypotheticalScores={setHypotheticalScores}
-            hypotheticalAssignments={hypotheticalAssignments}
-            setHypotheticalAssignments={setHypotheticalAssignments}
-            dialogOpen={dialogOpen}
-            setDialogOpen={setDialogOpen}
-            selectedCategory={selectedCategory}
-            setSelectedCategory={setSelectedCategory}
-            calculateCategoryGrade={calculateCategoryGrade}
-            calculateWeightedGrade={calculateWeightedGrade}
-          />
-        )}
+          {activeStep === 3 && (
+            <Results
+              categories={categories}
+              parsedGrades={parsedGrades}
+              whatIfMode={whatIfMode}
+              setWhatIfMode={setWhatIfMode}
+              targetGrade={targetGrade}
+              setTargetGrade={setTargetGrade}
+              hypotheticalScores={hypotheticalScores}
+              setHypotheticalScores={setHypotheticalScores}
+              hypotheticalAssignments={hypotheticalAssignments}
+              setHypotheticalAssignments={setHypotheticalAssignments}
+              dialogOpen={dialogOpen}
+              setDialogOpen={setDialogOpen}
+              selectedCategory={selectedCategory}
+              setSelectedCategory={setSelectedCategory}
+              calculateCategoryGrade={calculateCategoryGrade}
+              calculateWeightedGrade={calculateWeightedGrade}
+            />
+          )}
+        </Box>
 
-        <Box sx={{ display: "flex", justifyContent: "flex-end", mt: 2 }}>
+        {/* Navigation Buttons */}
+        <Box
+          sx={{
+            display: "flex",
+            justifyContent: "flex-end", // Align buttons to the right
+            gap: 2,
+            width: "100%",
+            mt: 4,
+            px: 0, // Remove any padding to align with components above
+          }}
+        >
           {activeStep > 0 && (
-            <Button onClick={handleBack} sx={{ mr: 1 }}>
+            <Button
+              variant="outlined"
+              onClick={handleBack}
+              size="large"
+              sx={{
+                px: 4,
+                minWidth: 120,
+              }}
+            >
               Back
             </Button>
           )}
           {activeStep < steps.length - 1 ? (
-            <Button variant="contained" onClick={handleNext}>
+            <Button
+              variant="contained"
+              onClick={handleNext}
+              size="large"
+              sx={{
+                px: 4,
+                minWidth: 120,
+              }}
+            >
               Next
             </Button>
           ) : (
-            <Button variant="contained" color="success">
+            <Button
+              variant="contained"
+              color="success"
+              size="large"
+              sx={{
+                px: 4,
+                minWidth: 120,
+              }}
+            >
               Finish
             </Button>
           )}
         </Box>
-      </Box>
-    </Container>
+      </Container>
+    </Box>
   );
 };
 
