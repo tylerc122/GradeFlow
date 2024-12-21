@@ -4,7 +4,6 @@ import { GradeSummary } from "./GradeSummary";
 import { CategoryBreakdown } from "./CategoryBreakdown";
 import { AssignmentTable } from "./AssignmentTable";
 import { HypotheticalAssignmentDialog } from "../dialogs/HypotheticalAssignmentDialog";
-import { EditScoreDialog } from "../dialogs/EditScoreDialog";
 
 const Results = ({
   categories,
@@ -19,10 +18,6 @@ const Results = ({
   setHypotheticalAssignments,
   dialogOpen,
   setDialogOpen,
-  editDialogOpen,
-  setEditDialogOpen,
-  selectedAssignment,
-  setSelectedAssignment,
   selectedCategory,
   setSelectedCategory,
   calculateCategoryGrade,
@@ -74,8 +69,7 @@ const Results = ({
         hypotheticalScores={hypotheticalScores}
         whatIfMode={whatIfMode}
         setSelectedCategory={setSelectedCategory}
-        setSelectedAssignment={setSelectedAssignment}
-        setEditDialogOpen={setEditDialogOpen}
+        setHypotheticalScores={setHypotheticalScores}
       />
 
       <HypotheticalAssignmentDialog
@@ -92,26 +86,6 @@ const Results = ({
           setDialogOpen(false);
           setSelectedCategory(null);
         }}
-        categoryName={selectedCategory}
-      />
-
-      <EditScoreDialog
-        open={editDialogOpen}
-        onClose={() => {
-          setEditDialogOpen(false);
-          setSelectedAssignment(null);
-          setSelectedCategory(null);
-        }}
-        onSave={(updatedAssignment) => {
-          const newScores = { ...hypotheticalScores };
-          const key = `${updatedAssignment.categoryName}-${updatedAssignment.name}`;
-          newScores[key] = updatedAssignment;
-          setHypotheticalScores(newScores);
-          setEditDialogOpen(false);
-          setSelectedAssignment(null);
-          setSelectedCategory(null);
-        }}
-        assignment={selectedAssignment}
         categoryName={selectedCategory}
       />
     </Box>

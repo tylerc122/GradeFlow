@@ -28,12 +28,12 @@ const CategorySetup = ({ categories, setCategories, error, setError }) => {
       return false;
     }
 
-    const totalWeight = categories.reduce(
-      (sum, cat, i) => (i === index ? sum : sum + parseFloat(cat.weight || 0)),
-      weight
-    );
+    const totalWeight = categories.reduce((sum, cat, i) => {
+      if (i === index) return sum;
+      return sum + (parseFloat(cat.weight) || 0);
+    }, weight);
 
-    return totalWeight <= 100;
+    return Math.abs(totalWeight - 100) < 0.01;
   };
 
   const handleCategoryChange = (index, field, value) => {
@@ -63,22 +63,12 @@ const CategorySetup = ({ categories, setCategories, error, setError }) => {
   const handleDeleteCategory = (index) => {
     const newCategories = categories.filter((_, i) => i !== index);
     setCategories(newCategories);
-
-    // Revalidate all categories after deletion
-    const allValid = newCategories.every((cat, i) => validateCategory(cat, i));
-    if (allValid) {
-      setError("");
-    }
   };
 
   const totalWeight = categories.reduce(
     (sum, cat) => sum + (parseFloat(cat.weight) || 0),
     0
   );
-  const isValidSetup =
-    categories.length > 0 &&
-    categories.every((cat, i) => validateCategory(cat, i)) &&
-    totalWeight === 100;
 
   return (
     <Paper sx={{ p: 3, mb: 3 }}>
@@ -171,7 +161,7 @@ const CategorySetup = ({ categories, setCategories, error, setError }) => {
         >
           Total Weight: {totalWeight}%
         </Typography>
-        {!isValidSetup && (
+        {totalWeight !== 100 && (
           <Typography color="error" variant="caption">
             {totalWeight < 100
               ? "Total weight must equal 100%"

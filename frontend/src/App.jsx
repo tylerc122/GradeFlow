@@ -10,10 +10,10 @@ import {
   Alert,
 } from "@mui/material";
 
-import CategorySetup from "./components/CategorySetup";
-import GradeInput from "./components/GradeInput";
-import CategoryReview from "./components/CategoryReview";
-import Results from "./components/Results";
+import GradeInput from "../components/GradeInput";
+import CategoryReview from "../components/CategoryReview";
+import CategorySetup from "../components/CategorySetup";
+import Results from "../components/results/Results";
 
 const App = () => {
   // Step tracking
@@ -34,14 +34,11 @@ const App = () => {
   const [parsedGrades, setParsedGrades] = useState(null);
   const [uncategorizedAssignments, setUncategorizedAssignments] = useState([]);
 
-  // What-if mode state
   const [whatIfMode, setWhatIfMode] = useState(false);
   const [targetGrade, setTargetGrade] = useState("");
   const [hypotheticalScores, setHypotheticalScores] = useState({});
   const [hypotheticalAssignments, setHypotheticalAssignments] = useState([]);
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [editDialogOpen, setEditDialogOpen] = useState(false);
-  const [selectedAssignment, setSelectedAssignment] = useState(null);
   const [selectedCategory, setSelectedCategory] = useState(null);
 
   // Handle grade data submission
@@ -72,14 +69,15 @@ const App = () => {
 
   const handleNext = async () => {
     if (activeStep === 0) {
-      const totalWeight = categories.reduce(
-        (sum, cat) => sum + parseFloat(cat.weight || 0),
-        0
-      );
+      const totalWeight = categories.reduce((sum, cat) => {
+        const weight = parseFloat(cat.weight) || 0;
+        return sum + weight;
+      }, 0);
+
       const allCategoriesValid =
         categories.length > 0 &&
-        categories.every((cat) => cat.name && cat.weight) &&
-        totalWeight === 100;
+        categories.every((cat) => cat.name && !isNaN(parseFloat(cat.weight))) &&
+        Math.abs(totalWeight - 100) < 0.01; // Using small epsilon for float comparison
 
       if (!allCategoriesValid) {
         setError(
@@ -102,8 +100,14 @@ const App = () => {
         setError("Please categorize all assignments before proceeding");
         return;
       }
-      const totalWeight = categories.reduce((sum, cat) => sum + cat.weight, 0);
-      if (totalWeight !== 100) {
+
+      // Fix the weight calculation here too
+      const totalWeight = categories.reduce((sum, cat) => {
+        const weight = parseFloat(cat.weight) || 0;
+        return sum + weight;
+      }, 0);
+
+      if (Math.abs(totalWeight - 100) >= 0.01) {
         setError("Total category weights must equal 100%");
         return;
       }
@@ -111,6 +115,14 @@ const App = () => {
 
     setActiveStep((prevStep) => prevStep + 1);
     setError(null);
+  };
+
+  const handleSetCategories = (newCategories) => {
+    const processedCategories = newCategories.map((cat) => ({
+      ...cat,
+      weight: parseFloat(cat.weight) || cat.weight, // Keep original if parsing fails
+    }));
+    setCategories(processedCategories);
   };
 
   const handleBack = () => {
@@ -269,7 +281,7 @@ const App = () => {
         {activeStep === 0 && (
           <CategorySetup
             categories={categories}
-            setCategories={setCategories}
+            setCategories={handleSetCategories} // Use the new handler
             error={error}
             setError={setError}
           />
@@ -305,10 +317,6 @@ const App = () => {
             setHypotheticalAssignments={setHypotheticalAssignments}
             dialogOpen={dialogOpen}
             setDialogOpen={setDialogOpen}
-            editDialogOpen={editDialogOpen}
-            setEditDialogOpen={setEditDialogOpen}
-            selectedAssignment={selectedAssignment}
-            setSelectedAssignment={setSelectedAssignment}
             selectedCategory={selectedCategory}
             setSelectedCategory={setSelectedCategory}
             calculateCategoryGrade={calculateCategoryGrade}
