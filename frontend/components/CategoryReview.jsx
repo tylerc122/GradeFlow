@@ -1,6 +1,9 @@
 import React from "react";
 import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd";
-import { Paper, Typography, Alert, Box } from "@mui/material";
+import { Paper, Typography, Alert, Box, Stack, alpha } from "@mui/material";
+import DragIndicatorIcon from "@mui/icons-material/DragIndicator";
+import CategoryIcon from "@mui/icons-material/Category";
+import AssignmentIcon from "@mui/icons-material/Assignment";
 
 const CategoryReview = ({
   parsedGrades,
@@ -10,7 +13,15 @@ const CategoryReview = ({
 }) => {
   if (!parsedGrades || !uncategorizedAssignments) {
     return (
-      <Paper sx={{ p: 3, mb: 3 }}>
+      <Paper
+        elevation={2}
+        sx={{
+          p: 4,
+          mb: 3,
+          borderRadius: 3,
+          background: "linear-gradient(145deg, #ffffff 0%, #f5f5f5 100%)",
+        }}
+      >
         <Typography variant="h6" color="error">
           No grade data available. Please go back and input your grades.
         </Typography>
@@ -19,136 +30,265 @@ const CategoryReview = ({
   }
 
   return (
-    <Paper sx={{ p: 3, mb: 3 }}>
-      <Typography variant="h6" gutterBottom>
-        Review and Categorize Assignments
-      </Typography>
-      <Alert severity="info" sx={{ mb: 2 }}>
-        Drag and drop assignments into their appropriate categories. All
-        assignments must be categorized before proceeding.
-      </Alert>
-      <DragDropContext onDragEnd={handleDragEnd}>
-        <Box sx={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 2 }}>
-          {/* Categories section */}
-          <Box>
-            <Typography variant="subtitle1" gutterBottom>
-              Categories
-            </Typography>
-            {categories.map((category, index) => (
-              <Droppable
-                key={`category-${index}`}
-                droppableId={`category-${index}`}
+    <Paper
+      elevation={2}
+      sx={{
+        p: 4,
+        mb: 3,
+        borderRadius: 3,
+        background: "linear-gradient(145deg, #ffffff 0%, #f5f5f5 100%)",
+      }}
+    >
+      <Stack spacing={3}>
+        <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+          <CategoryIcon
+            sx={{ fontSize: 32, color: "primary.main", opacity: 0.8 }}
+          />
+          <Typography variant="h5" sx={{ fontWeight: 500 }}>
+            Review and Categorize Assignments
+          </Typography>
+        </Box>
+
+        <Alert
+          severity="info"
+          sx={{
+            backgroundColor: alpha("#2196f3", 0.08),
+            border: "1px solid",
+            borderColor: alpha("#2196f3", 0.2),
+            "& .MuiAlert-icon": {
+              color: "primary.main",
+            },
+          }}
+        >
+          Drag and drop assignments into their appropriate categories. All
+          assignments must be categorized before proceeding.
+        </Alert>
+
+        <DragDropContext onDragEnd={handleDragEnd}>
+          <Box
+            sx={{
+              display: "grid",
+              gridTemplateColumns: "1fr 1fr",
+              gap: 3,
+            }}
+          >
+            {/* Categories section */}
+            <Stack spacing={2}>
+              <Typography
+                variant="subtitle1"
+                sx={{
+                  fontWeight: 500,
+                  color: "text.secondary",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 1,
+                }}
               >
+                <AssignmentIcon />
+                Categories
+              </Typography>
+
+              {categories.map((category, index) => (
+                <Droppable
+                  key={`category-${index}`}
+                  droppableId={`category-${index}`}
+                >
+                  {(provided, snapshot) => (
+                    <Paper
+                      ref={provided.innerRef}
+                      {...provided.droppableProps}
+                      elevation={1}
+                      sx={{
+                        p: 2,
+                        borderRadius: 2,
+                        border: "1px solid",
+                        borderColor: snapshot.isDraggingOver
+                          ? "primary.main"
+                          : "divider",
+                        backgroundColor: snapshot.isDraggingOver
+                          ? alpha("#2196f3", 0.08)
+                          : "background.paper",
+                        minHeight: 100,
+                        transition: "all 0.2s ease",
+                      }}
+                    >
+                      <Typography
+                        variant="subtitle2"
+                        gutterBottom
+                        sx={{
+                          fontWeight: 500,
+                          color: "text.secondary",
+                          mb: 2,
+                        }}
+                      >
+                        {category.name} ({category.weight}%)
+                      </Typography>
+
+                      <Stack spacing={1}>
+                        {(category.assignments || []).map(
+                          (assignment, assignmentIndex) => (
+                            <Draggable
+                              key={`category-${index}-assignment-${assignmentIndex}`}
+                              draggableId={`category-${index}-assignment-${assignmentIndex}`}
+                              index={assignmentIndex}
+                            >
+                              {(provided, snapshot) => (
+                                <Paper
+                                  ref={provided.innerRef}
+                                  {...provided.draggableProps}
+                                  {...provided.dragHandleProps}
+                                  elevation={snapshot.isDragging ? 3 : 1}
+                                  sx={{
+                                    p: 2,
+                                    borderRadius: 2,
+                                    backgroundColor: snapshot.isDragging
+                                      ? alpha("#2196f3", 0.08)
+                                      : "background.paper",
+                                    border: "1px solid",
+                                    borderColor: snapshot.isDragging
+                                      ? "primary.main"
+                                      : "divider",
+                                    display: "flex",
+                                    alignItems: "center",
+                                    gap: 1,
+                                    transition: "all 0.2s ease",
+                                    "&:hover": {
+                                      transform: "translateY(-2px)",
+                                      boxShadow: 2,
+                                    },
+                                  }}
+                                >
+                                  <DragIndicatorIcon
+                                    sx={{ color: "text.secondary" }}
+                                  />
+                                  <Box sx={{ flexGrow: 1 }}>
+                                    <Typography
+                                      variant="body2"
+                                      sx={{ fontWeight: 500 }}
+                                    >
+                                      {assignment.name}
+                                    </Typography>
+                                    <Typography
+                                      variant="caption"
+                                      color="text.secondary"
+                                    >
+                                      Score: {assignment.score}/
+                                      {assignment.total_points}
+                                    </Typography>
+                                  </Box>
+                                </Paper>
+                              )}
+                            </Draggable>
+                          )
+                        )}
+                        {provided.placeholder}
+                      </Stack>
+                    </Paper>
+                  )}
+                </Droppable>
+              ))}
+            </Stack>
+
+            {/* Uncategorized section */}
+            <Stack spacing={2}>
+              <Typography
+                variant="subtitle1"
+                sx={{
+                  fontWeight: 500,
+                  color: "text.secondary",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 1,
+                }}
+              >
+                <AssignmentIcon />
+                Uncategorized Assignments ({uncategorizedAssignments.length})
+              </Typography>
+
+              <Droppable droppableId="uncategorized">
                 {(provided, snapshot) => (
                   <Paper
                     ref={provided.innerRef}
                     {...provided.droppableProps}
+                    elevation={1}
                     sx={{
                       p: 2,
-                      mb: 2,
-                      minHeight: 100,
+                      borderRadius: 2,
+                      border: "1px solid",
+                      borderColor: snapshot.isDraggingOver
+                        ? "warning.main"
+                        : "divider",
                       backgroundColor: snapshot.isDraggingOver
-                        ? "action.hover"
+                        ? alpha("#ff9800", 0.08)
                         : "background.paper",
-                      transition: "background-color 0.2s ease",
+                      minHeight: 100,
+                      transition: "all 0.2s ease",
                     }}
                   >
-                    <Typography variant="subtitle2" gutterBottom>
-                      {category.name} ({category.weight}%)
-                    </Typography>
-                    {(category.assignments || []).map(
-                      (assignment, assignmentIndex) => (
+                    <Stack spacing={1}>
+                      {uncategorizedAssignments.map((assignment, index) => (
                         <Draggable
-                          key={`category-${index}-assignment-${assignmentIndex}`}
-                          draggableId={`category-${index}-assignment-${assignmentIndex}`}
-                          index={assignmentIndex}
+                          key={`uncategorized-${index}`}
+                          draggableId={`uncategorized-${index}`}
+                          index={index}
                         >
                           {(provided, snapshot) => (
                             <Paper
                               ref={provided.innerRef}
                               {...provided.draggableProps}
                               {...provided.dragHandleProps}
-                              elevation={snapshot.isDragging ? 6 : 1}
+                              elevation={snapshot.isDragging ? 3 : 1}
                               sx={{
-                                p: 1,
-                                mb: 1,
+                                p: 2,
+                                borderRadius: 2,
                                 backgroundColor: snapshot.isDragging
-                                  ? "grey.100"
+                                  ? alpha("#ff9800", 0.08)
                                   : "background.paper",
-                                "&:hover": { backgroundColor: "grey.50" },
+                                border: "1px solid",
+                                borderColor: snapshot.isDragging
+                                  ? "warning.main"
+                                  : "divider",
+                                display: "flex",
+                                alignItems: "center",
+                                gap: 1,
+                                transition: "all 0.2s ease",
+                                "&:hover": {
+                                  transform: "translateY(-2px)",
+                                  boxShadow: 2,
+                                },
                               }}
                             >
-                              <Typography variant="body2">
-                                {assignment.name} ({assignment.score}/
-                                {assignment.total_points})
-                              </Typography>
+                              <DragIndicatorIcon
+                                sx={{ color: "text.secondary" }}
+                              />
+                              <Box sx={{ flexGrow: 1 }}>
+                                <Typography
+                                  variant="body2"
+                                  sx={{ fontWeight: 500 }}
+                                >
+                                  {assignment.name}
+                                </Typography>
+                                <Typography
+                                  variant="caption"
+                                  color="text.secondary"
+                                >
+                                  Score: {assignment.score}/
+                                  {assignment.total_points}
+                                </Typography>
+                              </Box>
                             </Paper>
                           )}
                         </Draggable>
-                      )
-                    )}
-                    {provided.placeholder}
+                      ))}
+                      {provided.placeholder}
+                    </Stack>
                   </Paper>
                 )}
               </Droppable>
-            ))}
+            </Stack>
           </Box>
-
-          {/* Uncategorized section */}
-          <Box>
-            <Typography variant="subtitle1" gutterBottom>
-              Uncategorized Assignments ({uncategorizedAssignments.length})
-            </Typography>
-            <Droppable droppableId="uncategorized">
-              {(provided, snapshot) => (
-                <Paper
-                  ref={provided.innerRef}
-                  {...provided.droppableProps}
-                  sx={{
-                    p: 2,
-                    minHeight: 100,
-                    backgroundColor: snapshot.isDraggingOver
-                      ? "action.hover"
-                      : "background.paper",
-                    transition: "background-color 0.2s ease",
-                  }}
-                >
-                  {uncategorizedAssignments.map((assignment, index) => (
-                    <Draggable
-                      key={`uncategorized-${index}`}
-                      draggableId={`uncategorized-${index}`}
-                      index={index}
-                    >
-                      {(provided, snapshot) => (
-                        <Paper
-                          ref={provided.innerRef}
-                          {...provided.draggableProps}
-                          {...provided.dragHandleProps}
-                          elevation={snapshot.isDragging ? 6 : 1}
-                          sx={{
-                            p: 1,
-                            mb: 1,
-                            backgroundColor: snapshot.isDragging
-                              ? "grey.100"
-                              : "background.paper",
-                            "&:hover": { backgroundColor: "grey.50" },
-                          }}
-                        >
-                          <Typography variant="body2">
-                            {assignment.name} ({assignment.score}/
-                            {assignment.total_points})
-                          </Typography>
-                        </Paper>
-                      )}
-                    </Draggable>
-                  ))}
-                  {provided.placeholder}
-                </Paper>
-              )}
-            </Droppable>
-          </Box>
-        </Box>
-      </DragDropContext>
+        </DragDropContext>
+      </Stack>
     </Paper>
   );
 };
