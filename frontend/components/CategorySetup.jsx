@@ -40,20 +40,6 @@ const CategorySetup = ({ categories, setCategories, error, setError }) => {
   const handleCategoryChange = (index, field, value) => {
     const newCategories = [...categories];
     newCategories[index][field] = value;
-    const isValid = validateCategory(newCategories[index], index);
-
-    if (!isValid) {
-      setError(
-        "Please check category names and weights (0-100%). Total weight cannot exceed 100%."
-      );
-    } else {
-      const allValid = newCategories.every((cat, i) =>
-        validateCategory(cat, i)
-      );
-      if (allValid) {
-        setError("");
-      }
-    }
 
     setCategories(newCategories);
   };
@@ -111,19 +97,6 @@ const CategorySetup = ({ categories, setCategories, error, setError }) => {
             Add Category
           </Button>
         </Box>
-
-        {error && (
-          <Alert
-            severity="error"
-            sx={{
-              backgroundColor: alpha("#f44336", 0.08),
-              border: "1px solid",
-              borderColor: alpha("#f44336", 0.2),
-            }}
-          >
-            {error}
-          </Alert>
-        )}
 
         <Stack spacing={2}>
           {categories.map((category, index) => (

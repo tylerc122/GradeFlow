@@ -55,9 +55,7 @@ const CategoryReview = ({
             backgroundColor: alpha("#2196f3", 0.08),
             border: "1px solid",
             borderColor: alpha("#2196f3", 0.2),
-            "& .MuiAlert-icon": {
-              color: "primary.main",
-            },
+            "& .MuiAlert-icon": { color: "primary.main" },
           }}
         >
           Drag and drop assignments into their appropriate categories. All
@@ -65,13 +63,7 @@ const CategoryReview = ({
         </Alert>
 
         <DragDropContext onDragEnd={handleDragEnd}>
-          <Box
-            sx={{
-              display: "grid",
-              gridTemplateColumns: "1fr 1fr",
-              gap: 3,
-            }}
-          >
+          <Box sx={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 3 }}>
             {/* Categories section */}
             <Stack spacing={2}>
               <Typography
@@ -92,6 +84,10 @@ const CategoryReview = ({
                 <Droppable
                   key={`category-${index}`}
                   droppableId={`category-${index}`}
+                  type="assignment"
+                  direction="vertical"
+                  mode="standard"
+                  isCombineEnabled={false}
                 >
                   {(provided, snapshot) => (
                     <Paper
@@ -109,17 +105,15 @@ const CategoryReview = ({
                           ? alpha("#2196f3", 0.08)
                           : "background.paper",
                         minHeight: 100,
-                        transition: "all 0.2s ease",
+                        transition: "background-color 0.2s ease",
+                        display: "flex",
+                        flexDirection: "column",
+                        height: "100%",
                       }}
                     >
                       <Typography
                         variant="subtitle2"
-                        gutterBottom
-                        sx={{
-                          fontWeight: 500,
-                          color: "text.secondary",
-                          mb: 2,
-                        }}
+                        sx={{ fontWeight: 500, color: "text.secondary", mb: 2 }}
                       >
                         {category.name} ({category.weight}%)
                       </Typography>
@@ -128,8 +122,8 @@ const CategoryReview = ({
                         {(category.assignments || []).map(
                           (assignment, assignmentIndex) => (
                             <Draggable
-                              key={`category-${index}-assignment-${assignmentIndex}`}
-                              draggableId={`category-${index}-assignment-${assignmentIndex}`}
+                              key={`${category.name}-${assignment.name}-${assignmentIndex}`}
+                              draggableId={`${category.name}-${assignment.name}-${assignmentIndex}`}
                               index={assignmentIndex}
                             >
                               {(provided, snapshot) => (
@@ -151,7 +145,8 @@ const CategoryReview = ({
                                     display: "flex",
                                     alignItems: "center",
                                     gap: 1,
-                                    transition: "all 0.2s ease",
+                                    transition:
+                                      "transform 0.2s ease, box-shadow 0.2s ease",
                                     "&:hover": {
                                       transform: "translateY(-2px)",
                                       boxShadow: 2,
@@ -205,7 +200,13 @@ const CategoryReview = ({
                 Uncategorized Assignments ({uncategorizedAssignments.length})
               </Typography>
 
-              <Droppable droppableId="uncategorized">
+              <Droppable
+                droppableId="uncategorized"
+                type="assignment"
+                direction="vertical"
+                mode="standard"
+                isCombineEnabled={false}
+              >
                 {(provided, snapshot) => (
                   <Paper
                     ref={provided.innerRef}
@@ -222,14 +223,17 @@ const CategoryReview = ({
                         ? alpha("#ff9800", 0.08)
                         : "background.paper",
                       minHeight: 100,
-                      transition: "all 0.2s ease",
+                      transition: "background-color 0.2s ease",
+                      display: "flex",
+                      flexDirection: "column",
+                      height: "100%",
                     }}
                   >
                     <Stack spacing={1}>
                       {uncategorizedAssignments.map((assignment, index) => (
                         <Draggable
-                          key={`uncategorized-${index}`}
-                          draggableId={`uncategorized-${index}`}
+                          key={`uncategorized-${assignment.name}-${index}`}
+                          draggableId={`uncategorized-${assignment.name}-${index}`}
                           index={index}
                         >
                           {(provided, snapshot) => (
@@ -251,7 +255,8 @@ const CategoryReview = ({
                                 display: "flex",
                                 alignItems: "center",
                                 gap: 1,
-                                transition: "all 0.2s ease",
+                                transition:
+                                  "transform 0.2s ease, box-shadow 0.2s ease",
                                 "&:hover": {
                                   transform: "translateY(-2px)",
                                   boxShadow: 2,

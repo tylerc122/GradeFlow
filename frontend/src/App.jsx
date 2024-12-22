@@ -45,9 +45,21 @@ const App = () => {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState(null);
 
-  // Handle grade data submission
   const handleProcessGrades = async () => {
     try {
+      // First check if the input has minimal required content
+      const minRequiredLines = 4; // At minimum we need assignment name, status, score, total
+      const lines = rawGradeData
+        .split("\n")
+        .filter((line) => line.trim().length > 0);
+
+      if (lines.length < minRequiredLines) {
+        setError(
+          "Invalid grade data format. Please paste complete grade information from Blackboard."
+        );
+        return false;
+      }
+
       const response = await fetch(
         "http://localhost:8000/api/grades/calculate/raw",
         {
@@ -64,10 +76,21 @@ const App = () => {
       }
 
       const data = await response.json();
+
+      // Validate the returned data
+      if (!data.assignments || data.assignments.length === 0) {
+        setError(
+          "No valid assignments found in the provided data. Please check your input."
+        );
+        return false;
+      }
+
       setParsedGrades(data);
       setUncategorizedAssignments(data.assignments);
+      return true;
     } catch (err) {
       setError("Error processing grades: " + err.message);
+      return false;
     }
   };
 
@@ -78,10 +101,11 @@ const App = () => {
         return sum + weight;
       }, 0);
 
+      const weightDifference = Math.abs(totalWeight - 100);
       const allCategoriesValid =
         categories.length > 0 &&
         categories.every((cat) => cat.name && !isNaN(parseFloat(cat.weight))) &&
-        Math.abs(totalWeight - 100) < 0.01;
+        weightDifference < 0.01;
 
       if (!allCategoriesValid) {
         setError(
@@ -96,10 +120,22 @@ const App = () => {
         setError("Please input your grade data before proceeding");
         return;
       }
-      await handleProcessGrades();
+      const success = await handleProcessGrades();
+      if (!success) {
+        return; // Don't proceed if grade processing failed
+      }
     }
 
     if (activeStep === 2) {
+      if (
+        !parsedGrades ||
+        !parsedGrades.assignments ||
+        parsedGrades.assignments.length === 0
+      ) {
+        setError("Invalid grade data. Please go back and check your input.");
+        return;
+      }
+
       if (uncategorizedAssignments.length > 0) {
         setError("Please categorize all assignments before proceeding");
         return;
@@ -114,6 +150,13 @@ const App = () => {
         setError("Total category weights must equal 100%");
         return;
       }
+    }
+
+    // Add validation before showing results
+    if (activeStep === 3 && (!categories.length || !parsedGrades)) {
+      setError("Missing required data. Please start over.");
+      setActiveStep(0);
+      return;
     }
 
     setActiveStep((prevStep) => prevStep + 1);
@@ -270,12 +313,13 @@ const App = () => {
       }}
     >
       <Container
-        maxWidth="md" // Changed to md for better content width
+        maxWidth={false} // This makes it fluid
         sx={{
           py: 4,
+          px: { xs: 2, sm: 4, md: 6 }, // Responsive padding
           display: "flex",
           flexDirection: "column",
-          alignItems: "center", // Center children
+          alignItems: "center",
         }}
       >
         {/* Header */}
@@ -293,23 +337,30 @@ const App = () => {
         </Typography>
 
         {/* Stepper */}
-        <Paper
-          elevation={2}
+        <Box
           sx={{
-            p: 3,
-            borderRadius: 2,
+            maxWidth: "md",
             width: "100%",
             mb: 4,
           }}
         >
-          <Stepper activeStep={activeStep}>
-            {steps.map((label) => (
-              <Step key={label}>
-                <StepLabel>{label}</StepLabel>
-              </Step>
-            ))}
-          </Stepper>
-        </Paper>
+          <Paper
+            elevation={2}
+            sx={{
+              p: 3,
+              borderRadius: 2,
+              width: "100%",
+            }}
+          >
+            <Stepper activeStep={activeStep}>
+              {steps.map((label) => (
+                <Step key={label}>
+                  <StepLabel>{label}</StepLabel>
+                </Step>
+              ))}
+            </Stepper>
+          </Paper>
+        </Box>
 
         {/* Error Alert */}
         {error && (

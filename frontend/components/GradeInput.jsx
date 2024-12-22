@@ -11,6 +11,20 @@ import {
 import ContentPasteIcon from "@mui/icons-material/ContentPaste";
 
 const GradeInput = ({ rawGradeData, setRawGradeData }) => {
+  // Simple validation to check if the data looks like it might be in the correct format
+  const isValidFormat = (data) => {
+    if (!data.trim()) return false;
+
+    const lines = data.split("\n").filter((line) => line.trim());
+    if (lines.length < 4) return false; // Need at least name, status, score, total
+
+    // Check if we can find some expected patterns
+    const hasScore = data.includes("/"); // Look for score format like "14/20"
+    const hasStatus = data.includes("GRADED") || data.includes("UPCOMING");
+
+    return hasScore && hasStatus;
+  };
+
   return (
     <Paper
       elevation={2}
@@ -76,7 +90,7 @@ const GradeInput = ({ rawGradeData, setRawGradeData }) => {
           }}
         />
 
-        {rawGradeData && (
+        {rawGradeData && isValidFormat(rawGradeData) && (
           <Alert
             severity="success"
             sx={{
