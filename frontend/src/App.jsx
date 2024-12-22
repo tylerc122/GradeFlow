@@ -313,13 +313,14 @@ const App = () => {
       }}
     >
       <Container
-        maxWidth={false} // This makes it fluid
+        maxWidth={activeStep === 3 ? false : "md"} // Full width only for results page
         sx={{
           py: 4,
-          px: { xs: 2, sm: 4, md: 6 }, // Responsive padding
+          px: activeStep === 3 ? { xs: 2, sm: 4, md: 6 } : 3, // Different padding for results
           display: "flex",
           flexDirection: "column",
           alignItems: "center",
+          transition: "all 0.3s ease", // Smooth transition when switching steps
         }}
       >
         {/* Header */}

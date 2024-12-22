@@ -48,21 +48,22 @@ const Results = ({
         display: "grid",
         gridTemplateColumns: "1fr 1fr",
         gap: 3,
-        height: "85vh", // Set a fixed height
+        height: "calc(100vh - 280px)", // Adjust for header and padding
         backgroundColor: "background.default",
+        overflow: "hidden", // Prevent outer scrolling
       }}
     >
       {/* Left Panel */}
       <Box
         sx={{
-          overflowY: "auto",
           height: "100%",
-          pr: 2,
+          overflowY: "auto",
           "&::-webkit-scrollbar": {
             width: "8px",
           },
           "&::-webkit-scrollbar-track": {
             background: "#f1f1f1",
+            borderRadius: "4px",
           },
           "&::-webkit-scrollbar-thumb": {
             background: "#888",
@@ -95,35 +96,48 @@ const Results = ({
       </Box>
 
       {/* Right Panel */}
-      <Box
+      <Paper
+        elevation={2}
         sx={{
-          overflowY: "auto",
           height: "100%",
-          pr: 2,
-          "&::-webkit-scrollbar": {
-            width: "8px",
-          },
-          "&::-webkit-scrollbar-track": {
-            background: "#f1f1f1",
-          },
-          "&::-webkit-scrollbar-thumb": {
-            background: "#888",
-            borderRadius: "4px",
-            "&:hover": {
-              background: "#555",
-            },
-          },
+          borderRadius: 3,
+          background: "linear-gradient(145deg, #ffffff 0%, #f5f5f5 100%)",
+          overflow: "hidden", // Hide overflow at the paper level
+          display: "flex",
+          flexDirection: "column",
         }}
       >
-        <AssignmentTable
-          categories={categories}
-          hypotheticalAssignments={hypotheticalAssignments}
-          hypotheticalScores={hypotheticalScores}
-          whatIfMode={whatIfMode}
-          setSelectedCategory={setSelectedCategory}
-          setHypotheticalScores={setHypotheticalScores}
-        />
-      </Box>
+        <Box
+          sx={{
+            flexGrow: 1,
+            overflowY: "auto",
+            p: 4,
+            "&::-webkit-scrollbar": {
+              width: "8px",
+            },
+            "&::-webkit-scrollbar-track": {
+              background: "#f1f1f1",
+              borderRadius: "4px",
+            },
+            "&::-webkit-scrollbar-thumb": {
+              background: "#888",
+              borderRadius: "4px",
+              "&:hover": {
+                background: "#555",
+              },
+            },
+          }}
+        >
+          <AssignmentTable
+            categories={categories}
+            hypotheticalAssignments={hypotheticalAssignments}
+            hypotheticalScores={hypotheticalScores}
+            whatIfMode={whatIfMode}
+            setSelectedCategory={setSelectedCategory}
+            setHypotheticalScores={setHypotheticalScores}
+          />
+        </Box>
+      </Paper>
 
       <HypotheticalAssignmentDialog
         open={dialogOpen}
