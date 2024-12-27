@@ -17,6 +17,9 @@ class Assignment(BaseModel):
     status: str
     score: float
     total_points: float
+    suggested_category: Optional[str] = None
+    category_confidence: Optional[float] = None
+    match_reasons: Optional[list[str]] = None
 
 class GradeCalculationResponse(BaseModel):
     assignments: list[Assignment]
