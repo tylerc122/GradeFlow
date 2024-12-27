@@ -15,6 +15,7 @@ class CategoryPattern:
     prefixes: List[str]
     keywords: List[str]
     assignment_types: List[str]
+    compound_patterns: Optional[List[str]] = None  # For regex patterns
 
 class CategoryMatcher:
     def __init__(self):
@@ -23,39 +24,39 @@ class CategoryMatcher:
             "Quiz": CategoryPattern(
                 prefixes=["quiz", "qz", "q"],
                 keywords=["quiz", "quizzes"],
-                assignment_types=["Quiz"]
+                assignment_types=["Quiz"],
+                compound_patterns=[r'quiz\s*\d+', r'q\d+']  # Matches "quiz 1", "q1", etc.
             ),
             "Homework": CategoryPattern(
-                prefixes=["hw", "homework", "assignment"],
-                keywords=["homework", "assignment", "project"],
-                assignment_types=["Homework", "Assignment"]
+                prefixes=["hw", "homework"],
+                keywords=[                "homework", "assignment", "project", "lab", "lecture"],
+                assignment_types=["Homework", "Assignment"],
+                compound_patterns=[
+                    r'hw\s*\d+',
+                    r'hw\d+[._](?:required|extra|milestone|m\d+)',
+                    r'homework\s*\d+'
+                ]
             ),
             "Test": CategoryPattern(
                 prefixes=["test", "exam", "midterm", "final"],
-                keywords=["test", "exam", "midterm", "final"],
-                assignment_types=["Test", "Exam"]
-            ),
-            "Lab": CategoryPattern(
-                prefixes=["lab", "laboratory"],
-                keywords=["lab", "laboratory", "practical"],
-                assignment_types=["Lab", "Laboratory"]
+                keywords=["test", "exam", "midterm", "final", "finals"],
+                assignment_types=["Test", "Exam"],
+                compound_patterns=[r'final\s*exam', r'midterm\s*\d*']
             ),
             "Participation": CategoryPattern(
                 prefixes=["participation", "attend"],
-                keywords=["participation", "attendance", "discussion"],
+                keywords=["participation", "attendance", "guest lecture"],
                 assignment_types=["Participation", "Attendance"]
             )
         }
         
-        # Compile regex patterns for common variations
+        # Compile regex patterns
         self.number_pattern = re.compile(r'[0-9]+')
         self.separator_pattern = re.compile(r'[-_\s]+')
 
     def normalize_text(self, text: str) -> str:
         """Normalize text for pattern matching"""
-        # Convert to lowercase and remove extra whitespace
         text = text.lower().strip()
-        # Replace common separators with spaces
         text = self.separator_pattern.sub(' ', text)
         return text
 
@@ -63,8 +64,12 @@ class CategoryMatcher:
                       assignment_name: str, 
                       assignment_type: Optional[str] = None) -> CategoryMatch:
         """
-        Match an assignment to a category based on its name and type.
-        Returns the best matching category with confidence score.
+        Match an assignment to a category with improved confidence scoring:
+        - Assignment type match: 0.8
+        - Compound pattern match: 0.9
+        - Exact prefix match: 0.8
+        - Keyword match: 0.6
+        - Multiple matches stack up to 1.0
         """
         best_match = CategoryMatch(
             category="Uncategorized",
@@ -79,22 +84,30 @@ class CategoryMatcher:
             confidence = 0.0
             reasons = []
             
-            # Check assignment type match (highest confidence)
+            # Check assignment type match (highest base confidence)
             if assignment_type and assignment_type in patterns.assignment_types:
                 confidence += 0.8
                 reasons.append(f"assignment_type_match:{assignment_type}")
             
+            # Check compound patterns (very high confidence)
+            if patterns.compound_patterns:
+                for pattern in patterns.compound_patterns:
+                    if re.search(pattern, normalized_name):
+                        confidence += 0.9
+                        reasons.append(f"compound_pattern_match:{pattern}")
+                        break
+            
             # Check prefix matches
             for prefix in patterns.prefixes:
                 if any(word.startswith(prefix) for word in words):
-                    confidence += 0.6
+                    confidence += 0.8
                     reasons.append(f"prefix_match:{prefix}")
                     break
             
             # Check keyword matches
             for keyword in patterns.keywords:
                 if keyword in normalized_name:
-                    confidence += 0.4
+                    confidence += 0.6
                     reasons.append(f"keyword_match:{keyword}")
             
             # Normalize confidence to 0-1 range
