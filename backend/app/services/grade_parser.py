@@ -1,23 +1,25 @@
 from datetime import datetime
-from typing import List
+from typing import List, Optional
 from ..models.grade_models import Assignment
-from .category_matcher import CategoryMatcher, CategoryMatch  # Added CategoryMatch import
+from .category_matcher import CategoryMatcher
 import re
 
-def parse_blackboard_grades(raw_text: str) -> list[Assignment]:
+def parse_blackboard_grades(raw_text: str, available_categories: Optional[List[str]] = None) -> list[Assignment]:
     assignments = []
-    category_matcher = CategoryMatcher()
     
-    # Clean up the text - normalize newlines
+    # Log available categories
+    print("Available categories for matching:", available_categories)
+    
+    category_matcher = CategoryMatcher(available_categories=available_categories)
+    
+    # Clean up the text - normalize newlines and remove extra spaces
     clean_text = '\n'.join(line.strip() for line in raw_text.splitlines() if line.strip())
     
     # Create pattern to match assignment blocks
-    # Updated pattern to properly handle assignment names and due dates
     pattern = re.compile(
         r'(?P<name>[^\n]+)\n'  # Assignment name
-        r'(?:Due: [^\n]+\n)?'  # Optional due date
-        r'(?P<type>Assignment|Test)\n'  # Assignment type
-        r'(?:[^\n]+(?:AM|PM)[^\n]*\n)?'  # Date graded line
+        r'(?:Test\n)?'  # Optional Test type
+        r'(?:[^\n]+(?:AM|PM)[^\n]*\n)?'  # Optional date line
         r'(?P<status>Graded|Upcoming)\n'  # Status
         r'(?P<score>[0-9.-]+)\n'  # Score (number or -)
         r'/(?P<total>[0-9.]+)'  # Total points
@@ -25,9 +27,12 @@ def parse_blackboard_grades(raw_text: str) -> list[Assignment]:
     
     # Find all matches
     for match in pattern.finditer(clean_text):
-        # Get the real assignment name (before "Due:")
         name = match.group('name').strip()
-        assignment_type = match.group('type')
+        
+        # Skip if it's just metadata
+        if name in ['Test', 'Assignment', 'Graded', 'Upcoming']:
+            continue
+            
         status = 'GRADED' if match.group('status') == 'Graded' else 'UPCOMING'
         
         # Handle score
@@ -46,17 +51,17 @@ def parse_blackboard_grades(raw_text: str) -> list[Assignment]:
             print(f"Error parsing total points for {name}")
             continue
         
-        # Get category suggestion
-        category_match = category_matcher.match_category(name, assignment_type)
-        print(f"Category suggestion for {name}: {category_match.category} (confidence: {category_match.confidence})")
+        # Check if it's a test type
+        lines_before_status = clean_text[:match.start('status')].split('\n')
+        assignment_type = None
+        if len(lines_before_status) >= 2 and 'Test' in lines_before_status[-2]:
+            assignment_type = 'Test'
         
-        # Handle special cases like "lab participation" and "lecture participation"
-        if any(term in name.lower() for term in ['participation', 'survey']):
-            category_match = CategoryMatch(
-                category="Participation",
-                confidence=1.0,
-                match_reasons=["keyword_match:participation"]
-            )
+        # Get category suggestion with logging
+        print(f"\nAttempting to match category for: {name}")
+        category_match = category_matcher.match_category(name, assignment_type)
+        print(f"Match result: {category_match.category} (confidence: {category_match.confidence})")
+        print(f"Match reasons: {category_match.match_reasons}")
         
         assignment = Assignment(
             name=name,
