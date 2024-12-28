@@ -48,7 +48,7 @@ const App = () => {
   const handleProcessGrades = async () => {
     try {
       // First check if the input has minimal required content
-      const minRequiredLines = 4; // At minimum we need assignment name, status, score, total
+      const minRequiredLines = 4;
       const lines = rawGradeData
         .split("\n")
         .filter((line) => line.trim().length > 0);
@@ -60,13 +60,24 @@ const App = () => {
         return false;
       }
 
+      // Set up headers with categories if they exist
+      const headers = {
+        "Content-Type": "text/plain",
+      };
+
+      if (categories && categories.length > 0) {
+        // Log categories being sent
+        console.log("Sending categories:", categories);
+        headers["X-Grade-Categories"] = JSON.stringify(
+          categories.map((cat) => cat.name)
+        );
+      }
+
       const response = await fetch(
         "http://localhost:8000/api/grades/calculate/raw",
         {
           method: "POST",
-          headers: {
-            "Content-Type": "text/plain",
-          },
+          headers: headers,
           body: rawGradeData,
         }
       );
@@ -77,7 +88,6 @@ const App = () => {
 
       const data = await response.json();
 
-      // Validate the returned data
       if (!data.assignments || data.assignments.length === 0) {
         setError(
           "No valid assignments found in the provided data. Please check your input."
@@ -89,6 +99,7 @@ const App = () => {
       setUncategorizedAssignments(data.assignments);
       return true;
     } catch (err) {
+      console.error("Grade processing error:", err);
       setError("Error processing grades: " + err.message);
       return false;
     }
@@ -401,6 +412,8 @@ const App = () => {
               uncategorizedAssignments={uncategorizedAssignments}
               categories={categories}
               handleDragEnd={handleDragEnd}
+              setUncategorizedAssignments={setUncategorizedAssignments}
+              setCategories={setCategories}
             />
           )}
 
