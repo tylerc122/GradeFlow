@@ -26,7 +26,7 @@ async def calculate_grades_raw(
                 print("Error decoding categories header")
         
         # Process the grades with available categories
-        assignments = parse_blackboard_grades(raw_data, available_categories)
+        assignments = await parse_blackboard_grades(raw_data, available_categories)
         
         if not assignments:
             raise HTTPException(
