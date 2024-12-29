@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd";
 import {
   Paper,
@@ -17,6 +17,7 @@ import AssignmentIcon from "@mui/icons-material/Assignment";
 import KeyboardArrowDownIcon from "@mui/icons-material/KeyboardArrowDown";
 import KeyboardArrowUpIcon from "@mui/icons-material/KeyboardArrowUp";
 import AutoFixHighIcon from "@mui/icons-material/AutoFixHigh";
+import DeleteIcon from "@mui/icons-material/Delete";
 
 const CategoryReview = ({
   parsedGrades,
@@ -36,6 +37,25 @@ const CategoryReview = ({
       ...prev,
       [categoryIndex]: !prev[categoryIndex],
     }));
+  };
+
+  const handleDeleteAssignment = (assignment) => {
+    // Remove from uncategorized if present
+    if (uncategorizedAssignments.find((a) => a.name === assignment.name)) {
+      setUncategorizedAssignments(
+        uncategorizedAssignments.filter((a) => a.name !== assignment.name)
+      );
+      return;
+    }
+
+    // Remove from categories if present
+    const newCategories = categories.map((category) => ({
+      ...category,
+      assignments: (category.assignments || []).filter(
+        (a) => a.name !== assignment.name
+      ),
+    }));
+    setCategories(newCategories);
   };
 
   const applyAutoCategories = () => {
@@ -230,6 +250,7 @@ const CategoryReview = ({
                                   assignment={assignment}
                                   index={assignmentIndex}
                                   parentId={`${category.name}-${assignment.name}-${assignmentIndex}`}
+                                  onDelete={handleDeleteAssignment}
                                 />
                               )
                             )}
@@ -284,6 +305,7 @@ const CategoryReview = ({
                           assignment={assignment}
                           index={index}
                           parentId={`uncategorized-${assignment.name}-${index}`}
+                          onDelete={handleDeleteAssignment}
                         />
                       ))}
                       {provided.placeholder}
@@ -300,7 +322,7 @@ const CategoryReview = ({
 };
 
 // Helper component for assignment items
-const AssignmentItem = ({ assignment, index, parentId }) => (
+const AssignmentItem = ({ assignment, index, parentId, onDelete }) => (
   <Draggable draggableId={parentId} index={index}>
     {(provided, snapshot) => (
       <Paper
@@ -337,6 +359,17 @@ const AssignmentItem = ({ assignment, index, parentId }) => (
               ` • Suggested: ${assignment.suggested_category}`}
           </Typography>
         </Box>
+        <IconButton
+          onClick={() => onDelete(assignment)}
+          sx={{
+            color: "error.main",
+            "&:hover": {
+              backgroundColor: alpha("#f44336", 0.08),
+            },
+          }}
+        >
+          <DeleteIcon />
+        </IconButton>
       </Paper>
     )}
   </Draggable>

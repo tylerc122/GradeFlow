@@ -15,6 +15,7 @@ import {
 import GradeInput from "../components/GradeInput";
 import CategoryReview from "../components/CategoryReview";
 import CategorySetup from "../components/CategorySetup";
+import LoadingOverlay from "../components/LoadingOverlay";
 import Results from "../components/results/Results";
 
 const App = () => {
@@ -27,6 +28,9 @@ const App = () => {
     "Review & Categorize",
     "View Results",
   ];
+
+  // Loading type shit
+  const [isLoading, setIsLoading] = useState(false);
 
   // Category management
   const [categories, setCategories] = useState([]);
@@ -47,6 +51,7 @@ const App = () => {
 
   const handleProcessGrades = async () => {
     try {
+      setIsLoading(true); // Start loading
       // First check if the input has minimal required content
       const minRequiredLines = 4;
       const lines = rawGradeData
@@ -66,8 +71,6 @@ const App = () => {
       };
 
       if (categories && categories.length > 0) {
-        // Log categories being sent
-        console.log("Sending categories:", categories);
         headers["X-Grade-Categories"] = JSON.stringify(
           categories.map((cat) => cat.name)
         );
@@ -102,6 +105,8 @@ const App = () => {
       console.error("Grade processing error:", err);
       setError("Error processing grades: " + err.message);
       return false;
+    } finally {
+      setIsLoading(false); // End loading regardless of outcome
     }
   };
 
@@ -323,6 +328,7 @@ const App = () => {
         bgcolor: "background.default",
       }}
     >
+      {isLoading && <LoadingOverlay />}
       <Container
         maxWidth={activeStep === 3 ? false : "md"} // Full width only for results page
         sx={{
