@@ -15,7 +15,7 @@ class CategoryPattern:
 class CategoryMatch:
     """Represents a potential category match for an assignment"""
     category: str
-    confidence: float  # 0-1
+    confidence: float  # 0-1 confidence score
     match_reasons: List[str]
 
 class CategoryMatcher:
