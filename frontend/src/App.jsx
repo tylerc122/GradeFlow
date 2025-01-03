@@ -29,7 +29,7 @@ const App = () => {
     "View Results",
   ];
 
-  // Loading type shit
+  // Loading state
   const [isLoading, setIsLoading] = useState(false);
 
   // Category management
@@ -37,9 +37,11 @@ const App = () => {
   const [error, setError] = useState(null);
 
   // Grade data
+  const [mode, setMode] = useState(null);
   const [rawGradeData, setRawGradeData] = useState("");
   const [parsedGrades, setParsedGrades] = useState(null);
   const [uncategorizedAssignments, setUncategorizedAssignments] = useState([]);
+  const [manualGrades, setManualGrades] = useState([]);
 
   // What-if analysis states
   const [whatIfMode, setWhatIfMode] = useState(false);
@@ -51,8 +53,7 @@ const App = () => {
 
   const handleProcessGrades = async () => {
     try {
-      setIsLoading(true); // Start loading
-      // First check if the input has minimal required content
+      setIsLoading(true);
       const minRequiredLines = 4;
       const lines = rawGradeData
         .split("\n")
@@ -65,7 +66,6 @@ const App = () => {
         return false;
       }
 
-      // Set up headers with categories if they exist
       const headers = {
         "Content-Type": "text/plain",
       };
@@ -106,7 +106,7 @@ const App = () => {
       setError("Error processing grades: " + err.message);
       return false;
     } finally {
-      setIsLoading(false); // End loading regardless of outcome
+      setIsLoading(false);
     }
   };
 
@@ -132,17 +132,30 @@ const App = () => {
     }
 
     if (activeStep === 1) {
-      if (!rawGradeData.trim()) {
-        setError("Please input your grade data before proceeding");
+      if (!mode) {
+        setError("Please select an input method (Manual or Blackboard)");
         return;
       }
-      const success = await handleProcessGrades();
-      if (!success) {
-        return; // Don't proceed if grade processing failed
+
+      if (mode === "blackboard") {
+        if (!rawGradeData.trim()) {
+          setError("Please input your grade data before proceeding");
+          return;
+        }
+        const success = await handleProcessGrades();
+        if (!success) return;
+      } else if (mode === "manual") {
+        if (!manualGrades.length) {
+          setError("Please add at least one grade before proceeding");
+          return;
+        }
+        // Skip categorization step for manual input
+        setActiveStep(3);
+        return;
       }
     }
 
-    if (activeStep === 2) {
+    if (activeStep === 2 && mode === "blackboard") {
       if (
         !parsedGrades ||
         !parsedGrades.assignments ||
@@ -156,23 +169,6 @@ const App = () => {
         setError("Please categorize all assignments before proceeding");
         return;
       }
-
-      const totalWeight = categories.reduce((sum, cat) => {
-        const weight = parseFloat(cat.weight) || 0;
-        return sum + weight;
-      }, 0);
-
-      if (Math.abs(totalWeight - 100) >= 0.01) {
-        setError("Total category weights must equal 100%");
-        return;
-      }
-    }
-
-    // Add validation before showing results
-    if (activeStep === 3 && (!categories.length || !parsedGrades)) {
-      setError("Missing required data. Please start over.");
-      setActiveStep(0);
-      return;
     }
 
     setActiveStep((prevStep) => prevStep + 1);
@@ -321,23 +317,23 @@ const App = () => {
   return (
     <Box
       sx={{
-        width: "100vw", // Full viewport width
+        width: "100vw",
         minHeight: "100vh",
         display: "flex",
-        justifyContent: "center", // Center horizontally
+        justifyContent: "center",
         bgcolor: "background.default",
       }}
     >
       {isLoading && <LoadingOverlay />}
       <Container
-        maxWidth={activeStep === 3 ? false : "md"} // Full width only for results page
+        maxWidth={activeStep === 3 ? false : "md"}
         sx={{
           py: 4,
-          px: activeStep === 3 ? { xs: 2, sm: 4, md: 6 } : 3, // Different padding for results
+          px: activeStep === 3 ? { xs: 2, sm: 4, md: 6 } : 3,
           display: "flex",
           flexDirection: "column",
           alignItems: "center",
-          transition: "all 0.3s ease", // Smooth transition when switching steps
+          transition: "all 0.3s ease",
         }}
       >
         {/* Header */}
@@ -351,7 +347,7 @@ const App = () => {
             mb: 6,
           }}
         >
-          Grade Calculator
+          GradeFlow
         </Typography>
 
         {/* Stepper */}
@@ -407,12 +403,16 @@ const App = () => {
 
           {activeStep === 1 && (
             <GradeInput
+              mode={mode}
+              setMode={setMode}
               rawGradeData={rawGradeData}
               setRawGradeData={setRawGradeData}
+              categories={categories}
+              setGrades={setManualGrades}
             />
           )}
 
-          {activeStep === 2 && (
+          {activeStep === 2 && mode === "blackboard" && (
             <CategoryReview
               parsedGrades={parsedGrades}
               uncategorizedAssignments={uncategorizedAssignments}
@@ -426,7 +426,7 @@ const App = () => {
           {activeStep === 3 && (
             <Results
               categories={categories}
-              parsedGrades={parsedGrades}
+              parsedGrades={mode === "blackboard" ? parsedGrades : manualGrades}
               whatIfMode={whatIfMode}
               setWhatIfMode={setWhatIfMode}
               targetGrade={targetGrade}
@@ -449,11 +449,11 @@ const App = () => {
         <Box
           sx={{
             display: "flex",
-            justifyContent: "flex-end", // Align buttons to the right
+            justifyContent: "flex-end",
             gap: 2,
             width: "100%",
             mt: 4,
-            px: 0, // Remove any padding to align with components above
+            px: 0,
           }}
         >
           {activeStep > 0 && (
