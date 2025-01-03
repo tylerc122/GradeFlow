@@ -1,30 +1,18 @@
 import React from "react";
-import {
-  Paper,
-  Typography,
-  Alert,
-  TextField,
-  Box,
-  Stack,
-  alpha,
-} from "@mui/material";
+import { Paper, Typography, Box, Button, Stack, alpha } from "@mui/material";
 import ContentPasteIcon from "@mui/icons-material/ContentPaste";
+import EditIcon from "@mui/icons-material/Edit";
+import BlackboardInput from "./BlackboardInput";
+import ManualInput from "./ManualInput";
 
-const GradeInput = ({ rawGradeData, setRawGradeData }) => {
-  // Simple validation to check if the data looks like it might be in the correct format
-  const isValidFormat = (data) => {
-    if (!data.trim()) return false;
-
-    const lines = data.split("\n").filter((line) => line.trim());
-    if (lines.length < 4) return false; // Need at least name, status, score, total
-
-    // Check if we can find some expected patterns
-    const hasScore = data.includes("/"); // Look for score format like "14/20"
-    const hasStatus = data.includes("GRADED") || data.includes("UPCOMING");
-
-    return hasScore && hasStatus;
-  };
-
+const GradeInput = ({
+  mode,
+  setMode,
+  rawGradeData,
+  setRawGradeData,
+  categories,
+  setGrades,
+}) => {
   return (
     <Paper
       elevation={2}
@@ -35,7 +23,7 @@ const GradeInput = ({ rawGradeData, setRawGradeData }) => {
         background: "linear-gradient(145deg, #ffffff 0%, #f5f5f5 100%)",
       }}
     >
-      <Stack spacing={3}>
+      <Stack spacing={4}>
         <Box
           sx={{
             display: "flex",
@@ -43,64 +31,44 @@ const GradeInput = ({ rawGradeData, setRawGradeData }) => {
             gap: 2,
           }}
         >
-          <ContentPasteIcon
-            sx={{ fontSize: 32, color: "primary.main", opacity: 0.8 }}
-          />
+          {mode === "blackboard" ? (
+            <ContentPasteIcon
+              sx={{ fontSize: 32, color: "primary.main", opacity: 0.8 }}
+            />
+          ) : (
+            <EditIcon
+              sx={{ fontSize: 32, color: "primary.main", opacity: 0.8 }}
+            />
+          )}
           <Typography variant="h5" sx={{ fontWeight: 500 }}>
-            Input Blackboard Grades
+            Input Grades
           </Typography>
         </Box>
 
-        <Alert
-          severity="info"
-          sx={{
-            backgroundColor: alpha("#2196f3", 0.08),
-            border: "1px solid",
-            borderColor: alpha("#2196f3", 0.2),
-            "& .MuiAlert-icon": {
-              color: "primary.main",
-            },
-          }}
-        >
-          Copy and paste your grades directly from Blackboard's grade center.
-          The system will automatically parse and categorize your assignments.
-        </Alert>
-
-        <TextField
-          multiline
-          fullWidth
-          rows={12}
-          value={rawGradeData}
-          onChange={(e) => setRawGradeData(e.target.value)}
-          placeholder="Paste your grades here..."
-          variant="outlined"
-          sx={{
-            "& .MuiOutlinedInput-root": {
-              backgroundColor: "#fff",
-              borderRadius: 2,
-              "&:hover .MuiOutlinedInput-notchedOutline": {
-                borderColor: "primary.main",
-                borderWidth: "1px",
-              },
-              "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
-                borderColor: "primary.main",
-                borderWidth: "2px",
-              },
-            },
-          }}
-        />
-
-        {rawGradeData && isValidFormat(rawGradeData) && (
-          <Alert
-            severity="success"
-            sx={{
-              backgroundColor: alpha("#4caf50", 0.08),
-              border: "1px solid",
-              borderColor: alpha("#4caf50", 0.2),
-            }}
+        <Box sx={{ display: "flex", gap: 2 }}>
+          <Button
+            variant={mode === "manual" ? "contained" : "outlined"}
+            onClick={() => setMode("manual")}
+            sx={{ flex: 1, py: 2 }}
           >
-            Grade data detected! Click "Next" to proceed with the analysis.
-          </Alert>
+            Manual Input
+          </Button>
+          <Button
+            variant={mode === "blackboard" ? "contained" : "outlined"}
+            onClick={() => setMode("blackboard")}
+            sx={{ flex: 1, py: 2 }}
+          >
+            Blackboard Import
+          </Button>
+        </Box>
+
+        {mode === "blackboard" ? (
+          <BlackboardInput
+            rawGradeData={rawGradeData}
+            setRawGradeData={setRawGradeData}
+          />
+        ) : (
+          <ManualInput categories={categories} setGrades={setGrades} />
         )}
       </Stack>
     </Paper>

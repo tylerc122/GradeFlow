@@ -5,8 +5,36 @@ import { CategoryBreakdown } from "./CategoryBreakdown";
 import { AssignmentTable } from "./AssignmentTable";
 import { HypotheticalAssignmentDialog } from "../dialogs/HypotheticalAssignmentDialog";
 
+const LETTER_GRADES = {
+  "A+": { points: 4.0, minPercent: 97 },
+  A: { points: 4.0, minPercent: 93 },
+  "A-": { points: 3.7, minPercent: 90 },
+  "B+": { points: 3.3, minPercent: 87 },
+  B: { points: 3.0, minPercent: 83 },
+  "B-": { points: 2.7, minPercent: 80 },
+  "C+": { points: 2.3, minPercent: 77 },
+  C: { points: 2.0, minPercent: 73 },
+  "C-": { points: 1.7, minPercent: 70 },
+  "D+": { points: 1.3, minPercent: 67 },
+  D: { points: 1.0, minPercent: 63 },
+  "D-": { points: 0.7, minPercent: 60 },
+  F: { points: 0.0, minPercent: 0 },
+};
+
+// Helper function to convert percentage to letter grade
+const percentageToLetter = (percentage) => {
+  for (const [letter, data] of Object.entries(LETTER_GRADES)) {
+    if (percentage >= data.minPercent) {
+      return letter;
+    }
+  }
+  return "F";
+};
+
 const Results = ({
   categories,
+  mode,
+  manualGrades,
   parsedGrades,
   whatIfMode,
   setWhatIfMode,
@@ -23,7 +51,12 @@ const Results = ({
   calculateCategoryGrade,
   calculateWeightedGrade,
 }) => {
-  if (!parsedGrades || !categories || categories.length === 0) {
+  if (
+    (!parsedGrades && mode === "blackboard") ||
+    (!manualGrades && mode === "manual") ||
+    !categories ||
+    categories.length === 0
+  ) {
     return (
       <Paper sx={{ p: 3, mb: 3 }}>
         <Typography variant="h6" color="error">
@@ -33,14 +66,53 @@ const Results = ({
     );
   }
 
-  const upcomingByCategory = categories.reduce((acc, category) => {
-    acc[category.name] = category.assignments.filter(
-      (a) => a.status === "UPCOMING"
-    ).length;
-    return acc;
-  }, {});
+  // Calculate final grade based on mode
+  const calculateFinalGrade = () => {
+    if (mode === "blackboard") {
+      return {
+        percentage: calculateWeightedGrade(),
+        hasLetterGrades: false,
+      };
+    } else {
+      // For manual mode
+      let totalWeightedPoints = 0;
+      let totalWeight = 0;
+      let hasLetterGrades = false;
 
-  const weightedGrade = calculateWeightedGrade();
+      categories.forEach((category) => {
+        const grade = manualGrades.find(
+          (g) => g.categoryName === category.name
+        );
+        if (grade) {
+          if (grade.isLetter) {
+            hasLetterGrades = true;
+            totalWeightedPoints +=
+              LETTER_GRADES[grade.grade].points * category.weight;
+          } else {
+            totalWeightedPoints += grade.value * category.weight;
+          }
+          totalWeight += category.weight;
+        }
+      });
+
+      const percentage = totalWeightedPoints / totalWeight;
+      return {
+        percentage,
+        hasLetterGrades,
+      };
+    }
+  };
+
+  const finalGrade = calculateFinalGrade();
+  const upcomingByCategory =
+    mode === "blackboard"
+      ? categories.reduce((acc, category) => {
+          acc[category.name] = category.assignments.filter(
+            (a) => a.status === "UPCOMING"
+          ).length;
+          return acc;
+        }, {})
+      : {};
 
   return (
     <Box
@@ -48,9 +120,9 @@ const Results = ({
         display: "grid",
         gridTemplateColumns: "1fr 1fr",
         gap: 3,
-        height: "calc(100vh - 280px)", // Adjust for header and padding
+        height: "calc(100vh - 280px)",
         backgroundColor: "background.default",
-        overflow: "hidden", // Prevent outer scrolling
+        overflow: "hidden",
       }}
     >
       {/* Left Panel */}
@@ -76,7 +148,7 @@ const Results = ({
       >
         <Stack spacing={3}>
           <GradeSummary
-            weightedGrade={weightedGrade}
+            finalGrade={finalGrade}
             whatIfMode={whatIfMode}
             setWhatIfMode={setWhatIfMode}
             targetGrade={targetGrade}
@@ -84,7 +156,9 @@ const Results = ({
           />
 
           <CategoryBreakdown
+            mode={mode}
             categories={categories}
+            manualGrades={manualGrades}
             whatIfMode={whatIfMode}
             hypotheticalAssignments={hypotheticalAssignments}
             calculateCategoryGrade={calculateCategoryGrade}
@@ -96,48 +170,50 @@ const Results = ({
       </Box>
 
       {/* Right Panel */}
-      <Paper
-        elevation={2}
-        sx={{
-          height: "100%",
-          borderRadius: 3,
-          background: "linear-gradient(145deg, #ffffff 0%, #f5f5f5 100%)",
-          overflow: "hidden", // Hide overflow at the paper level
-          display: "flex",
-          flexDirection: "column",
-        }}
-      >
-        <Box
+      {mode === "blackboard" && (
+        <Paper
+          elevation={2}
           sx={{
-            flexGrow: 1,
-            overflowY: "auto",
-            p: 4,
-            "&::-webkit-scrollbar": {
-              width: "8px",
-            },
-            "&::-webkit-scrollbar-track": {
-              background: "#f1f1f1",
-              borderRadius: "4px",
-            },
-            "&::-webkit-scrollbar-thumb": {
-              background: "#888",
-              borderRadius: "4px",
-              "&:hover": {
-                background: "#555",
-              },
-            },
+            height: "100%",
+            borderRadius: 3,
+            background: "linear-gradient(145deg, #ffffff 0%, #f5f5f5 100%)",
+            overflow: "hidden",
+            display: "flex",
+            flexDirection: "column",
           }}
         >
-          <AssignmentTable
-            categories={categories}
-            hypotheticalAssignments={hypotheticalAssignments}
-            hypotheticalScores={hypotheticalScores}
-            whatIfMode={whatIfMode}
-            setSelectedCategory={setSelectedCategory}
-            setHypotheticalScores={setHypotheticalScores}
-          />
-        </Box>
-      </Paper>
+          <Box
+            sx={{
+              flexGrow: 1,
+              overflowY: "auto",
+              p: 4,
+              "&::-webkit-scrollbar": {
+                width: "8px",
+              },
+              "&::-webkit-scrollbar-track": {
+                background: "#f1f1f1",
+                borderRadius: "4px",
+              },
+              "&::-webkit-scrollbar-thumb": {
+                background: "#888",
+                borderRadius: "4px",
+                "&:hover": {
+                  background: "#555",
+                },
+              },
+            }}
+          >
+            <AssignmentTable
+              categories={categories}
+              hypotheticalAssignments={hypotheticalAssignments}
+              hypotheticalScores={hypotheticalScores}
+              whatIfMode={whatIfMode}
+              setSelectedCategory={setSelectedCategory}
+              setHypotheticalScores={setHypotheticalScores}
+            />
+          </Box>
+        </Paper>
+      )}
 
       <HypotheticalAssignmentDialog
         open={dialogOpen}

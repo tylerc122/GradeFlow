@@ -9,19 +9,53 @@ import {
 } from "@mui/material";
 import { AutoGraph, Calculate } from "@mui/icons-material";
 
+const LETTER_GRADES = {
+  "A+": { points: 4.0, minPercent: 97 },
+  A: { points: 4.0, minPercent: 93 },
+  "A-": { points: 3.7, minPercent: 90 },
+  "B+": { points: 3.3, minPercent: 87 },
+  B: { points: 3.0, minPercent: 83 },
+  "B-": { points: 2.7, minPercent: 80 },
+  "C+": { points: 2.3, minPercent: 77 },
+  C: { points: 2.0, minPercent: 73 },
+  "C-": { points: 1.7, minPercent: 70 },
+  "D+": { points: 1.3, minPercent: 67 },
+  D: { points: 1.0, minPercent: 63 },
+  "D-": { points: 0.7, minPercent: 60 },
+  F: { points: 0.0, minPercent: 0 },
+};
+
+// Helper function to convert percentage to letter grade
+const percentageToLetter = (percentage) => {
+  for (const [letter, data] of Object.entries(LETTER_GRADES)) {
+    if (percentage >= data.minPercent) {
+      return letter;
+    }
+  }
+  return "F";
+};
+
 export const GradeSummary = ({
-  weightedGrade,
+  finalGrade,
   whatIfMode,
   setWhatIfMode,
   targetGrade,
   setTargetGrade,
 }) => {
-  const getGradeColor = (grade) => {
-    if (grade >= 90) return "#4caf50";
-    if (grade >= 80) return "#2196f3";
-    if (grade >= 70) return "#ff9800";
+  const getGradeColor = (percentage) => {
+    if (percentage >= 90) return "#4caf50";
+    if (percentage >= 80) return "#2196f3";
+    if (percentage >= 70) return "#ff9800";
     return "#f44336";
   };
+
+  // Calculate GPA if there are letter grades
+  const gpa = finalGrade.hasLetterGrades ? finalGrade.percentage : null;
+
+  // Get letter grade from percentage
+  const letterGrade = finalGrade.hasLetterGrades
+    ? percentageToLetter(finalGrade.percentage * 25)
+    : null;
 
   return (
     <Paper
@@ -52,19 +86,33 @@ export const GradeSummary = ({
             >
               Current Grade
             </Typography>
-            <Typography
-              variant="h3"
-              sx={{
-                fontWeight: 600,
-                color: getGradeColor(weightedGrade),
-                display: "flex",
-                alignItems: "center",
-                gap: 1,
-              }}
-            >
-              {weightedGrade.toFixed(2)}%
-              <AutoGraph sx={{ fontSize: 32, opacity: 0.8 }} />
-            </Typography>
+            <Box sx={{ display: "flex", alignItems: "baseline", gap: 2 }}>
+              <Typography
+                variant="h3"
+                sx={{
+                  fontWeight: 600,
+                  color: getGradeColor(finalGrade.percentage),
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 1,
+                }}
+              >
+                {finalGrade.percentage.toFixed(2)}%
+                <AutoGraph sx={{ fontSize: 32, opacity: 0.8 }} />
+              </Typography>
+
+              {gpa !== null && (
+                <Typography
+                  variant="h4"
+                  sx={{
+                    fontWeight: 500,
+                    color: "text.secondary",
+                  }}
+                >
+                  {letterGrade} ({gpa.toFixed(2)} GPA)
+                </Typography>
+              )}
+            </Box>
           </Box>
 
           <Button
@@ -142,3 +190,5 @@ export const GradeSummary = ({
     </Paper>
   );
 };
+
+export default GradeSummary;
