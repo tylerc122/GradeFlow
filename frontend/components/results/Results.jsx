@@ -4,6 +4,7 @@ import { GradeSummary } from "./GradeSummary";
 import { CategoryBreakdown } from "./CategoryBreakdown";
 import { AssignmentTable } from "./AssignmentTable";
 import { HypotheticalAssignmentDialog } from "../dialogs/HypotheticalAssignmentDialog";
+import ManualGradeTable from "./ManualGradeTable.jsx";
 
 const LETTER_GRADES = {
   "A+": { points: 4.0, minPercent: 97 },
@@ -35,6 +36,7 @@ const Results = ({
   categories,
   mode,
   manualGrades,
+  setManualGrades,
   parsedGrades,
   whatIfMode,
   setWhatIfMode,
@@ -51,11 +53,19 @@ const Results = ({
   calculateCategoryGrade,
   calculateWeightedGrade,
 }) => {
+  if (!categories || categories.length === 0) {
+    return (
+      <Paper sx={{ p: 3, mb: 3 }}>
+        <Typography variant="h6" color="error">
+          No categories defined. Please go back and set up grade categories.
+        </Typography>
+      </Paper>
+    );
+  }
+
   if (
-    (!parsedGrades && mode === "blackboard") ||
-    (!manualGrades && mode === "manual") ||
-    !categories ||
-    categories.length === 0
+    (mode === "blackboard" && !parsedGrades?.assignments) ||
+    (mode === "manual" && (!manualGrades || manualGrades.length === 0))
   ) {
     return (
       <Paper sx={{ p: 3, mb: 3 }}>
@@ -107,20 +117,30 @@ const Results = ({
   const upcomingByCategory =
     mode === "blackboard"
       ? categories.reduce((acc, category) => {
-          acc[category.name] = category.assignments.filter(
+          acc[category.name] = (category.assignments || []).filter(
             (a) => a.status === "UPCOMING"
           ).length;
           return acc;
         }, {})
-      : {};
+      : categories.reduce((acc, category) => {
+          acc[category.name] = 0;
+          return acc;
+        }, {});
 
   return (
     <Box
       sx={{
-        display: "grid",
-        gridTemplateColumns: "1fr 1fr",
+        display: "flex",
+        flexDirection: "column",
         gap: 3,
-        height: "calc(100vh - 280px)",
+        maxWidth: mode === "manual" ? "800px" : "100%",
+        margin: mode === "manual" ? "0 auto" : "0",
+        ...(mode === "blackboard" && {
+          display: "grid",
+          gridTemplateColumns: "1fr 1fr",
+          height: "calc(100vh - 280px)",
+          maxWidth: "100%",
+        }),
         backgroundColor: "background.default",
         overflow: "hidden",
       }}
@@ -155,22 +175,42 @@ const Results = ({
             setTargetGrade={setTargetGrade}
           />
 
-          <CategoryBreakdown
-            mode={mode}
-            categories={categories}
-            manualGrades={manualGrades}
-            whatIfMode={whatIfMode}
-            hypotheticalAssignments={hypotheticalAssignments}
-            calculateCategoryGrade={calculateCategoryGrade}
-            upcomingByCategory={upcomingByCategory}
-            setSelectedCategory={setSelectedCategory}
-            setDialogOpen={setDialogOpen}
-          />
+          {mode === "blackboard" && (
+            <CategoryBreakdown
+              mode={mode}
+              categories={categories}
+              manualGrades={manualGrades}
+              whatIfMode={whatIfMode}
+              hypotheticalAssignments={hypotheticalAssignments}
+              calculateCategoryGrade={calculateCategoryGrade}
+              upcomingByCategory={upcomingByCategory}
+              setSelectedCategory={setSelectedCategory}
+              setDialogOpen={setDialogOpen}
+            />
+          )}
         </Stack>
       </Box>
 
-      {/* Right Panel */}
-      {mode === "blackboard" && (
+      {mode === "manual" ? (
+        <ManualGradeTable
+          categories={categories}
+          manualGrades={manualGrades}
+          whatIfMode={whatIfMode}
+          onGradeChange={(newGrade) => {
+            const updatedGrades = manualGrades.map((g) =>
+              g.categoryName === newGrade.categoryName ? newGrade : g
+            );
+            if (
+              !updatedGrades.find(
+                (g) => g.categoryName === newGrade.categoryName
+              )
+            ) {
+              updatedGrades.push(newGrade);
+            }
+            setManualGrades(updatedGrades);
+          }}
+        />
+      ) : (
         <Paper
           elevation={2}
           sx={{
