@@ -458,7 +458,6 @@ const App = () => {
         </Box>
 
         {/* Navigation Buttons */}
-        {/* Navigation Buttons */}
         <Box
           sx={{
             display: "flex",
