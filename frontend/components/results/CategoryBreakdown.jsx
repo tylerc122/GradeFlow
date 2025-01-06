@@ -40,8 +40,8 @@ export const CategoryBreakdown = ({
         );
 
         const allAssignments = [
-          ...category.assignments,
-          ...categoryHypotheticals,
+          ...(category.assignments || []),
+          ...(categoryHypotheticals || []),
         ];
 
         const categoryGrade = calculateCategoryGrade(

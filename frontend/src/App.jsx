@@ -37,7 +37,7 @@ const App = () => {
   const [error, setError] = useState(null);
 
   // Grade data
-  const [mode, setMode] = useState(null);
+  const [mode, setMode] = useState("manual");
   const [rawGradeData, setRawGradeData] = useState("");
   const [parsedGrades, setParsedGrades] = useState(null);
   const [uncategorizedAssignments, setUncategorizedAssignments] = useState([]);
@@ -179,6 +179,7 @@ const App = () => {
     const processedCategories = newCategories.map((cat) => ({
       ...cat,
       weight: parseFloat(cat.weight) || cat.weight,
+      assignments: [], // Initialize empty assignments array
     }));
     setCategories(processedCategories);
   };
@@ -268,7 +269,7 @@ const App = () => {
   };
 
   const calculateCategoryGrade = (assignments, categoryName) => {
-    if (!assignments.length) return 0;
+    if (!assignments || !assignments.length) return 0;
 
     const allAssignments = assignments.map((assignment) => {
       if (assignment.status === "UPCOMING") {
@@ -296,13 +297,21 @@ const App = () => {
   };
 
   const calculateWeightedGrade = () => {
+    if (mode === "manual") {
+      return manualGrades.reduce((total, grade) => {
+        const category = categories.find((c) => c.name === grade.categoryName);
+        if (!category) return total;
+        return total + grade.value * (category.weight / 100);
+      }, 0);
+    }
+
     return categories.reduce((total, category) => {
       const categoryHypotheticals = hypotheticalAssignments.filter(
         (a) => a.categoryName === category.name
       );
 
       const allAssignments = [
-        ...category.assignments,
+        ...(category.assignments || []),
         ...categoryHypotheticals,
       ];
 
@@ -426,7 +435,10 @@ const App = () => {
           {activeStep === 3 && (
             <Results
               categories={categories}
-              parsedGrades={mode === "blackboard" ? parsedGrades : manualGrades}
+              mode={mode}
+              manualGrades={manualGrades}
+              setManualGrades={setManualGrades}
+              parsedGrades={parsedGrades}
               whatIfMode={whatIfMode}
               setWhatIfMode={setWhatIfMode}
               targetGrade={targetGrade}
@@ -446,14 +458,18 @@ const App = () => {
         </Box>
 
         {/* Navigation Buttons */}
+        {/* Navigation Buttons */}
         <Box
           sx={{
             display: "flex",
-            justifyContent: "flex-end",
+            justifyContent:
+              activeStep === 3 && mode === "manual" ? "center" : "flex-end",
             gap: 2,
-            width: "100%",
+            width: activeStep === 3 && mode === "manual" ? "800px" : "100%",
             mt: 4,
             px: 0,
+            margin:
+              activeStep === 3 && mode === "manual" ? "0 auto" : undefined,
           }}
         >
           {activeStep > 0 && (
