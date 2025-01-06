@@ -5,16 +5,17 @@ import {
   Step,
   StepLabel,
   Button,
-  Typography,
   Alert,
   Paper,
   Container,
   useTheme,
 } from "@mui/material";
+import Grid from "@mui/material/Grid";
 
 import GradeInput from "../components/GradeInput";
 import CategoryReview from "../components/CategoryReview";
 import CategorySetup from "../components/CategorySetup";
+import WelcomeSection from "../components/WelcomeSection";
 import LoadingOverlay from "../components/LoadingOverlay";
 import Results from "../components/results/Results";
 
@@ -50,6 +51,35 @@ const App = () => {
   const [hypotheticalAssignments, setHypotheticalAssignments] = useState([]);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState(null);
+
+  // Grade calculation functions
+  const calculateCategoryGrade = (assignments, categoryName) => {
+    if (!assignments || !assignments.length) return 0;
+
+    const allAssignments = assignments.map((assignment) => {
+      if (assignment.status === "UPCOMING") {
+        const hypotheticalScore =
+          hypotheticalScores[`${categoryName}-${assignment.name}`];
+        return hypotheticalScore || assignment;
+      }
+      return assignment;
+    });
+
+    const totalEarned = allAssignments.reduce((sum, a) => {
+      const score =
+        a.status === "UPCOMING"
+          ? hypotheticalScores[`${categoryName}-${a.name}`]?.score || 0
+          : a.score;
+      return sum + score;
+    }, 0);
+
+    const totalPossible = allAssignments.reduce(
+      (sum, a) => sum + a.total_points,
+      0
+    );
+
+    return totalPossible > 0 ? (totalEarned / totalPossible) * 100 : 0;
+  };
 
   const handleProcessGrades = async () => {
     try {
@@ -108,6 +138,33 @@ const App = () => {
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const calculateWeightedGrade = () => {
+    if (mode === "manual") {
+      return manualGrades.reduce((total, grade) => {
+        const category = categories.find((c) => c.name === grade.categoryName);
+        if (!category) return total;
+        return total + grade.value * (category.weight / 100);
+      }, 0);
+    }
+
+    return categories.reduce((total, category) => {
+      const categoryHypotheticals = hypotheticalAssignments.filter(
+        (a) => a.categoryName === category.name
+      );
+
+      const allAssignments = [
+        ...(category.assignments || []),
+        ...categoryHypotheticals,
+      ];
+
+      const categoryGrade = calculateCategoryGrade(
+        allAssignments,
+        category.name
+      );
+      return total + categoryGrade * (category.weight / 100);
+    }, 0);
   };
 
   const handleNext = async () => {
@@ -175,6 +232,11 @@ const App = () => {
     setError(null);
   };
 
+  const handleBack = () => {
+    setActiveStep((prevStep) => prevStep - 1);
+    setError(null);
+  };
+
   const handleSetCategories = (newCategories) => {
     const processedCategories = newCategories.map((cat) => ({
       ...cat,
@@ -182,29 +244,6 @@ const App = () => {
       assignments: [], // Initialize empty assignments array
     }));
     setCategories(processedCategories);
-  };
-
-  const handleBack = () => {
-    if (activeStep === 2) {
-      const allAssignments = [
-        ...uncategorizedAssignments,
-        ...categories.flatMap((category) => category.assignments || []),
-      ];
-
-      const uniqueAssignments = Array.from(
-        new Map(allAssignments.map((item) => [item.name, item])).values()
-      );
-
-      const newCategories = categories.map((category) => ({
-        ...category,
-        assignments: [],
-      }));
-
-      setCategories(newCategories);
-      setUncategorizedAssignments(uniqueAssignments);
-    }
-    setActiveStep((prevStep) => prevStep - 1);
-    setError(null);
   };
 
   const handleDragEnd = (result) => {
@@ -225,6 +264,7 @@ const App = () => {
     let newUncategorized = [...uncategorizedAssignments];
     let newCategories = [...categories];
 
+    // Ensure assignments array exists for all categories
     newCategories = newCategories.map((category) => ({
       ...category,
       assignments: category.assignments || [],
@@ -232,6 +272,7 @@ const App = () => {
 
     let draggedItem;
 
+    // Handle dragging from uncategorized area
     if (sourceId === "uncategorized") {
       draggedItem = newUncategorized[source.index];
       newUncategorized.splice(source.index, 1);
@@ -246,7 +287,9 @@ const App = () => {
           draggedItem
         );
       }
-    } else if (sourceId.startsWith("category-")) {
+    }
+    // Handle dragging from a category
+    else if (sourceId.startsWith("category-")) {
       const sourceCategoryIndex = parseInt(sourceId.split("-")[1]);
       draggedItem =
         newCategories[sourceCategoryIndex].assignments[source.index];
@@ -268,59 +311,85 @@ const App = () => {
     setCategories(newCategories);
   };
 
-  const calculateCategoryGrade = (assignments, categoryName) => {
-    if (!assignments || !assignments.length) return 0;
-
-    const allAssignments = assignments.map((assignment) => {
-      if (assignment.status === "UPCOMING") {
-        const hypotheticalScore =
-          hypotheticalScores[`${categoryName}-${assignment.name}`];
-        return hypotheticalScore || assignment;
-      }
-      return assignment;
-    });
-
-    const totalEarned = allAssignments.reduce((sum, a) => {
-      const score =
-        a.status === "UPCOMING"
-          ? hypotheticalScores[`${categoryName}-${a.name}`]?.score || 0
-          : a.score;
-      return sum + score;
-    }, 0);
-
-    const totalPossible = allAssignments.reduce(
-      (sum, a) => sum + a.total_points,
-      0
-    );
-
-    return totalPossible > 0 ? (totalEarned / totalPossible) * 100 : 0;
-  };
-
-  const calculateWeightedGrade = () => {
-    if (mode === "manual") {
-      return manualGrades.reduce((total, grade) => {
-        const category = categories.find((c) => c.name === grade.categoryName);
-        if (!category) return total;
-        return total + grade.value * (category.weight / 100);
-      }, 0);
+  const renderMainContent = () => {
+    if (activeStep === 3) {
+      return (
+        <Results
+          categories={categories}
+          mode={mode}
+          manualGrades={manualGrades}
+          setManualGrades={setManualGrades}
+          parsedGrades={parsedGrades}
+          whatIfMode={whatIfMode}
+          setWhatIfMode={setWhatIfMode}
+          targetGrade={targetGrade}
+          setTargetGrade={setTargetGrade}
+          hypotheticalScores={hypotheticalScores}
+          setHypotheticalScores={setHypotheticalScores}
+          hypotheticalAssignments={hypotheticalAssignments}
+          setHypotheticalAssignments={setHypotheticalAssignments}
+          dialogOpen={dialogOpen}
+          setDialogOpen={setDialogOpen}
+          selectedCategory={selectedCategory}
+          setSelectedCategory={setSelectedCategory}
+          calculateCategoryGrade={calculateCategoryGrade}
+          calculateWeightedGrade={calculateWeightedGrade}
+        />
+      );
     }
 
-    return categories.reduce((total, category) => {
-      const categoryHypotheticals = hypotheticalAssignments.filter(
-        (a) => a.categoryName === category.name
-      );
+    return (
+      <Grid container spacing={6} sx={{ minHeight: "70vh", mt: 1 }}>
+        {/* Welcome Section - Always shown except on Results page */}
+        <Grid item xs={12} md={6} sx={{ mb: 4 }}>
+          <WelcomeSection />
+        </Grid>
 
-      const allAssignments = [
-        ...(category.assignments || []),
-        ...categoryHypotheticals,
-      ];
+        {/* Content Section */}
+        <Grid item xs={12} md={6} sx={{ mb: 4 }}>
+          <Paper
+            elevation={2}
+            sx={{
+              p: 4,
+              borderRadius: 3,
+              bgcolor: "background.paper",
+              height: "100%",
+            }}
+          >
+            {activeStep === 0 && (
+              <CategorySetup
+                categories={categories}
+                setCategories={handleSetCategories}
+                error={error}
+                setError={setError}
+              />
+            )}
 
-      const categoryGrade = calculateCategoryGrade(
-        allAssignments,
-        category.name
-      );
-      return total + categoryGrade * (category.weight / 100);
-    }, 0);
+            {activeStep === 1 && (
+              <GradeInput
+                mode={mode}
+                setMode={setMode}
+                rawGradeData={rawGradeData}
+                setRawGradeData={setRawGradeData}
+                categories={categories}
+                setGrades={setManualGrades}
+              />
+            )}
+
+            {activeStep === 2 && mode === "blackboard" && (
+              <CategoryReview
+                parsedGrades={parsedGrades}
+                uncategorizedAssignments={uncategorizedAssignments}
+                categories={categories}
+                handleDragEnd={handleDragEnd}
+                setUncategorizedAssignments={setUncategorizedAssignments}
+                setCategories={setCategories}
+              />
+            )}
+          </Paper>
+        </Grid>
+      </Grid>
+    );
   };
 
   return (
@@ -329,61 +398,33 @@ const App = () => {
         width: "100vw",
         minHeight: "100vh",
         display: "flex",
-        justifyContent: "center",
+        flexDirection: "column",
         bgcolor: "background.default",
+        pt: 4,
+        pb: 4,
       }}
     >
       {isLoading && <LoadingOverlay />}
-      <Container
-        maxWidth={activeStep === 3 ? false : "md"}
-        sx={{
-          py: 4,
-          px: activeStep === 3 ? { xs: 2, sm: 4, md: 6 } : 3,
-          display: "flex",
-          flexDirection: "column",
-          alignItems: "center",
-          transition: "all 0.3s ease",
-        }}
-      >
-        {/* Header */}
-        <Typography
-          variant="h3"
-          component="h1"
-          align="center"
-          sx={{
-            fontWeight: 600,
-            color: "primary.main",
-            mb: 6,
-          }}
-        >
-          GradeFlow
-        </Typography>
 
+      <Container maxWidth="xl">
         {/* Stepper */}
-        <Box
+        <Paper
+          elevation={2}
           sx={{
-            maxWidth: "md",
-            width: "100%",
-            mb: 4,
+            p: 3,
+            borderRadius: 2,
+            mb: 2,
+            bgcolor: "background.paper",
           }}
         >
-          <Paper
-            elevation={2}
-            sx={{
-              p: 3,
-              borderRadius: 2,
-              width: "100%",
-            }}
-          >
-            <Stepper activeStep={activeStep}>
-              {steps.map((label) => (
-                <Step key={label}>
-                  <StepLabel>{label}</StepLabel>
-                </Step>
-              ))}
-            </Stepper>
-          </Paper>
-        </Box>
+          <Stepper activeStep={activeStep}>
+            {steps.map((label) => (
+              <Step key={label}>
+                <StepLabel>{label}</StepLabel>
+              </Step>
+            ))}
+          </Stepper>
+        </Paper>
 
         {/* Error Alert */}
         {error && (
@@ -400,75 +441,16 @@ const App = () => {
         )}
 
         {/* Main Content */}
-        <Box sx={{ width: "100%", mb: 4 }}>
-          {activeStep === 0 && (
-            <CategorySetup
-              categories={categories}
-              setCategories={handleSetCategories}
-              error={error}
-              setError={setError}
-            />
-          )}
-
-          {activeStep === 1 && (
-            <GradeInput
-              mode={mode}
-              setMode={setMode}
-              rawGradeData={rawGradeData}
-              setRawGradeData={setRawGradeData}
-              categories={categories}
-              setGrades={setManualGrades}
-            />
-          )}
-
-          {activeStep === 2 && mode === "blackboard" && (
-            <CategoryReview
-              parsedGrades={parsedGrades}
-              uncategorizedAssignments={uncategorizedAssignments}
-              categories={categories}
-              handleDragEnd={handleDragEnd}
-              setUncategorizedAssignments={setUncategorizedAssignments}
-              setCategories={setCategories}
-            />
-          )}
-
-          {activeStep === 3 && (
-            <Results
-              categories={categories}
-              mode={mode}
-              manualGrades={manualGrades}
-              setManualGrades={setManualGrades}
-              parsedGrades={parsedGrades}
-              whatIfMode={whatIfMode}
-              setWhatIfMode={setWhatIfMode}
-              targetGrade={targetGrade}
-              setTargetGrade={setTargetGrade}
-              hypotheticalScores={hypotheticalScores}
-              setHypotheticalScores={setHypotheticalScores}
-              hypotheticalAssignments={hypotheticalAssignments}
-              setHypotheticalAssignments={setHypotheticalAssignments}
-              dialogOpen={dialogOpen}
-              setDialogOpen={setDialogOpen}
-              selectedCategory={selectedCategory}
-              setSelectedCategory={setSelectedCategory}
-              calculateCategoryGrade={calculateCategoryGrade}
-              calculateWeightedGrade={calculateWeightedGrade}
-            />
-          )}
-        </Box>
+        {renderMainContent()}
 
         {/* Navigation Buttons */}
         <Box
           sx={{
             display: "flex",
-            justifyContent:
-              activeStep === 3 && mode === "manual" ? "center" : "flex-end",
+            justifyContent: "flex-end",
             gap: 2,
-            width: activeStep === 3 && mode === "manual" ? "800px" : "100%",
             mt: 4,
-            px: 0,
-            margin:
-              activeStep === 3 && mode === "manual" ? "0 auto" : undefined,
+            mb: 4,
           }}
         >
           {activeStep > 0 && (
@@ -484,31 +466,17 @@ const App = () => {
               Back
             </Button>
           )}
-          {activeStep < steps.length - 1 ? (
-            <Button
-              variant="contained"
-              onClick={handleNext}
-              size="large"
-              sx={{
-                px: 4,
-                minWidth: 120,
-              }}
-            >
-              Next
-            </Button>
-          ) : (
-            <Button
-              variant="contained"
-              color="success"
-              size="large"
-              sx={{
-                px: 4,
-                minWidth: 120,
-              }}
-            >
-              Finish
-            </Button>
-          )}
+          <Button
+            variant="contained"
+            onClick={handleNext}
+            size="large"
+            sx={{
+              px: 4,
+              minWidth: 120,
+            }}
+          >
+            {activeStep === steps.length - 1 ? "Finish" : "Next"}
+          </Button>
         </Box>
       </Container>
     </Box>
