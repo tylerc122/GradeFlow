@@ -47,10 +47,10 @@ const AboutPage = () => {
               The Story Behind GradeFlow
             </Typography>
             <Typography variant="body1" paragraph>
-              As a student at [Your University], I constantly found myself
-              copying and pasting grades from Blackboard into spreadsheets,
-              trying to calculate my current standing in each class. It was a
-              tedious process that I knew could be automated.
+              As a student at George Washington University, I constantly found
+              myself copying and pasting grades from Blackboard into
+              spreadsheets, trying to calculate my current standing in each
+              class. It was a tedious process that I knew could be automated.
             </Typography>
             <Typography variant="body1" paragraph>
               That's when I had the idea for GradeFlow. I noticed that
@@ -92,8 +92,9 @@ const AboutPage = () => {
                   Student & Developer
                 </Typography>
                 <Typography variant="body1" sx={{ mt: 2 }}>
-                  Computer Science student at [Your University], passionate
-                  about building tools that make students' lives easier.
+                  Computer Science student at George Washington University,
+                  passionate about building tools that make students' lives
+                  easier.
                 </Typography>
               </Box>
             </Box>
@@ -102,7 +103,7 @@ const AboutPage = () => {
               <Typography variant="body1" paragraph>
                 I'm currently studying Computer Science with a focus on web
                 development and artificial intelligence. When I'm not coding,
-                you can find me [your interests/hobbies].
+                you can find me.
               </Typography>
               <Typography variant="body1">
                 Feel free to reach out if you have any questions about GradeFlow
