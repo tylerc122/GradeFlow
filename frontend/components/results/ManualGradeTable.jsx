@@ -20,11 +20,15 @@ const ManualGradeTable = ({
   const handleGradeChange = (categoryName, newValue) => {
     // Support both percentage and letter grades
     const isLetterGrade = isNaN(newValue) && newValue.trim().length > 0;
+
+    // If it's a number, ensure we preserve all digits
+    let parsedValue = isLetterGrade ? 0 : parseFloat(newValue);
+
     onGradeChange({
       categoryName,
       grade: newValue,
       isLetter: isLetterGrade,
-      value: isLetterGrade ? 0 : parseFloat(newValue),
+      value: isLetterGrade ? 0 : parsedValue,
     });
   };
 
@@ -69,6 +73,10 @@ const ManualGradeTable = ({
                       }
                       sx={{ width: "100px" }}
                       placeholder="95 or A"
+                      inputProps={{
+                        type: "text", // Changed from "number" to "text" to prevent browser-based number formatting
+                        inputMode: "decimal", // Better mobile keyboard for numbers but allows text
+                      }}
                     />
                   ) : (
                     <Typography>{gradeData.grade || "-"}</Typography>
