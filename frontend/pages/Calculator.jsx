@@ -53,23 +53,25 @@ const Calculator = () => {
   const [selectedCategory, setSelectedCategory] = useState(null);
 
   // Grade calculation functions
-  const calculateCategoryGrade = (assignments, categoryName) => {
+  const calculateCategoryGrade = (
+    assignments,
+    categoryName,
+    hypotheticalScores
+  ) => {
     if (!assignments || !assignments.length) return 0;
 
     const allAssignments = assignments.map((assignment) => {
-      if (assignment.status === "UPCOMING") {
-        const hypotheticalScore =
-          hypotheticalScores[`${categoryName}-${assignment.name}`];
+      if (assignment.status === "UPCOMING" || assignment.isHypothetical) {
+        const hypotheticalKey = `${categoryName}-${assignment.name}`;
+        const hypotheticalScore = hypotheticalScores[hypotheticalKey];
         return hypotheticalScore || assignment;
       }
       return assignment;
     });
 
     const totalEarned = allAssignments.reduce((sum, a) => {
-      const score =
-        a.status === "UPCOMING"
-          ? hypotheticalScores[`${categoryName}-${a.name}`]?.score || 0
-          : a.score;
+      const scoreKey = `${categoryName}-${a.name}`;
+      const score = hypotheticalScores[scoreKey]?.score ?? a.score;
       return sum + score;
     }, 0);
 
@@ -140,15 +142,11 @@ const Calculator = () => {
     }
   };
 
-  const calculateWeightedGrade = () => {
-    if (mode === "manual") {
-      return manualGrades.reduce((total, grade) => {
-        const category = categories.find((c) => c.name === grade.categoryName);
-        if (!category) return total;
-        return total + grade.value * (category.weight / 100);
-      }, 0);
-    }
-
+  const calculateWeightedGrade = (
+    categories,
+    hypotheticalScores,
+    hypotheticalAssignments
+  ) => {
     return categories.reduce((total, category) => {
       const categoryHypotheticals = hypotheticalAssignments.filter(
         (a) => a.categoryName === category.name
@@ -161,7 +159,8 @@ const Calculator = () => {
 
       const categoryGrade = calculateCategoryGrade(
         allAssignments,
-        category.name
+        category.name,
+        hypotheticalScores
       );
       return total + categoryGrade * (category.weight / 100);
     }, 0);

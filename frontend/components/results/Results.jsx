@@ -22,16 +22,6 @@ const LETTER_GRADES = {
   F: { points: 0.0, minPercent: 0 },
 };
 
-// Helper function to convert percentage to letter grade
-const percentageToLetter = (percentage) => {
-  for (const [letter, data] of Object.entries(LETTER_GRADES)) {
-    if (percentage >= data.minPercent) {
-      return letter;
-    }
-  }
-  return "F";
-};
-
 const Results = ({
   categories,
   mode,
@@ -50,8 +40,6 @@ const Results = ({
   setDialogOpen,
   selectedCategory,
   setSelectedCategory,
-  calculateCategoryGrade,
-  calculateWeightedGrade,
 }) => {
   if (!categories || categories.length === 0) {
     return (
@@ -76,15 +64,34 @@ const Results = ({
     );
   }
 
-  // Calculate final grade based on mode
-  const calculateFinalGrade = () => {
-    if (mode === "blackboard") {
-      return {
-        percentage: calculateWeightedGrade(),
-        hasLetterGrades: false,
-      };
-    } else {
-      // For manual mode
+  const calculateCategoryGrade = (assignments, categoryName) => {
+    if (!assignments || !assignments.length) return 0;
+
+    const allAssignments = assignments.map((assignment) => {
+      if (assignment.status === "UPCOMING" || assignment.isHypothetical) {
+        const hypotheticalKey = `${categoryName}-${assignment.name}`;
+        const hypotheticalScore = hypotheticalScores[hypotheticalKey];
+        return hypotheticalScore || assignment;
+      }
+      return assignment;
+    });
+
+    const totalEarned = allAssignments.reduce((sum, a) => {
+      const scoreKey = `${categoryName}-${a.name}`;
+      const score = hypotheticalScores[scoreKey]?.score ?? a.score;
+      return sum + score;
+    }, 0);
+
+    const totalPossible = allAssignments.reduce(
+      (sum, a) => sum + a.total_points,
+      0
+    );
+
+    return totalPossible > 0 ? (totalEarned / totalPossible) * 100 : 0;
+  };
+
+  const calculateWeightedGrade = () => {
+    if (mode === "manual") {
       let totalWeightedPoints = 0;
       let totalWeight = 0;
       let hasLetterGrades = false;
@@ -105,15 +112,33 @@ const Results = ({
         }
       });
 
-      const percentage = totalWeightedPoints / totalWeight;
-      return {
-        percentage,
-        hasLetterGrades,
-      };
+      return totalWeightedPoints / totalWeight;
     }
+
+    return categories.reduce((total, category) => {
+      const categoryHypotheticals = hypotheticalAssignments.filter(
+        (a) => a.categoryName === category.name
+      );
+
+      const allAssignments = [
+        ...(category.assignments || []),
+        ...categoryHypotheticals,
+      ];
+
+      const categoryGrade = calculateCategoryGrade(
+        allAssignments,
+        category.name
+      );
+      return total + categoryGrade * (category.weight / 100);
+    }, 0);
   };
 
-  const finalGrade = calculateFinalGrade();
+  // Calculate final grade based on mode
+  const finalGrade = {
+    percentage: calculateWeightedGrade(),
+    hasLetterGrades: mode === "manual" && manualGrades.some((g) => g.isLetter),
+  };
+
   const upcomingByCategory =
     mode === "blackboard"
       ? categories.reduce((acc, category) => {
