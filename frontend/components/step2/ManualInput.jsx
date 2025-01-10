@@ -58,16 +58,19 @@ const ManualInput = ({ categories, setGrades }) => {
     }));
 
     // Update parent component with all grades
-    const newGrades = Object.entries(categoryGrades).map(([name, grade]) => ({
-      categoryName: name,
-      grade: grade,
-      isLetter: isLetterGrade(grade),
-      value: isLetterGrade(grade)
-        ? LETTER_GRADES[grade.toUpperCase()].points
-        : isPercentage(grade)
-        ? parseFloat(grade)
-        : null,
-    }));
+    const newGrades = Object.entries(categoryGrades).map(([name, grade]) => {
+      const currentGrade = name === categoryName ? cleanedValue : grade;
+      return {
+        categoryName: name,
+        grade: currentGrade,
+        isLetter: isLetterGrade(currentGrade),
+        value: isLetterGrade(currentGrade)
+          ? LETTER_GRADES[currentGrade.toUpperCase()].points
+          : isPercentage(currentGrade)
+          ? parseFloat(currentGrade)
+          : null,
+      };
+    });
 
     setGrades(newGrades);
   };
@@ -125,6 +128,10 @@ const ManualInput = ({ categories, setGrades }) => {
               helperText={getGradeError(categoryGrades[category.name])}
               sx={{ width: 150 }}
               placeholder="95 or A-"
+              inputProps={{
+                type: "text",
+                inputMode: "decimal",
+              }}
             />
           </Box>
         </Paper>
