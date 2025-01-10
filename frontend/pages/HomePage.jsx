@@ -15,12 +15,22 @@ import AutoGraphIcon from "@mui/icons-material/AutoGraph";
 import ContentPasteIcon from "@mui/icons-material/ContentPaste";
 import CalculateIcon from "@mui/icons-material/Calculate";
 import SchoolIcon from "@mui/icons-material/School";
+import Percent from "@mui/icons-material/Percent";
+import SocialProof from "../components/home-sections/SocialProof";
+import FAQ from "../components/home-sections/FAQ";
+import Footer from "../components/home-sections/Footer";
 
 const HomePage = () => {
   const theme = useTheme();
   const navigate = useNavigate();
 
   const features = [
+    {
+      icon: <Percent sx={{ fontSize: 40, color: "primary.main" }} />,
+      title: "Set Your Structure",
+      description:
+        "Start by defining your course's grade categories and their weights. This one-time setup ensures accurate grade calculations.",
+    },
     {
       icon: <ContentPasteIcon sx={{ fontSize: 40, color: "primary.main" }} />,
       title: "Paste & Go",
@@ -35,9 +45,9 @@ const HomePage = () => {
     },
     {
       icon: <CalculateIcon sx={{ fontSize: 40, color: "primary.main" }} />,
-      title: "What-If Analysis",
+      title: "Instant Results",
       description:
-        "Explore different grade scenarios with our what-if calculator to plan your academic goals.",
+        "Get your overall grade, category breakdowns, and performance metrics instantly.",
     },
   ];
 
@@ -78,9 +88,9 @@ const HomePage = () => {
                 In Seconds
               </Typography>
               <Typography variant="h5" color="text.secondary" sx={{ mb: 4 }}>
-                Stop wrestling with spreadsheets. GradeFlow automatically
-                processes your Blackboard grades and calculates everything for
-                you.
+                Stop wrestling with spreadsheets and manual calculations.
+                GradeFlow automatically processes your Blackboard grades and
+                calculates everything for you.
               </Typography>
               <Button
                 variant="contained"
@@ -99,29 +109,61 @@ const HomePage = () => {
             </Grid>
             <Grid item xs={12} md={5}>
               <Box
-                component="img"
-                src="/api/placeholder/500/400"
-                alt="Grade calculation illustration"
                 sx={{
-                  width: "100%",
-                  height: "auto",
-                  borderRadius: 4,
-                  boxShadow: 3,
+                  position: "relative",
+                  "&:before": {
+                    content: '""',
+                    position: "absolute",
+                    top: "10%",
+                    left: "10%",
+                    right: "-10%",
+                    bottom: "-10%",
+                    background: `linear-gradient(45deg, ${theme.palette.primary.main}15, ${theme.palette.primary.light}15)`,
+                    borderRadius: 5,
+                    transform: "rotate(-3deg)",
+                    zIndex: 0,
+                  },
                 }}
-              />
+              >
+                <Box
+                  component="img"
+                  src="./grade.png"
+                  alt="Grade calculation illustration"
+                  sx={{
+                    width: "100%",
+                    height: "auto",
+                    borderRadius: 4,
+                    boxShadow: 3,
+                    position: "relative",
+                    zIndex: 1,
+                    transform: "rotate(3deg) translateY(-20px)",
+                    transition: "transform 0.3s ease-in-out",
+                    "&:hover": {
+                      transform: "rotate(0deg) translateY(-30px)",
+                    },
+                  }}
+                />
+              </Box>
             </Grid>
           </Grid>
         </Container>
       </Box>
 
       {/* Features Section */}
-      <Container maxWidth="lg" sx={{ py: 12 }}>
+      <Container maxWidth="xl" sx={{ py: 12 }}>
+        {" "}
         <Typography variant="h3" align="center" sx={{ mb: 8, fontWeight: 600 }}>
           How It Works
         </Typography>
-        <Grid container spacing={4}>
+        <Grid
+          container
+          spacing={4}
+          sx={{
+            justifyContent: "center",
+          }}
+        >
           {features.map((feature, index) => (
-            <Grid item xs={12} md={4} key={index}>
+            <Grid item sx={{ width: 350 }} key={index}>
               <Card
                 elevation={2}
                 sx={{
@@ -149,11 +191,18 @@ const HomePage = () => {
         </Grid>
       </Container>
 
+      {/* Social Proof Section i.e more cap cause it looks cool as hell its getting gutted for now */}
+      {/*<SocialProof />*/}
+
+      {/* FAQ Section */}
+      <FAQ />
+
       {/* CTA Section */}
       <Box
         sx={{
           bgcolor: "background.paper",
-          py: 12,
+          pt: 6,
+          pb: 5,
           borderTop: `1px solid ${theme.palette.divider}`,
         }}
       >
@@ -161,10 +210,11 @@ const HomePage = () => {
           <Paper
             elevation={2}
             sx={{
-              p: 6,
+              p: 5,
               borderRadius: 4,
               textAlign: "center",
               background: `linear-gradient(45deg, ${theme.palette.background.paper} 30%, ${theme.palette.grey[50]} 90%)`,
+              mb: 2,
             }}
           >
             <SchoolIcon sx={{ fontSize: 48, color: "primary.main", mb: 2 }} />
@@ -191,6 +241,8 @@ const HomePage = () => {
           </Paper>
         </Container>
       </Box>
+      {/* Footer */}
+      <Footer />
     </Box>
   );
 };
