@@ -1,4 +1,8 @@
 import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { useSnackbar } from "notistack";
+import { useAuth } from "../src/contexts/AuthContext";
+import SaveIcon from "@mui/icons-material/Save";
 import {
   Box,
   Stepper,
@@ -11,13 +15,13 @@ import {
   useTheme,
 } from "@mui/material";
 import Grid from "@mui/material/Grid";
-
 import GradeInput from "../components/step2/GradeInput";
 import CategoryReview from "../components/step3/CategoryReview";
 import CategorySetup from "../components/CategorySetup";
 import WelcomeSection from "../components/WelcomeSection";
 import LoadingOverlay from "../components/LoadingOverlay";
 import Results from "../components/results/Results";
+import SaveCalculationDialog from "../components/dialogs/SaveCalculationDialog";
 
 const Calculator = () => {
   const theme = useTheme();
@@ -38,7 +42,7 @@ const Calculator = () => {
   const [error, setError] = useState(null);
 
   // Grade data
-  const [mode, setMode] = useState("manual");
+  const [mode, setMode] = useState("blackboard");
   const [rawGradeData, setRawGradeData] = useState("");
   const [parsedGrades, setParsedGrades] = useState(null);
   const [uncategorizedAssignments, setUncategorizedAssignments] = useState([]);
@@ -52,12 +56,16 @@ const Calculator = () => {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState(null);
 
+  // Save calculation state
+  const [saveDialogOpen, setSaveDialogOpen] = useState(false);
+  const [savingError, setSavingError] = useState(null);
+  const [isSaving, setIsSaving] = useState(false);
+  const { user } = useAuth();
+  const { enqueueSnackbar } = useSnackbar();
+  const navigate = useNavigate();
+
   // Grade calculation functions
-  const calculateCategoryGrade = (
-    assignments,
-    categoryName,
-    hypotheticalScores
-  ) => {
+  const calculateCategoryGrade = (assignments, categoryName) => {
     if (!assignments || !assignments.length) return 0;
 
     const allAssignments = assignments.map((assignment) => {
@@ -142,11 +150,31 @@ const Calculator = () => {
     }
   };
 
-  const calculateWeightedGrade = (
-    categories,
-    hypotheticalScores,
-    hypotheticalAssignments
-  ) => {
+  const calculateWeightedGrade = () => {
+    if (mode === "manual") {
+      let totalWeightedPoints = 0;
+      let totalWeight = 0;
+      let hasLetterGrades = false;
+
+      categories.forEach((category) => {
+        const grade = manualGrades.find(
+          (g) => g.categoryName === category.name
+        );
+        if (grade) {
+          if (grade.isLetter) {
+            hasLetterGrades = true;
+            totalWeightedPoints +=
+              LETTER_GRADES[grade.grade].points * category.weight;
+          } else {
+            totalWeightedPoints += grade.value * category.weight;
+          }
+          totalWeight += category.weight;
+        }
+      });
+
+      return totalWeightedPoints / totalWeight;
+    }
+
     return categories.reduce((total, category) => {
       const categoryHypotheticals = hypotheticalAssignments.filter(
         (a) => a.categoryName === category.name
@@ -159,11 +187,90 @@ const Calculator = () => {
 
       const categoryGrade = calculateCategoryGrade(
         allAssignments,
-        category.name,
-        hypotheticalScores
+        category.name
       );
       return total + categoryGrade * (category.weight / 100);
     }, 0);
+  };
+
+  const handleSave = async (saveData) => {
+    setIsSaving(true);
+    setSavingError(null);
+
+    try {
+      const calculationData = {
+        ...saveData,
+        raw_data: rawGradeData,
+        categories: categories.map((category) => ({
+          name: category.name,
+          weight: category.weight,
+          assignments: [
+            ...(category.assignments || []),
+            ...hypotheticalAssignments.filter(
+              (a) => a.categoryName === category.name
+            ),
+          ],
+        })),
+        overall_grade: calculateWeightedGrade(),
+        total_points_earned: categories.reduce((total, category) => {
+          return (
+            total +
+            (category.assignments || []).reduce((sum, assignment) => {
+              if (assignment.status === "GRADED") {
+                return sum + assignment.score;
+              }
+              return sum;
+            }, 0)
+          );
+        }, 0),
+        total_points_possible: categories.reduce((total, category) => {
+          return (
+            total +
+            (category.assignments || []).reduce((sum, assignment) => {
+              if (assignment.status === "GRADED") {
+                return sum + assignment.total_points;
+              }
+              return sum;
+            }, 0)
+          );
+        }, 0),
+      };
+
+      const response = await fetch("http://localhost:8000/api/grades/save", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        credentials: "include",
+        body: JSON.stringify(calculationData),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to save calculation");
+      }
+
+      const result = await response.json();
+      setSaveDialogOpen(false);
+      enqueueSnackbar("Calculation saved successfully!", {
+        variant: "success",
+        action: (key) => (
+          <Button
+            color="inherit"
+            size="small"
+            onClick={() => {
+              navigate(`/grades/${result.id}`);
+            }}
+          >
+            View
+          </Button>
+        ),
+      });
+    } catch (error) {
+      setSavingError(error.message);
+      enqueueSnackbar("Failed to save calculation", { variant: "error" });
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const handleNext = async () => {
@@ -333,6 +440,7 @@ const Calculator = () => {
           setSelectedCategory={setSelectedCategory}
           calculateCategoryGrade={calculateCategoryGrade}
           calculateWeightedGrade={calculateWeightedGrade}
+          rawGradeData={rawGradeData}
         />
       );
     }
@@ -465,18 +573,49 @@ const Calculator = () => {
               Back
             </Button>
           )}
-          <Button
-            variant="contained"
-            onClick={handleNext}
-            size="large"
-            sx={{
-              px: 4,
-              minWidth: 120,
-            }}
-          >
-            {activeStep === steps.length - 1 ? "Finish" : "Next"}
-          </Button>
+          {activeStep === steps.length - 1 && user ? (
+            <Button
+              variant="contained"
+              onClick={() => setSaveDialogOpen(true)}
+              startIcon={<SaveIcon />}
+              size="large"
+              sx={{
+                px: 4,
+                minWidth: 120,
+              }}
+            >
+              Save Calculation
+            </Button>
+          ) : (
+            <Button
+              variant="contained"
+              onClick={handleNext}
+              size="large"
+              sx={{
+                px: 4,
+                minWidth: 120,
+              }}
+            >
+              Next
+            </Button>
+          )}
         </Box>
+
+        <SaveCalculationDialog
+          open={saveDialogOpen}
+          onClose={() => {
+            setSaveDialogOpen(false);
+            setSavingError(null);
+          }}
+          onSave={handleSave}
+          loading={isSaving}
+          error={savingError}
+          calculationData={{
+            categories,
+            hypotheticalAssignments,
+            rawGradeData,
+          }}
+        />
       </Container>
     </Box>
   );

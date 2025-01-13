@@ -8,9 +8,11 @@ import {
 } from "react-router-dom";
 import { Box, ThemeProvider, CssBaseline } from "@mui/material";
 import { AnimatePresence } from "framer-motion";
+import { SnackbarProvider } from "notistack";
 import Navbar from "../components/Navbar";
 import HomePage from "../pages/HomePage";
 import Calculator from "../pages/Calculator";
+import SavedCalculation from "../pages/SavedCalculation"; // Make sure this path is correct
 import AboutPage from "../pages/AboutPage";
 import LoginPage from "../pages/LoginPage";
 import RegisterPage from "../pages/RegisterPage";
@@ -25,7 +27,7 @@ const ProtectedRoute = ({ children }) => {
   const location = useLocation();
 
   if (loading) {
-    return null; // Or a loading spinner
+    return null;
   }
 
   if (!user) {
@@ -75,6 +77,16 @@ const AnimatedRoutes = () => {
           }
         />
         <Route
+          path="/about"
+          element={
+            <PageTransition>
+              <AboutPage />
+            </PageTransition>
+          }
+        />
+
+        {/* Protected Routes */}
+        <Route
           path="/grades"
           element={
             <ProtectedRoute>
@@ -85,11 +97,13 @@ const AnimatedRoutes = () => {
           }
         />
         <Route
-          path="/about"
+          path="/grades/:id"
           element={
-            <PageTransition>
-              <AboutPage />
-            </PageTransition>
+            <ProtectedRoute>
+              <PageTransition>
+                <SavedCalculation />
+              </PageTransition>
+            </ProtectedRoute>
           }
         />
       </Routes>
@@ -103,29 +117,31 @@ const App = () => {
     <Router>
       <ThemeProvider theme={theme}>
         <AuthProvider>
-          <CssBaseline />
-          <Box
-            sx={{
-              display: "flex",
-              flexDirection: "column",
-              minHeight: "100vh",
-              width: "100vw",
-              overflow: "hidden",
-            }}
-          >
-            <Navbar />
+          <SnackbarProvider maxSnack={3}>
+            <CssBaseline />
             <Box
-              component="main"
               sx={{
-                flexGrow: 1,
-                minHeight: "100%",
-                width: "100%",
-                overflow: "auto",
+                display: "flex",
+                flexDirection: "column",
+                minHeight: "100vh",
+                width: "100vw",
+                overflow: "hidden",
               }}
             >
-              <AnimatedRoutes />
+              <Navbar />
+              <Box
+                component="main"
+                sx={{
+                  flexGrow: 1,
+                  minHeight: "100%",
+                  width: "100%",
+                  overflow: "auto",
+                }}
+              >
+                <AnimatedRoutes />
+              </Box>
             </Box>
-          </Box>
+          </SnackbarProvider>
         </AuthProvider>
       </ThemeProvider>
     </Router>

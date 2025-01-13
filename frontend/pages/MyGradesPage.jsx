@@ -9,26 +9,37 @@ import {
   useTheme,
   CircularProgress,
   Alert,
+  IconButton,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  Button,
 } from "@mui/material";
 import { useNavigate } from "react-router-dom";
+import { useSnackbar } from "notistack";
 import AssignmentIcon from "@mui/icons-material/Assignment";
+import DeleteIcon from "@mui/icons-material/Delete";
 
 const MyGradesPage = () => {
   const theme = useTheme();
   const navigate = useNavigate();
+  const { enqueueSnackbar } = useSnackbar();
   const [calculations, setCalculations] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [calculationToDelete, setCalculationToDelete] = useState(null);
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
 
   useEffect(() => {
     const fetchCalculations = async () => {
       try {
         const response = await fetch("http://localhost:8000/api/grades/saved", {
-          credentials: "include", // Important for cookies/session
+          credentials: "include",
         });
 
         if (!response.ok) {
-          // If not authenticated, redirect to login
           if (response.status === 401) {
             navigate("/login");
             return;
@@ -44,23 +55,46 @@ const MyGradesPage = () => {
         setLoading(false);
       }
     };
-
     fetchCalculations();
-  }, [navigate]);
+  }, [navigate, refreshTrigger]);
 
-  const getGradeColor = (grade) => {
-    if (grade >= 90) return theme.palette.success.main;
-    if (grade >= 80) return theme.palette.primary.main;
-    if (grade >= 70) return theme.palette.warning.main;
-    return theme.palette.error.main;
+  useEffect(() => {
+    const handleFocus = () => {
+      setRefreshTrigger((prev) => prev + 1);
+    };
+
+    window.addEventListener("focus", handleFocus);
+    return () => window.removeEventListener("focus", handleFocus);
+  }, []);
+
+  const handleDelete = async (calculationId) => {
+    try {
+      const response = await fetch(
+        `http://localhost:8000/api/grades/${calculationId}`,
+        {
+          method: "DELETE",
+          credentials: "include",
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error("Failed to delete calculation");
+      }
+
+      setCalculations(calculations.filter((calc) => calc.id !== calculationId));
+      enqueueSnackbar("Calculation deleted successfully", {
+        variant: "success",
+      });
+    } catch (error) {
+      enqueueSnackbar("Failed to delete calculation", { variant: "error" });
+    }
+    setDeleteDialogOpen(false);
+    setCalculationToDelete(null);
   };
 
-  const formatDate = (dateString) => {
-    return new Intl.DateTimeFormat("en-US", {
-      month: "short",
-      day: "numeric",
-      year: "numeric",
-    }).format(new Date(dateString));
+  const openDeleteDialog = (calculation) => {
+    setCalculationToDelete(calculation);
+    setDeleteDialogOpen(true);
   };
 
   if (loading) {
@@ -100,7 +134,6 @@ const MyGradesPage = () => {
           <Grid item xs={12} key={calc.id}>
             <Paper
               elevation={2}
-              onClick={() => navigate(`/calculator/results/${calc.id}`)}
               sx={{
                 p: 3,
                 cursor: "pointer",
@@ -113,45 +146,42 @@ const MyGradesPage = () => {
               }}
             >
               <Box sx={{ display: "flex", alignItems: "flex-start", gap: 2 }}>
-                <AssignmentIcon
-                  sx={{
-                    fontSize: 40,
-                    color: getGradeColor(calc.results.overall_grade),
-                    opacity: 0.8,
-                  }}
-                />
-
-                <Box sx={{ flexGrow: 1 }}>
-                  <Typography variant="h6" sx={{ fontWeight: 500, mb: 1 }}>
-                    {calc.name}
-                  </Typography>
-
-                  <Box sx={{ display: "flex", alignItems: "center", mb: 2 }}>
-                    <Typography
-                      variant="h5"
-                      sx={{
-                        fontWeight: 600,
-                        color: getGradeColor(calc.results.overall_grade),
-                      }}
-                    >
-                      {calc.results.overall_grade.toFixed(1)}%
-                    </Typography>
-                    <Typography
-                      variant="body2"
-                      color="text.secondary"
-                      sx={{ ml: 2 }}
-                    >
-                      Saved on {formatDate(calc.created_at)}
-                    </Typography>
-                  </Box>
-
+                <Box
+                  onClick={() => navigate(`/grades/${calc.id}`)}
+                  sx={{ flexGrow: 1 }}
+                >
                   <Box
                     sx={{
                       display: "flex",
+                      alignItems: "center",
                       gap: 2,
-                      flexWrap: "wrap",
+                      mb: 2,
                     }}
                   >
+                    <AssignmentIcon
+                      sx={{
+                        fontSize: 40,
+                        color: getGradeColor(calc.results.overall_grade),
+                        opacity: 0.8,
+                      }}
+                    />
+                    <Box>
+                      <Typography variant="h6" sx={{ fontWeight: 500 }}>
+                        {calc.name}
+                      </Typography>
+                      <Typography
+                        variant="h5"
+                        sx={{
+                          fontWeight: 600,
+                          color: getGradeColor(calc.results.overall_grade),
+                        }}
+                      >
+                        {calc.results.overall_grade.toFixed(1)}%
+                      </Typography>
+                    </Box>
+                  </Box>
+
+                  <Box sx={{ display: "flex", gap: 2, flexWrap: "wrap" }}>
                     {calc.categories.map((cat) => (
                       <Box
                         key={cat.name}
@@ -165,12 +195,27 @@ const MyGradesPage = () => {
                         }}
                       >
                         <Typography variant="body2">
-                          {cat.name}: Weight {cat.weight}%
+                          {cat.name}: {cat.weight}%
                         </Typography>
                       </Box>
                     ))}
                   </Box>
                 </Box>
+
+                <IconButton
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    openDeleteDialog(calc);
+                  }}
+                  sx={{
+                    color: "error.main",
+                    "&:hover": {
+                      backgroundColor: alpha("#f44336", 0.08),
+                    },
+                  }}
+                >
+                  <DeleteIcon />
+                </IconButton>
               </Box>
             </Paper>
           </Grid>
@@ -192,8 +237,40 @@ const MyGradesPage = () => {
           </Grid>
         )}
       </Grid>
+
+      <Dialog
+        open={deleteDialogOpen}
+        onClose={() => setDeleteDialogOpen(false)}
+        maxWidth="sm"
+        fullWidth
+      >
+        <DialogTitle>Delete Calculation</DialogTitle>
+        <DialogContent>
+          <Typography>
+            Are you sure you want to delete "{calculationToDelete?.name}"? This
+            action cannot be undone.
+          </Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setDeleteDialogOpen(false)}>Cancel</Button>
+          <Button
+            onClick={() => handleDelete(calculationToDelete?.id)}
+            color="error"
+            variant="contained"
+          >
+            Delete
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Container>
   );
+};
+
+const getGradeColor = (grade) => {
+  if (grade >= 90) return "#4caf50";
+  if (grade >= 80) return "#2196f3";
+  if (grade >= 70) return "#ff9800";
+  return "#f44336";
 };
 
 export default MyGradesPage;

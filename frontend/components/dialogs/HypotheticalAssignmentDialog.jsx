@@ -6,6 +6,7 @@ import {
   DialogActions,
   TextField,
   Button,
+  Alert,
 } from "@mui/material";
 
 export const HypotheticalAssignmentDialog = ({
@@ -17,9 +18,13 @@ export const HypotheticalAssignmentDialog = ({
   const [assignmentName, setAssignmentName] = useState("");
   const [score, setScore] = useState("");
   const [totalPoints, setTotalPoints] = useState("");
+  const [error, setError] = useState("");
 
   const handleSubmit = () => {
-    if (!assignmentName || !score || !totalPoints) return;
+    if (!assignmentName || !score || !totalPoints) {
+      setError("All fields are required to continue!");
+      return;
+    }
     onAdd({
       name: assignmentName,
       score: parseFloat(score),
@@ -31,12 +36,18 @@ export const HypotheticalAssignmentDialog = ({
     setAssignmentName("");
     setScore("");
     setTotalPoints("");
+    setError("");
   };
 
   return (
     <Dialog open={open} onClose={onClose}>
       <DialogTitle>Add Hypothetical Assignment</DialogTitle>
       <DialogContent>
+        {error && (
+          <Alert severity="error" sx={{ mb: 3, width: "100%" }}>
+            {error}
+          </Alert>
+        )}
         <TextField
           autoFocus
           margin="dense"

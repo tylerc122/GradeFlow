@@ -125,33 +125,30 @@ const AboutPage = () => {
                     flexDirection: "column",
                   }}
                 >
-                  <Typography variant="h4" sx={{ fontWeight: 600 }}>
+                  <Typography variant="h4" sx={{ fontWeight: 600, mb: "1%" }}>
                     Tyler Collo
                   </Typography>
                   <Typography
                     variant="h6"
                     color="text.secondary"
-                    sx={{ mb: "5%", ml: "2px" }}
+                    sx={{ mb: "2%", ml: "2px" }}
                   >
-                    Student & Developer
-                  </Typography>
-
-                  <Typography variant="body1" sx={{ mb: 2 }}>
-                    Computer Science student at George Washington University,
-                    currently working at{" "}
-                    <Link
-                      href="https://gyfrapp.com/"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      sx={{
-                        color: "primary.main",
-                        textDecoration: "none",
-                        "&:hover": { textDecoration: "underline" },
-                      }}
-                    >
-                      Gyfr
-                    </Link>
-                    .
+                    <Typography variant="body1" sx={{ mb: 2 }}>
+                      Computer Science student at GWU, currently working at{" "}
+                      <Link
+                        href="https://gyfrapp.com/"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        sx={{
+                          color: "primary.main",
+                          textDecoration: "none",
+                          "&:hover": { textDecoration: "underline" },
+                        }}
+                      >
+                        Gyfr
+                      </Link>
+                      .
+                    </Typography>
                   </Typography>
 
                   <Typography variant="body1" sx={{ mb: 2 }}>
@@ -161,8 +158,10 @@ const AboutPage = () => {
                   </Typography>
 
                   <Typography variant="body1" sx={{ mb: 3 }}>
-                    Feel free to reach out if you have any questions about
-                    GradeFlow or just want to connect!
+                    If you want to learn more about me or my other projects,
+                    check out my personal website. Also, feel free to reach out
+                    if you have any questions about GradeFlow or just want to
+                    connect!
                   </Typography>
 
                   {/* Social Links */}
