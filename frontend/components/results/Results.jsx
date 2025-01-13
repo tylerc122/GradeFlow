@@ -1,10 +1,16 @@
-import React from "react";
-import { Box, Paper, Typography, Stack } from "@mui/material";
+import React, { useState } from "react";
+import { Box, Stack, Paper, Typography } from "@mui/material";
+import { useAuth } from "../../src/contexts/AuthContext";
+import SaveCalculationDialog from "../dialogs/SaveCalculationDialog";
+import SaveIcon from "@mui/icons-material/Save";
+import Button from "@mui/material/Button";
 import { GradeSummary } from "./GradeSummary";
 import { CategoryBreakdown } from "./CategoryBreakdown";
 import { AssignmentTable } from "./AssignmentTable";
 import { HypotheticalAssignmentDialog } from "../dialogs/HypotheticalAssignmentDialog";
 import ManualGradeTable from "./ManualGradeTable.jsx";
+import { useSnackbar } from "notistack";
+import { useNavigate } from "react-router-dom";
 
 const LETTER_GRADES = {
   "A+": { points: 4.0, minPercent: 97 },
@@ -40,7 +46,97 @@ const Results = ({
   setDialogOpen,
   selectedCategory,
   setSelectedCategory,
+  calculateCategoryGrade,
+  calculateWeightedGrade,
+  rawGradeData,
 }) => {
+  const { user } = useAuth();
+  const [saveDialogOpen, setSaveDialogOpen] = useState(false);
+  const [savingError, setSavingError] = useState(null);
+  const [isSaving, setIsSaving] = useState(false);
+  const { enqueueSnackbar } = useSnackbar();
+  const navigate = useNavigate();
+
+  const handleSave = async (saveData) => {
+    setIsSaving(true);
+    setSavingError(null);
+
+    try {
+      const calculationData = {
+        ...saveData,
+        raw_data: rawGradeData,
+        categories: categories.map((category) => ({
+          name: category.name,
+          weight: category.weight,
+          assignments: [
+            ...category.assignments,
+            ...hypotheticalAssignments.filter(
+              (a) => a.categoryName === category.name
+            ),
+          ],
+        })),
+        overall_grade: calculateWeightedGrade(),
+        total_points_earned: categories.reduce((total, category) => {
+          return (
+            total +
+            category.assignments.reduce((sum, assignment) => {
+              if (assignment.status === "GRADED") {
+                return sum + assignment.score;
+              }
+              return sum;
+            }, 0)
+          );
+        }, 0),
+        total_points_possible: categories.reduce((total, category) => {
+          return (
+            total +
+            category.assignments.reduce((sum, assignment) => {
+              if (assignment.status === "GRADED") {
+                return sum + assignment.total_points;
+              }
+              return sum;
+            }, 0)
+          );
+        }, 0),
+      };
+
+      const response = await fetch("http://localhost:8000/api/grades/save", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        credentials: "include",
+        body: JSON.stringify(calculationData),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to save calculation");
+      }
+
+      const result = await response.json();
+      setSaveDialogOpen(false);
+      enqueueSnackbar("Calculation saved successfully!", {
+        variant: "success",
+        action: (key) => (
+          <Button
+            color="inherit"
+            size="small"
+            onClick={() => {
+              navigate(`/calculator/saved/${result.id}`);
+            }}
+          >
+            View
+          </Button>
+        ),
+      });
+    } catch (error) {
+      setSavingError(error.message);
+      enqueueSnackbar("Failed to save calculation", { variant: "error" });
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
   if (!categories || categories.length === 0) {
     return (
       <Paper sx={{ p: 3, mb: 3 }}>
@@ -63,75 +159,6 @@ const Results = ({
       </Paper>
     );
   }
-
-  const calculateCategoryGrade = (assignments, categoryName) => {
-    if (!assignments || !assignments.length) return 0;
-
-    const allAssignments = assignments.map((assignment) => {
-      if (assignment.status === "UPCOMING" || assignment.isHypothetical) {
-        const hypotheticalKey = `${categoryName}-${assignment.name}`;
-        const hypotheticalScore = hypotheticalScores[hypotheticalKey];
-        return hypotheticalScore || assignment;
-      }
-      return assignment;
-    });
-
-    const totalEarned = allAssignments.reduce((sum, a) => {
-      const scoreKey = `${categoryName}-${a.name}`;
-      const score = hypotheticalScores[scoreKey]?.score ?? a.score;
-      return sum + score;
-    }, 0);
-
-    const totalPossible = allAssignments.reduce(
-      (sum, a) => sum + a.total_points,
-      0
-    );
-
-    return totalPossible > 0 ? (totalEarned / totalPossible) * 100 : 0;
-  };
-
-  const calculateWeightedGrade = () => {
-    if (mode === "manual") {
-      let totalWeightedPoints = 0;
-      let totalWeight = 0;
-      let hasLetterGrades = false;
-
-      categories.forEach((category) => {
-        const grade = manualGrades.find(
-          (g) => g.categoryName === category.name
-        );
-        if (grade) {
-          if (grade.isLetter) {
-            hasLetterGrades = true;
-            totalWeightedPoints +=
-              LETTER_GRADES[grade.grade].points * category.weight;
-          } else {
-            totalWeightedPoints += grade.value * category.weight;
-          }
-          totalWeight += category.weight;
-        }
-      });
-
-      return totalWeightedPoints / totalWeight;
-    }
-
-    return categories.reduce((total, category) => {
-      const categoryHypotheticals = hypotheticalAssignments.filter(
-        (a) => a.categoryName === category.name
-      );
-
-      const allAssignments = [
-        ...(category.assignments || []),
-        ...categoryHypotheticals,
-      ];
-
-      const categoryGrade = calculateCategoryGrade(
-        allAssignments,
-        category.name
-      );
-      return total + categoryGrade * (category.weight / 100);
-    }, 0);
-  };
 
   // Calculate final grade based on mode
   const finalGrade = {
@@ -192,12 +219,30 @@ const Results = ({
         }}
       >
         <Stack spacing={3}>
-          <GradeSummary
-            finalGrade={finalGrade}
-            whatIfMode={whatIfMode}
-            setWhatIfMode={setWhatIfMode}
-            targetGrade={targetGrade}
-            setTargetGrade={setTargetGrade}
+          <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
+            <GradeSummary
+              finalGrade={finalGrade}
+              whatIfMode={whatIfMode}
+              setWhatIfMode={setWhatIfMode}
+              targetGrade={targetGrade}
+              setTargetGrade={setTargetGrade}
+            />
+          </Box>
+
+          <SaveCalculationDialog
+            open={saveDialogOpen}
+            onClose={() => {
+              setSaveDialogOpen(false);
+              setSavingError(null);
+            }}
+            onSave={handleSave}
+            loading={isSaving}
+            error={savingError}
+            calculationData={{
+              categories,
+              hypotheticalAssignments,
+              finalGrade,
+            }}
           />
 
           {mode === "blackboard" && (
