@@ -11,6 +11,7 @@ router = APIRouter()
 class UserCreate(BaseModel):
     email: EmailStr
     password: str
+    name: str
 
 class UserLogin(BaseModel):
     email: EmailStr
@@ -30,6 +31,7 @@ async def register(
     hashed_password = session_manager.hash_password(user_data.password)
     db_user = User(
         email=user_data.email,
+        name=user_data.name,
         hashed_password=hashed_password
     )
     
@@ -40,7 +42,11 @@ async def register(
     # Create session
     session_manager.create_session(db_user.id, response)
     
-    return {"message": "User created successfully"}
+    return {
+        "id": db_user.id,
+        "email": db_user.email,
+        "name": db_user.name
+    }
 
 @router.post("/login")
 async def login(
@@ -60,7 +66,11 @@ async def login(
     # Create session
     session_manager.create_session(user.id, response)
     
-    return {"message": "Logged in successfully"}
+    return {
+        "id": user.id,
+        "email": user.email,
+        "name": user.name
+    }
 
 @router.post("/logout")
 async def logout(
