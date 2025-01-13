@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import {
   AppBar,
   Toolbar,
@@ -7,16 +7,38 @@ import {
   Box,
   Container,
   useTheme,
+  IconButton,
+  Menu,
+  MenuItem,
+  Divider,
 } from "@mui/material";
-import { Link as RouterLink, useLocation } from "react-router-dom";
-import { Calculator } from "lucide-react";
+import { Link as RouterLink, useLocation, useNavigate } from "react-router-dom";
+import { Calculator, LogOut, User } from "lucide-react";
+import { useAuth } from "../src/contexts/AuthContext";
 
 const Navbar = () => {
   const theme = useTheme();
   const location = useLocation();
+  const navigate = useNavigate();
+  const { user, logout } = useAuth();
+  const [anchorEl, setAnchorEl] = useState(null);
 
   const isActiveRoute = (path) => {
     return location.pathname === path;
+  };
+
+  const handleMenuClick = (event) => {
+    setAnchorEl(event.currentTarget);
+  };
+
+  const handleMenuClose = () => {
+    setAnchorEl(null);
+  };
+
+  const handleLogout = async () => {
+    handleMenuClose();
+    await logout();
+    navigate("/");
   };
 
   return (
@@ -65,7 +87,7 @@ const Navbar = () => {
           </Box>
 
           {/* Navigation Links */}
-          <Box sx={{ display: "flex", gap: 1 }}>
+          <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
             <Button
               component={RouterLink}
               to="/"
@@ -88,6 +110,23 @@ const Navbar = () => {
             >
               Calculator
             </Button>
+
+            {/* Only show My Grades if user is logged in */}
+            {user && (
+              <Button
+                component={RouterLink}
+                to="/grades"
+                sx={{
+                  color: isActiveRoute("/grades")
+                    ? "primary.main"
+                    : "text.primary",
+                  fontWeight: isActiveRoute("/grades") ? 600 : 500,
+                }}
+              >
+                My Grades
+              </Button>
+            )}
+
             <Button
               component={RouterLink}
               to="/about"
@@ -101,20 +140,74 @@ const Navbar = () => {
               About
             </Button>
 
-            <Button
-              variant="contained"
-              component="a"
-              href="https://github.com/tylerc122/GradeFlow"
-              target="_blank"
-              rel="noopener noreferrer"
-              sx={{
-                ml: 2,
-                px: 2,
-                borderRadius: 1,
-              }}
-            >
-              View on GitHub
-            </Button>
+            {/* Auth Buttons */}
+            {user ? (
+              <>
+                <IconButton
+                  onClick={handleMenuClick}
+                  sx={{
+                    ml: 2,
+                    width: 40,
+                    height: 40,
+                    bgcolor: "primary.main",
+                    color: "white",
+                    "&:hover": {
+                      bgcolor: "primary.dark",
+                    },
+                  }}
+                >
+                  {/* Show first letter of name if available */}
+                  {user.name ? (
+                    user.name.charAt(0).toUpperCase()
+                  ) : (
+                    <User size={20} />
+                  )}
+                </IconButton>
+                <Menu
+                  anchorEl={anchorEl}
+                  open={Boolean(anchorEl)}
+                  onClose={handleMenuClose}
+                  PaperProps={{
+                    sx: { width: 200, mt: 1 },
+                  }}
+                >
+                  <MenuItem disabled>
+                    <Box>
+                      {user.name && (
+                        <Typography variant="body1">{user.name}</Typography>
+                      )}
+                      <Typography variant="body2" color="text.secondary">
+                        {user.email}
+                      </Typography>
+                    </Box>
+                  </MenuItem>
+                  <Divider />
+                  <MenuItem onClick={handleLogout}>
+                    <LogOut size={18} style={{ marginRight: 8 }} />
+                    Logout
+                  </MenuItem>
+                </Menu>
+              </>
+            ) : (
+              <Box sx={{ display: "flex", gap: 1, ml: 2 }}>
+                <Button
+                  component={RouterLink}
+                  to="/login"
+                  variant="outlined"
+                  sx={{ borderRadius: 2 }}
+                >
+                  Login
+                </Button>
+                <Button
+                  component={RouterLink}
+                  to="/register"
+                  variant="contained"
+                  sx={{ borderRadius: 2 }}
+                >
+                  Sign Up
+                </Button>
+              </Box>
+            )}
           </Box>
         </Toolbar>
       </Container>
