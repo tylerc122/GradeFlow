@@ -1,4 +1,4 @@
-import React, { useRef } from "react";
+import React, { useRef, useState } from "react";
 import {
   Paper,
   Typography,
@@ -12,14 +12,20 @@ import {
   TextField,
   Chip,
   Stack,
-  IconButton,
   alpha,
+  IconButton,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  Button,
+  Tooltip,
 } from "@mui/material";
 import AssignmentIcon from "@mui/icons-material/Assignment";
 import TimelineIcon from "@mui/icons-material/Timeline";
+import DeleteIcon from "@mui/icons-material/Delete";
 import VisibilityIcon from "@mui/icons-material/Visibility";
 import VisibilityOffIcon from "@mui/icons-material/VisibilityOff";
-import DeleteIcon from "@mui/icons-material/Delete";
 
 export const AssignmentTable = ({
   categories,
@@ -28,11 +34,13 @@ export const AssignmentTable = ({
   whatIfMode,
   setSelectedCategory,
   setHypotheticalScores,
-  hiddenAssignments = [],
+  hiddenAssignments,
   onToggleAssignmentVisibility,
   onDeleteAssignment,
 }) => {
   const inputRef = useRef(null);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [assignmentToDelete, setAssignmentToDelete] = useState(null);
 
   const handleScoreEdit = (categoryName, assignment, newScore) => {
     setHypotheticalScores((prev) => ({
@@ -56,16 +64,26 @@ export const AssignmentTable = ({
     e.target.select();
   };
 
+  const handleDeleteClick = (categoryName, assignment) => {
+    setAssignmentToDelete({ categoryName, assignment });
+    setDeleteDialogOpen(true);
+  };
+
+  const handleConfirmDelete = () => {
+    if (assignmentToDelete) {
+      onDeleteAssignment(
+        assignmentToDelete.categoryName,
+        assignmentToDelete.assignment.name
+      );
+    }
+    setDeleteDialogOpen(false);
+    setAssignmentToDelete(null);
+  };
+
   const getStatusColor = (status, isHypothetical) => {
     if (isHypothetical) return "info";
     if (status === "UPCOMING") return "warning";
     return "success";
-  };
-
-  const isAssignmentHidden = (assignment) => {
-    return hiddenAssignments.includes(
-      `${assignment.categoryName}-${assignment.name}`
-    );
   };
 
   return (
@@ -196,14 +214,15 @@ export const AssignmentTable = ({
                       hypotheticalData?.score ?? assignment.score;
                     const percentage =
                       (currentScore / assignment.total_points) * 100;
-                    const isHidden = isAssignmentHidden(assignment);
+                    const isHidden =
+                      hiddenAssignments.includes(hypotheticalKey);
 
                     return (
                       <TableRow
-                        key={assignmentIndex}
+                        key={`${category.name}-${assignment.name}-${assignmentIndex}`}
                         sx={{
                           backgroundColor: isHidden
-                            ? alpha("#000", 0.04)
+                            ? alpha("#9e9e9e", 0.1) // Grayed out if hidden
                             : assignment.isHypothetical
                             ? alpha("#2196f3", 0.04)
                             : assignment.status === "UPCOMING"
@@ -214,7 +233,6 @@ export const AssignmentTable = ({
                           "&:hover": {
                             backgroundColor: alpha("#000", 0.02),
                           },
-                          textDecoration: isHidden ? "line-through" : "none",
                           opacity: isHidden ? 0.6 : 1,
                         }}
                       >
@@ -278,6 +296,19 @@ export const AssignmentTable = ({
                                 "& input": {
                                   textAlign: "center",
                                 },
+                                "& .MuiInput-underline:before": {
+                                  borderBottom: assignment.isHypothetical
+                                    ? `2px dashed ${alpha("#1976d2", 0.6)}`
+                                    : !hypotheticalData
+                                    ? `2px dashed ${alpha("#ff9800", 0.6)}`
+                                    : "1px solid rgba(0, 0, 0, 0.42)",
+                                },
+                                "& .MuiInput-underline:hover:before": {
+                                  borderBottom: `2px solid ${alpha(
+                                    "#1976d2",
+                                    0.6
+                                  )} !important`,
+                                },
                               }}
                             />
                           ) : (
@@ -311,42 +342,42 @@ export const AssignmentTable = ({
                           <Box
                             sx={{
                               display: "flex",
-                              justifyContent: "center",
                               gap: 1,
+                              justifyContent: "center",
                             }}
                           >
-                            <IconButton
-                              size="small"
-                              onClick={() =>
-                                onToggleAssignmentVisibility(
-                                  category.name,
-                                  assignment.name
-                                )
+                            <Tooltip
+                              title={
+                                isHidden ? "Show Assignment" : "Hide Assignment"
                               }
                             >
-                              {isHidden ? (
-                                <VisibilityOffIcon />
-                              ) : (
-                                <VisibilityIcon />
-                              )}
-                            </IconButton>
-                            <IconButton
-                              size="small"
-                              onClick={() =>
-                                onDeleteAssignment(
-                                  category.name,
-                                  assignment.name
-                                )
-                              }
-                              sx={{
-                                color: "error.main",
-                                "&:hover": {
-                                  backgroundColor: alpha("#f44336", 0.08),
-                                },
-                              }}
-                            >
-                              <DeleteIcon />
-                            </IconButton>
+                              <IconButton
+                                onClick={() =>
+                                  onToggleAssignmentVisibility(
+                                    category.name,
+                                    assignment.name
+                                  )
+                                }
+                                size="small"
+                              >
+                                {isHidden ? (
+                                  <VisibilityOffIcon />
+                                ) : (
+                                  <VisibilityIcon />
+                                )}
+                              </IconButton>
+                            </Tooltip>
+                            <Tooltip title="Delete Assignment">
+                              <IconButton
+                                onClick={() =>
+                                  handleDeleteClick(category.name, assignment)
+                                }
+                                size="small"
+                                color="error"
+                              >
+                                <DeleteIcon />
+                              </IconButton>
+                            </Tooltip>
                           </Box>
                         </TableCell>
                       </TableRow>
@@ -358,6 +389,24 @@ export const AssignmentTable = ({
           </Box>
         ))}
       </Stack>
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog
+        open={deleteDialogOpen}
+        onClose={() => setDeleteDialogOpen(false)}
+      >
+        <DialogTitle>Delete Assignment</DialogTitle>
+        <DialogContent>
+          Are you sure you want to delete {assignmentToDelete?.assignment?.name}
+          ? This action cannot be undone.
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setDeleteDialogOpen(false)}>Cancel</Button>
+          <Button onClick={handleConfirmDelete} color="error">
+            Delete
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Paper>
   );
 };
