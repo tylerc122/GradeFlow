@@ -64,8 +64,8 @@ const Navbar = () => {
         <Container
           maxWidth={false}
           sx={{
-            width: isResultsView ? "2200px" : "100%",
-            maxWidth: isResultsView ? "95vw" : "xl",
+            width: isResultsView ? "2300px" : "100%",
+            maxWidth: isResultsView ? "97vw" : "xl",
             transition: "all 0.3s ease-in-out",
           }}
         >
@@ -86,11 +86,20 @@ const Navbar = () => {
                 display: "flex",
                 alignItems: "center",
                 textDecoration: "none",
-                color: "inherit",
+                color: "primary.main", // Set color directly here instead of inheriting
                 gap: 1,
+                "&:hover": {
+                  opacity: 0.8, // Optional: add subtle hover effect
+                },
               }}
             >
-              <Calculator size={24} />
+              <Calculator
+                size={24}
+                sx={{
+                  color: "primary.main",
+                  opacity: 1,
+                }}
+              />
               <Typography
                 variant="h6"
                 noWrap

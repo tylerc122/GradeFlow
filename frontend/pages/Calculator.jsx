@@ -447,7 +447,7 @@ const Calculator = () => {
         >
           <Box
             sx={{
-              width: "2200px",
+              width: "2300px",
               maxWidth: "95vw",
             }}
           >
