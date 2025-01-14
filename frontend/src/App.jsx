@@ -12,13 +12,14 @@ import { SnackbarProvider } from "notistack";
 import Navbar from "../components/Navbar";
 import HomePage from "../pages/HomePage";
 import Calculator from "../pages/Calculator";
-import SavedCalculation from "../pages/SavedCalculation"; // Make sure this path is correct
+import SavedCalculation from "../pages/SavedCalculation";
 import AboutPage from "../pages/AboutPage";
 import LoginPage from "../pages/LoginPage";
 import RegisterPage from "../pages/RegisterPage";
 import MyGradesPage from "../pages/MyGradesPage";
 import PageTransition from "../components/animations/PageTransition";
 import { AuthProvider, useAuth } from "./contexts/AuthContext";
+import { CalculatorProvider } from "./contexts/CalculatorContext";
 import theme from "./theme";
 
 // Protected Route component
@@ -117,31 +118,33 @@ const App = () => {
     <Router>
       <ThemeProvider theme={theme}>
         <AuthProvider>
-          <SnackbarProvider maxSnack={3}>
-            <CssBaseline />
-            <Box
-              sx={{
-                display: "flex",
-                flexDirection: "column",
-                minHeight: "100vh",
-                width: "100vw",
-                overflow: "hidden",
-              }}
-            >
-              <Navbar />
+          <CalculatorProvider>
+            <SnackbarProvider maxSnack={3}>
+              <CssBaseline />
               <Box
-                component="main"
                 sx={{
-                  flexGrow: 1,
-                  minHeight: "100%",
-                  width: "100%",
-                  overflow: "auto",
+                  display: "flex",
+                  flexDirection: "column",
+                  minHeight: "100vh",
+                  width: "100vw",
+                  overflow: "hidden",
                 }}
               >
-                <AnimatedRoutes />
+                <Navbar />
+                <Box
+                  component="main"
+                  sx={{
+                    flexGrow: 1,
+                    minHeight: "100%",
+                    width: "100%",
+                    overflow: "auto",
+                  }}
+                >
+                  <AnimatedRoutes />
+                </Box>
               </Box>
-            </Box>
-          </SnackbarProvider>
+            </SnackbarProvider>
+          </CalculatorProvider>
         </AuthProvider>
       </ThemeProvider>
     </Router>

@@ -12,10 +12,14 @@ import {
   TextField,
   Chip,
   Stack,
+  IconButton,
   alpha,
 } from "@mui/material";
 import AssignmentIcon from "@mui/icons-material/Assignment";
 import TimelineIcon from "@mui/icons-material/Timeline";
+import VisibilityIcon from "@mui/icons-material/Visibility";
+import VisibilityOffIcon from "@mui/icons-material/VisibilityOff";
+import DeleteIcon from "@mui/icons-material/Delete";
 
 export const AssignmentTable = ({
   categories,
@@ -24,6 +28,9 @@ export const AssignmentTable = ({
   whatIfMode,
   setSelectedCategory,
   setHypotheticalScores,
+  hiddenAssignments = [],
+  onToggleAssignmentVisibility,
+  onDeleteAssignment,
 }) => {
   const inputRef = useRef(null);
 
@@ -53,6 +60,12 @@ export const AssignmentTable = ({
     if (isHypothetical) return "info";
     if (status === "UPCOMING") return "warning";
     return "success";
+  };
+
+  const isAssignmentHidden = (assignment) => {
+    return hiddenAssignments.includes(
+      `${assignment.categoryName}-${assignment.name}`
+    );
   };
 
   return (
@@ -154,6 +167,15 @@ export const AssignmentTable = ({
                     >
                       Percentage
                     </TableCell>
+                    <TableCell
+                      align="center"
+                      sx={{
+                        fontWeight: 600,
+                        color: "text.primary",
+                      }}
+                    >
+                      Actions
+                    </TableCell>
                   </TableRow>
                 </TableHead>
                 <TableBody>
@@ -174,12 +196,15 @@ export const AssignmentTable = ({
                       hypotheticalData?.score ?? assignment.score;
                     const percentage =
                       (currentScore / assignment.total_points) * 100;
+                    const isHidden = isAssignmentHidden(assignment);
 
                     return (
                       <TableRow
                         key={assignmentIndex}
                         sx={{
-                          backgroundColor: assignment.isHypothetical
+                          backgroundColor: isHidden
+                            ? alpha("#000", 0.04)
+                            : assignment.isHypothetical
                             ? alpha("#2196f3", 0.04)
                             : assignment.status === "UPCOMING"
                             ? hypotheticalData
@@ -189,6 +214,8 @@ export const AssignmentTable = ({
                           "&:hover": {
                             backgroundColor: alpha("#000", 0.02),
                           },
+                          textDecoration: isHidden ? "line-through" : "none",
+                          opacity: isHidden ? 0.6 : 1,
                         }}
                       >
                         <TableCell>
@@ -251,19 +278,6 @@ export const AssignmentTable = ({
                                 "& input": {
                                   textAlign: "center",
                                 },
-                                "& .MuiInput-underline:before": {
-                                  borderBottom: assignment.isHypothetical
-                                    ? `2px dashed ${alpha("#1976d2", 0.6)}`
-                                    : !hypotheticalData
-                                    ? `2px dashed ${alpha("#ff9800", 0.6)}`
-                                    : "1px solid rgba(0, 0, 0, 0.42)",
-                                },
-                                "& .MuiInput-underline:hover:before": {
-                                  borderBottom: `2px solid ${alpha(
-                                    "#1976d2",
-                                    0.6
-                                  )} !important`,
-                                },
                               }}
                             />
                           ) : (
@@ -292,6 +306,48 @@ export const AssignmentTable = ({
                               ? `${percentage.toFixed(1)}%`
                               : "-"}
                           </Typography>
+                        </TableCell>
+                        <TableCell align="center">
+                          <Box
+                            sx={{
+                              display: "flex",
+                              justifyContent: "center",
+                              gap: 1,
+                            }}
+                          >
+                            <IconButton
+                              size="small"
+                              onClick={() =>
+                                onToggleAssignmentVisibility(
+                                  category.name,
+                                  assignment.name
+                                )
+                              }
+                            >
+                              {isHidden ? (
+                                <VisibilityOffIcon />
+                              ) : (
+                                <VisibilityIcon />
+                              )}
+                            </IconButton>
+                            <IconButton
+                              size="small"
+                              onClick={() =>
+                                onDeleteAssignment(
+                                  category.name,
+                                  assignment.name
+                                )
+                              }
+                              sx={{
+                                color: "error.main",
+                                "&:hover": {
+                                  backgroundColor: alpha("#f44336", 0.08),
+                                },
+                              }}
+                            >
+                              <DeleteIcon />
+                            </IconButton>
+                          </Box>
                         </TableCell>
                       </TableRow>
                     );

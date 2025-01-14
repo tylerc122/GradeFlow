@@ -13,8 +13,9 @@ const faqs = [
   {
     question: "Is my grade data secure?",
     answer:
-      "Yes! We never store your grade data. All calculations are performed client-side in your browser, and the data is immediately discarded after calculation.",
+      "Yes! Your grade data is secure. When using the calculator without an account, all calculations are performed client-side in your browser and immediately discarded. If you choose to save your calculations by creating an account, your data is securely stored and only accessible to you when logged in.",
   },
+
   {
     question: "Can I still use this if my university doesn't use Blackboard?",
     answer:

@@ -54,8 +54,41 @@ const Results = ({
   const [saveDialogOpen, setSaveDialogOpen] = useState(false);
   const [savingError, setSavingError] = useState(null);
   const [isSaving, setIsSaving] = useState(false);
+  const [hiddenAssignments, setHiddenAssignments] = useState([]);
   const { enqueueSnackbar } = useSnackbar();
   const navigate = useNavigate();
+
+  const handleToggleAssignmentVisibility = (categoryName, assignmentName) => {
+    const assignmentKey = `${categoryName}-${assignmentName}`;
+    setHiddenAssignments((prev) =>
+      prev.includes(assignmentKey)
+        ? prev.filter((key) => key !== assignmentKey)
+        : [...prev, assignmentKey]
+    );
+  };
+
+  const handleDeleteAssignment = (categoryName, assignmentName) => {
+    setCategories((prev) =>
+      prev.map((category) => {
+        if (category.name === categoryName) {
+          return {
+            ...category,
+            assignments: category.assignments.filter(
+              (a) => a.name !== assignmentName
+            ),
+          };
+        }
+        return category;
+      })
+    );
+
+    // Also remove from hypothetical assignments if present
+    setHypotheticalAssignments((prev) =>
+      prev.filter(
+        (a) => !(a.categoryName === categoryName && a.name === assignmentName)
+      )
+    );
+  };
 
   const handleSave = async (saveData) => {
     setIsSaving(true);
@@ -185,13 +218,14 @@ const Results = ({
         display: "flex",
         flexDirection: "column",
         gap: 3,
-        maxWidth: mode === "manual" ? "800px" : "100%",
-        margin: mode === "manual" ? "0 auto" : "0",
+        maxWidth: "100%",
         ...(mode === "blackboard" && {
           display: "grid",
-          gridTemplateColumns: "1fr 1fr",
+          gridTemplateColumns: "1050px 1050px",
+          columnGap: "50px",
+          width: "2200px",
           height: "calc(100vh - 280px)",
-          maxWidth: "100%",
+          margin: "0 auto",
         }),
         backgroundColor: "background.default",
         overflow: "hidden",
@@ -320,6 +354,9 @@ const Results = ({
               whatIfMode={whatIfMode}
               setSelectedCategory={setSelectedCategory}
               setHypotheticalScores={setHypotheticalScores}
+              hiddenAssignments={hiddenAssignments}
+              onToggleAssignmentVisibility={handleToggleAssignmentVisibility}
+              onDeleteAssignment={handleDeleteAssignment}
             />
           </Box>
         </Paper>
