@@ -22,6 +22,7 @@ import WelcomeSection from "../components/WelcomeSection";
 import LoadingOverlay from "../components/LoadingOverlay";
 import Results from "../components/results/Results";
 import SaveCalculationDialog from "../components/dialogs/SaveCalculationDialog";
+import { useCalculator } from "../src/contexts/CalculatorContext";
 
 const Calculator = () => {
   const theme = useTheme();
@@ -55,6 +56,7 @@ const Calculator = () => {
   const [hypotheticalAssignments, setHypotheticalAssignments] = useState([]);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState(null);
+  const [hiddenAssignments, setHiddenAssignments] = useState([]);
 
   // Save calculation state
   const [saveDialogOpen, setSaveDialogOpen] = useState(false);
@@ -64,9 +66,19 @@ const Calculator = () => {
   const { enqueueSnackbar } = useSnackbar();
   const navigate = useNavigate();
 
+  // Misc
+  const { setIsResultsView } = useCalculator();
+
   // Grade calculation functions
   const calculateCategoryGrade = (assignments, categoryName) => {
     if (!assignments || !assignments.length) return 0;
+
+    const visibleAssignments = assignments.filter(
+      (assignment) =>
+        !hiddenAssignments.includes(`${categoryName}-${assignment.name}`)
+    );
+
+    if (!visibleAssignments.length) return 0;
 
     const allAssignments = assignments.map((assignment) => {
       if (assignment.status === "UPCOMING" || assignment.isHypothetical) {
@@ -319,6 +331,7 @@ const Calculator = () => {
     }
 
     if (activeStep === 2 && mode === "blackboard") {
+      setIsResultsView(true);
       if (
         !parsedGrades ||
         !parsedGrades.assignments ||
@@ -339,6 +352,10 @@ const Calculator = () => {
   };
 
   const handleBack = () => {
+    if (activeStep === 3) {
+      // When leaving results view
+      setIsResultsView(false);
+    }
     setActiveStep((prevStep) => prevStep - 1);
     setError(null);
   };
@@ -420,28 +437,63 @@ const Calculator = () => {
   const renderMainContent = () => {
     if (activeStep === 3) {
       return (
-        <Results
-          categories={categories}
-          mode={mode}
-          manualGrades={manualGrades}
-          setManualGrades={setManualGrades}
-          parsedGrades={parsedGrades}
-          whatIfMode={whatIfMode}
-          setWhatIfMode={setWhatIfMode}
-          targetGrade={targetGrade}
-          setTargetGrade={setTargetGrade}
-          hypotheticalScores={hypotheticalScores}
-          setHypotheticalScores={setHypotheticalScores}
-          hypotheticalAssignments={hypotheticalAssignments}
-          setHypotheticalAssignments={setHypotheticalAssignments}
-          dialogOpen={dialogOpen}
-          setDialogOpen={setDialogOpen}
-          selectedCategory={selectedCategory}
-          setSelectedCategory={setSelectedCategory}
-          calculateCategoryGrade={calculateCategoryGrade}
-          calculateWeightedGrade={calculateWeightedGrade}
-          rawGradeData={rawGradeData}
-        />
+        <Box
+          sx={{
+            width: "100%",
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+          }}
+        >
+          <Box
+            sx={{
+              width: "2200px",
+              maxWidth: "95vw",
+            }}
+          >
+            <Paper
+              elevation={2}
+              sx={{
+                p: 3,
+                borderRadius: 2,
+                mb: 2,
+                bgcolor: "background.paper",
+                width: "100%",
+              }}
+            >
+              <Stepper activeStep={activeStep}>
+                {steps.map((label) => (
+                  <Step key={label}>
+                    <StepLabel>{label}</StepLabel>
+                  </Step>
+                ))}
+              </Stepper>
+            </Paper>
+
+            <Results
+              categories={categories}
+              mode={mode}
+              manualGrades={manualGrades}
+              setManualGrades={setManualGrades}
+              parsedGrades={parsedGrades}
+              whatIfMode={whatIfMode}
+              setWhatIfMode={setWhatIfMode}
+              targetGrade={targetGrade}
+              setTargetGrade={setTargetGrade}
+              hypotheticalScores={hypotheticalScores}
+              setHypotheticalScores={setHypotheticalScores}
+              hypotheticalAssignments={hypotheticalAssignments}
+              setHypotheticalAssignments={setHypotheticalAssignments}
+              dialogOpen={dialogOpen}
+              setDialogOpen={setDialogOpen}
+              selectedCategory={selectedCategory}
+              setSelectedCategory={setSelectedCategory}
+              calculateCategoryGrade={calculateCategoryGrade}
+              calculateWeightedGrade={calculateWeightedGrade}
+              rawGradeData={rawGradeData}
+            />
+          </Box>
+        </Box>
       );
     }
 
@@ -514,91 +566,106 @@ const Calculator = () => {
       {isLoading && <LoadingOverlay />}
 
       <Container maxWidth="xl">
-        {/* Stepper */}
-        <Paper
-          elevation={2}
-          sx={{
-            p: 3,
-            borderRadius: 2,
-            mb: 2,
-            bgcolor: "background.paper",
-          }}
-        >
-          <Stepper activeStep={activeStep}>
-            {steps.map((label) => (
-              <Step key={label}>
-                <StepLabel>{label}</StepLabel>
-              </Step>
-            ))}
-          </Stepper>
-        </Paper>
-
-        {/* Error Alert */}
-        {error && (
-          <Alert
-            severity="error"
-            sx={{
-              width: "100%",
-              mb: 4,
-              borderRadius: 2,
-            }}
-          >
-            {error}
-          </Alert>
-        )}
-
-        {/* Main Content */}
-        {renderMainContent()}
-
-        {/* Navigation Buttons */}
         <Box
           sx={{
             display: "flex",
-            justifyContent: "flex-end",
-            gap: 2,
-            mt: 4,
-            mb: 4,
+            flexDirection: "column",
+            alignItems: activeStep === 3 ? "center" : "stretch",
+            width: "100%",
+            transition: "all 0.3s ease-in-out",
           }}
         >
-          {activeStep > 0 && (
-            <Button
-              variant="outlined"
-              onClick={handleBack}
-              size="large"
+          {/* Only show stepper here for non-results steps */}
+          {activeStep !== 3 && (
+            <Paper
+              elevation={2}
               sx={{
-                px: 4,
-                minWidth: 120,
+                p: 3,
+                borderRadius: 2,
+                mb: 2,
+                bgcolor: "background.paper",
               }}
             >
-              Back
-            </Button>
+              <Stepper activeStep={activeStep}>
+                {steps.map((label) => (
+                  <Step key={label}>
+                    <StepLabel>{label}</StepLabel>
+                  </Step>
+                ))}
+              </Stepper>
+            </Paper>
           )}
-          {activeStep === steps.length - 1 && user ? (
-            <Button
-              variant="contained"
-              onClick={() => setSaveDialogOpen(true)}
-              startIcon={<SaveIcon />}
-              size="large"
+
+          {/* Error Alert */}
+          {error && (
+            <Alert
+              severity="error"
               sx={{
-                px: 4,
-                minWidth: 120,
+                width: "100%",
+                mb: 4,
+                borderRadius: 2,
               }}
             >
-              Save Calculation
-            </Button>
-          ) : (
-            <Button
-              variant="contained"
-              onClick={handleNext}
-              size="large"
-              sx={{
-                px: 4,
-                minWidth: 120,
-              }}
-            >
-              Next
-            </Button>
+              {error}
+            </Alert>
           )}
+
+          {/* Main Content */}
+          {renderMainContent()}
+
+          {/* Navigation Buttons - align based on step */}
+          <Box
+            sx={{
+              display: "flex",
+              justifyContent: "flex-end",
+              gap: 2,
+              mt: 4,
+              mb: 4,
+              width: activeStep === 3 ? "2200px" : "100%",
+              maxWidth: activeStep === 3 ? "95vw" : "100%",
+              transition: "all 0.3s ease-in-out",
+            }}
+          >
+            {activeStep > 0 && (
+              <Button
+                variant="outlined"
+                onClick={handleBack}
+                size="large"
+                sx={{
+                  px: 4,
+                  minWidth: 120,
+                }}
+              >
+                Back
+              </Button>
+            )}
+            {activeStep === steps.length - 1 && user ? (
+              <Button
+                variant="contained"
+                onClick={() => setSaveDialogOpen(true)}
+                startIcon={<SaveIcon />}
+                size="large"
+                sx={{
+                  px: 4,
+                  minWidth: 120,
+                }}
+              >
+                Save Calculation
+              </Button>
+            ) : (
+              <Button
+                variant="contained"
+                onClick={handleNext}
+                size="large"
+                sx={{
+                  px: 4,
+                  minWidth: 120,
+                }}
+              >
+                Next
+              </Button>
+            )}
+          </Box>
         </Box>
 
         <SaveCalculationDialog

@@ -15,12 +15,14 @@ import {
 import { Link as RouterLink, useLocation, useNavigate } from "react-router-dom";
 import { Calculator, LogOut, User } from "lucide-react";
 import { useAuth } from "../src/contexts/AuthContext";
+import { useCalculator } from "../src/contexts/CalculatorContext";
 
 const Navbar = () => {
   const theme = useTheme();
   const location = useLocation();
   const navigate = useNavigate();
   const { user, logout } = useAuth();
+  const { isResultsView } = useCalculator();
   const [anchorEl, setAnchorEl] = useState(null);
 
   const isActiveRoute = (path) => {
@@ -51,166 +53,182 @@ const Navbar = () => {
         width: "100%",
       }}
     >
-      <Container maxWidth="xl">
-        <Toolbar
-          disableGutters
+      <Box
+        sx={{
+          display: "flex",
+          justifyContent: "center",
+          width: "100%",
+          transition: "all 0.3s ease-in-out",
+        }}
+      >
+        <Container
+          maxWidth={false}
           sx={{
-            display: "flex",
-            width: "100%",
-            minHeight: "64px",
-            justifyContent: "space-between",
+            width: isResultsView ? "2200px" : "100%",
+            maxWidth: isResultsView ? "95vw" : "xl",
+            transition: "all 0.3s ease-in-out",
           }}
         >
-          {/* Logo and Brand */}
-          <Box
-            component={RouterLink}
-            to="/"
+          <Toolbar
+            disableGutters
             sx={{
               display: "flex",
-              alignItems: "center",
-              textDecoration: "none",
-              color: "inherit",
-              gap: 1,
+              width: "100%",
+              minHeight: "64px",
+              justifyContent: "space-between",
             }}
           >
-            <Calculator size={24} />
-            <Typography
-              variant="h6"
-              noWrap
-              sx={{
-                fontWeight: 700,
-                color: "primary.main",
-              }}
-            >
-              GradeFlow
-            </Typography>
-          </Box>
-
-          {/* Navigation Links */}
-          <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-            <Button
+            {/* Logo and Brand */}
+            <Box
               component={RouterLink}
               to="/"
               sx={{
-                color: isActiveRoute("/") ? "primary.main" : "text.primary",
-                fontWeight: isActiveRoute("/") ? 600 : 500,
+                display: "flex",
+                alignItems: "center",
+                textDecoration: "none",
+                color: "inherit",
+                gap: 1,
               }}
             >
-              Home
-            </Button>
-            <Button
-              component={RouterLink}
-              to="/calculator"
-              sx={{
-                color: isActiveRoute("/calculator")
-                  ? "primary.main"
-                  : "text.primary",
-                fontWeight: isActiveRoute("/calculator") ? 600 : 500,
-              }}
-            >
-              Calculator
-            </Button>
-
-            {/* Only show My Grades if user is logged in */}
-            {user && (
-              <Button
-                component={RouterLink}
-                to="/grades"
+              <Calculator size={24} />
+              <Typography
+                variant="h6"
+                noWrap
                 sx={{
-                  color: isActiveRoute("/grades")
-                    ? "primary.main"
-                    : "text.primary",
-                  fontWeight: isActiveRoute("/grades") ? 600 : 500,
+                  fontWeight: 700,
+                  color: "primary.main",
                 }}
               >
-                My Grades
+                GradeFlow
+              </Typography>
+            </Box>
+
+            {/* Navigation Links */}
+            <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+              <Button
+                component={RouterLink}
+                to="/"
+                sx={{
+                  color: isActiveRoute("/") ? "primary.main" : "text.primary",
+                  fontWeight: isActiveRoute("/") ? 600 : 500,
+                }}
+              >
+                Home
               </Button>
-            )}
+              <Button
+                component={RouterLink}
+                to="/calculator"
+                sx={{
+                  color: isActiveRoute("/calculator")
+                    ? "primary.main"
+                    : "text.primary",
+                  fontWeight: isActiveRoute("/calculator") ? 600 : 500,
+                }}
+              >
+                Calculator
+              </Button>
 
-            <Button
-              component={RouterLink}
-              to="/about"
-              sx={{
-                color: isActiveRoute("/about")
-                  ? "primary.main"
-                  : "text.primary",
-                fontWeight: isActiveRoute("/about") ? 600 : 500,
-              }}
-            >
-              About
-            </Button>
-
-            {/* Auth Buttons */}
-            {user ? (
-              <>
-                <IconButton
-                  onClick={handleMenuClick}
+              {/* Only show My Grades if user is logged in */}
+              {user && (
+                <Button
+                  component={RouterLink}
+                  to="/grades"
                   sx={{
-                    ml: 2,
-                    width: 40,
-                    height: 40,
-                    bgcolor: "primary.main",
-                    color: "white",
-                    "&:hover": {
-                      bgcolor: "primary.dark",
-                    },
+                    color: isActiveRoute("/grades")
+                      ? "primary.main"
+                      : "text.primary",
+                    fontWeight: isActiveRoute("/grades") ? 600 : 500,
                   }}
                 >
-                  {/* Show first letter of name if available */}
-                  {user.name ? (
-                    user.name.charAt(0).toUpperCase()
-                  ) : (
-                    <User size={20} />
-                  )}
-                </IconButton>
-                <Menu
-                  anchorEl={anchorEl}
-                  open={Boolean(anchorEl)}
-                  onClose={handleMenuClose}
-                  PaperProps={{
-                    sx: { width: 200, mt: 1 },
-                  }}
-                >
-                  <MenuItem disabled>
-                    <Box>
-                      {user.name && (
-                        <Typography variant="body1">{user.name}</Typography>
-                      )}
-                      <Typography variant="body2" color="text.secondary">
-                        {user.email}
-                      </Typography>
-                    </Box>
-                  </MenuItem>
-                  <Divider />
-                  <MenuItem onClick={handleLogout}>
-                    <LogOut size={18} style={{ marginRight: 8 }} />
-                    Logout
-                  </MenuItem>
-                </Menu>
-              </>
-            ) : (
-              <Box sx={{ display: "flex", gap: 1, ml: 2 }}>
-                <Button
-                  component={RouterLink}
-                  to="/login"
-                  variant="outlined"
-                  sx={{ borderRadius: 2 }}
-                >
-                  Login
+                  My Grades
                 </Button>
-                <Button
-                  component={RouterLink}
-                  to="/register"
-                  variant="contained"
-                  sx={{ borderRadius: 2 }}
-                >
-                  Sign Up
-                </Button>
-              </Box>
-            )}
-          </Box>
-        </Toolbar>
-      </Container>
+              )}
+
+              <Button
+                component={RouterLink}
+                to="/about"
+                sx={{
+                  color: isActiveRoute("/about")
+                    ? "primary.main"
+                    : "text.primary",
+                  fontWeight: isActiveRoute("/about") ? 600 : 500,
+                }}
+              >
+                About
+              </Button>
+
+              {/* Auth Buttons */}
+              {user ? (
+                <>
+                  <IconButton
+                    onClick={handleMenuClick}
+                    sx={{
+                      ml: 2,
+                      width: 40,
+                      height: 40,
+                      bgcolor: "primary.main",
+                      color: "white",
+                      "&:hover": {
+                        bgcolor: "primary.dark",
+                      },
+                    }}
+                  >
+                    {/* Show first letter of name if available */}
+                    {user.name ? (
+                      user.name.charAt(0).toUpperCase()
+                    ) : (
+                      <User size={20} />
+                    )}
+                  </IconButton>
+                  <Menu
+                    anchorEl={anchorEl}
+                    open={Boolean(anchorEl)}
+                    onClose={handleMenuClose}
+                    PaperProps={{
+                      sx: { width: 200, mt: 1 },
+                    }}
+                  >
+                    <MenuItem disabled>
+                      <Box>
+                        {user.name && (
+                          <Typography variant="body1">{user.name}</Typography>
+                        )}
+                        <Typography variant="body2" color="text.secondary">
+                          {user.email}
+                        </Typography>
+                      </Box>
+                    </MenuItem>
+                    <Divider />
+                    <MenuItem onClick={handleLogout}>
+                      <LogOut size={18} style={{ marginRight: 8 }} />
+                      Logout
+                    </MenuItem>
+                  </Menu>
+                </>
+              ) : (
+                <Box sx={{ display: "flex", gap: 1, ml: 2 }}>
+                  <Button
+                    component={RouterLink}
+                    to="/login"
+                    variant="outlined"
+                    sx={{ borderRadius: 2 }}
+                  >
+                    Login
+                  </Button>
+                  <Button
+                    component={RouterLink}
+                    to="/register"
+                    variant="contained"
+                    sx={{ borderRadius: 2 }}
+                  >
+                    Sign Up
+                  </Button>
+                </Box>
+              )}
+            </Box>
+          </Toolbar>
+        </Container>
+      </Box>
     </AppBar>
   );
 };
