@@ -69,38 +69,77 @@ const Calculator = () => {
   // Misc
   const { setIsResultsView } = useCalculator();
 
-  // Grade calculation functions
+  // Update calculation function to use hidden assignments
   const calculateCategoryGrade = (assignments, categoryName) => {
+    console.log(`\nCalculating grade for ${categoryName}`);
+    console.log("Hidden assignments:", hiddenAssignments);
+
     if (!assignments || !assignments.length) return 0;
 
+    // Filter out hidden assignments first
     const visibleAssignments = assignments.filter(
       (assignment) =>
         !hiddenAssignments.includes(`${categoryName}-${assignment.name}`)
     );
 
+    console.log(`Total assignments: ${assignments.length}`);
+    console.log(`Visible assignments: ${visibleAssignments.length}`);
+
     if (!visibleAssignments.length) return 0;
 
-    const allAssignments = assignments.map((assignment) => {
-      if (assignment.status === "UPCOMING" || assignment.isHypothetical) {
-        const hypotheticalKey = `${categoryName}-${assignment.name}`;
-        const hypotheticalScore = hypotheticalScores[hypotheticalKey];
-        return hypotheticalScore || assignment;
-      }
-      return assignment;
-    });
-
-    const totalEarned = allAssignments.reduce((sum, a) => {
+    const totalEarned = visibleAssignments.reduce((sum, a) => {
       const scoreKey = `${categoryName}-${a.name}`;
       const score = hypotheticalScores[scoreKey]?.score ?? a.score;
       return sum + score;
     }, 0);
 
-    const totalPossible = allAssignments.reduce(
+    const totalPossible = visibleAssignments.reduce(
       (sum, a) => sum + a.total_points,
       0
     );
 
-    return totalPossible > 0 ? (totalEarned / totalPossible) * 100 : 0;
+    const grade = totalPossible > 0 ? (totalEarned / totalPossible) * 100 : 0;
+    console.log(`Category grade: ${grade}%\n`);
+    return grade;
+  };
+
+  // Update the original calculateCategoryGrade function
+  const originalCalculateCategoryGrade = calculateCategoryGrade;
+
+  // Wrap the calculation to include hidden assignments
+  const wrappedCalculateCategoryGrade = (assignments, categoryName) => {
+    console.log(
+      "Current hidden assignments in calculation:",
+      hiddenAssignments
+    );
+
+    // Filter out hidden assignments
+    const visibleAssignments = assignments.filter(
+      (assignment) =>
+        !hiddenAssignments.includes(`${categoryName}-${assignment.name}`)
+    );
+
+    console.log(`Category ${categoryName}:`);
+    console.log("- Original assignments:", assignments.length);
+    console.log("- Visible assignments:", visibleAssignments.length);
+
+    // Use the original calculation function with filtered assignments
+    return originalCalculateCategoryGrade(visibleAssignments, categoryName);
+  };
+
+  const handleToggleAssignmentVisibility = (categoryName, assignmentName) => {
+    console.log(
+      "Toggling visibility for:",
+      `${categoryName}-${assignmentName}`
+    );
+    setHiddenAssignments((prev) => {
+      const assignmentKey = `${categoryName}-${assignmentName}`;
+      const newHidden = prev.includes(assignmentKey)
+        ? prev.filter((key) => key !== assignmentKey)
+        : [...prev, assignmentKey];
+      console.log("Updated hidden assignments:", newHidden);
+      return newHidden;
+    });
   };
 
   const handleProcessGrades = async () => {
@@ -163,6 +202,7 @@ const Calculator = () => {
   };
 
   const calculateWeightedGrade = () => {
+    console.log("\nCalculating final weighted grade");
     if (mode === "manual") {
       let totalWeightedPoints = 0;
       let totalWeight = 0;
@@ -201,7 +241,12 @@ const Calculator = () => {
         allAssignments,
         category.name
       );
-      return total + categoryGrade * (category.weight / 100);
+      const weightedGrade = categoryGrade * (category.weight / 100);
+      console.log(
+        `${category.name}: ${categoryGrade}% * ${category.weight}% = ${weightedGrade}%`
+      );
+
+      return total + weightedGrade;
     }, 0);
   };
 
@@ -472,6 +517,7 @@ const Calculator = () => {
 
             <Results
               categories={categories}
+              setCategories={setCategories}
               mode={mode}
               manualGrades={manualGrades}
               setManualGrades={setManualGrades}
@@ -490,7 +536,10 @@ const Calculator = () => {
               setSelectedCategory={setSelectedCategory}
               calculateCategoryGrade={calculateCategoryGrade}
               calculateWeightedGrade={calculateWeightedGrade}
+              wrappedCalculateCategoryGrade={wrappedCalculateCategoryGrade}
               rawGradeData={rawGradeData}
+              hiddenAssignments={hiddenAssignments}
+              onToggleAssignmentVisibility={handleToggleAssignmentVisibility}
             />
           </Box>
         </Box>

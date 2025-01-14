@@ -46,28 +46,24 @@ const Results = ({
   setDialogOpen,
   selectedCategory,
   setSelectedCategory,
-  calculateCategoryGrade,
   calculateWeightedGrade,
   rawGradeData,
+  wrappedCalculateCategoryGrade,
+  hiddenAssignments,
+  onToggleAssignmentVisibility,
+  setCategories,
+  calculateCategoryGrade,
 }) => {
   const { user } = useAuth();
   const [saveDialogOpen, setSaveDialogOpen] = useState(false);
   const [savingError, setSavingError] = useState(null);
   const [isSaving, setIsSaving] = useState(false);
-  const [hiddenAssignments, setHiddenAssignments] = useState([]);
   const { enqueueSnackbar } = useSnackbar();
   const navigate = useNavigate();
 
-  const handleToggleAssignmentVisibility = (categoryName, assignmentName) => {
-    const assignmentKey = `${categoryName}-${assignmentName}`;
-    setHiddenAssignments((prev) =>
-      prev.includes(assignmentKey)
-        ? prev.filter((key) => key !== assignmentKey)
-        : [...prev, assignmentKey]
-    );
-  };
-
+  // Handler for deleting assignments
   const handleDeleteAssignment = (categoryName, assignmentName) => {
+    // Remove from categories
     setCategories((prev) =>
       prev.map((category) => {
         if (category.name === categoryName) {
@@ -88,6 +84,9 @@ const Results = ({
         (a) => !(a.categoryName === categoryName && a.name === assignmentName)
       )
     );
+
+    // Show feedback
+    enqueueSnackbar("Assignment deleted successfully", { variant: "success" });
   };
 
   const handleSave = async (saveData) => {
@@ -193,9 +192,37 @@ const Results = ({
     );
   }
 
+  const calculateFinalGrade = () => {
+    if (mode === "manual") {
+      return calculateWeightedGrade();
+    }
+
+    // Use the wrapped calculation function that accounts for hidden assignments
+    return categories.reduce((total, category) => {
+      const categoryHypotheticals = hypotheticalAssignments.filter(
+        (a) => a.categoryName === category.name
+      );
+
+      const allAssignments = [
+        ...(category.assignments || []),
+        ...categoryHypotheticals,
+      ];
+
+      // Use wrappedCalculateCategoryGrade instead of calculateCategoryGrade
+      const categoryGrade = wrappedCalculateCategoryGrade(
+        allAssignments,
+        category.name
+      );
+      console.log(
+        `Category ${category.name} grade with hidden: ${categoryGrade}`
+      );
+      return total + categoryGrade * (category.weight / 100);
+    }, 0);
+  };
+
   // Calculate final grade based on mode
   const finalGrade = {
-    percentage: calculateWeightedGrade(),
+    percentage: calculateFinalGrade(), // Use new calculation function
     hasLetterGrades: mode === "manual" && manualGrades.some((g) => g.isLetter),
   };
 
@@ -286,7 +313,7 @@ const Results = ({
               manualGrades={manualGrades}
               whatIfMode={whatIfMode}
               hypotheticalAssignments={hypotheticalAssignments}
-              calculateCategoryGrade={calculateCategoryGrade}
+              calculateCategoryGrade={wrappedCalculateCategoryGrade}
               upcomingByCategory={upcomingByCategory}
               setSelectedCategory={setSelectedCategory}
               setDialogOpen={setDialogOpen}
@@ -355,8 +382,9 @@ const Results = ({
               setSelectedCategory={setSelectedCategory}
               setHypotheticalScores={setHypotheticalScores}
               hiddenAssignments={hiddenAssignments}
-              onToggleAssignmentVisibility={handleToggleAssignmentVisibility}
+              onToggleAssignmentVisibility={onToggleAssignmentVisibility}
               onDeleteAssignment={handleDeleteAssignment}
+              calculateCategoryGrade={wrappedCalculateCategoryGrade}
             />
           </Box>
         </Paper>
