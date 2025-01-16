@@ -68,10 +68,7 @@ const CategoryReview = ({
 
     // Process each uncategorized assignment
     uncategorizedAssignments.forEach((assignment) => {
-      if (
-        assignment.suggested_category &&
-        assignment.category_confidence >= confidenceThreshold
-      ) {
+      if (assignment.suggested_category) {
         // Find the matching category
         const categoryIndex = newCategories.findIndex(
           (cat) =>

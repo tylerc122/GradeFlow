@@ -80,42 +80,69 @@ async def parse_blackboard_grades(raw_text: str, available_categories: Optional[
             status=status,
             score=score,
             total_points=total_points,
-            suggested_category=category_match.category,
-            category_confidence=category_match.confidence,
+            suggested_category=None,
+            category_confidence=0.0,
             match_reasons=category_match.match_reasons
         )
         
-        # If rule-based confidence is low, add to pending OpenAI batch
-        if available_categories and OpenAICategorizer.should_use_openai(category_match.confidence):
+        # If rule-based categorization is confident enough (>= 0.5), use it
+        if category_match.confidence >= 0.5:
+            assignment.suggested_category = category_match.category
+            assignment.category_confidence = category_match.confidence
+            assignment.match_reasons = category_match.match_reasons
+            assignments.append(assignment)
+            print(f"Rule-based categorization successful for: {name}")
+            
+        # If not confident enough, add to pending for OpenAI
+        elif available_categories:
             pending_assignments.append((assignment, (name, assignment_type)))
         else:
+            # If no OpenAI fallback available, use rule-based anyway but with low confidence
+            assignment.suggested_category = category_match.category
+            assignment.category_confidence = category_match.confidence
+            assignment.match_reasons = category_match.match_reasons
             assignments.append(assignment)
-            print(f"Successfully added assignment: {name}")
 
-    # Process pending assignments in batches
+    # Process pending assignments with OpenAI in batches
     if pending_assignments:
         batch_size = 5
         for i in range(0, len(pending_assignments), batch_size):
             batch = pending_assignments[i:i + batch_size]
             batch_inputs = [info for _, info in batch]
             try:
-                results = await openai_categorizer.suggest_categories_batch(batch_inputs, available_categories)
+                results = await openai_categorizer.suggest_categories_batch(
+                    batch_inputs, 
+                    available_categories
+                )
                 
                 # Update assignments with OpenAI results
                 for (assignment, _), (category, confidence, reasons) in zip(batch, results):
-                    if category and confidence > assignment.category_confidence:
+                    # Only use OpenAI's suggestion if it's confident (>= 0.7)
+                    if confidence >= 0.7:
                         assignment.suggested_category = category
                         assignment.category_confidence = confidence
-                        assignment.match_reasons = reasons
+                        assignment.match_reasons = ["openai:" + reason for reason in reasons]
+                    else:
+                        # If OpenAI isn't confident, don't suggest any category
+                        assignment.suggested_category = None
+                        assignment.category_confidence = 0.0
+                        assignment.match_reasons = ["low_confidence:both_methods_uncertain"]
+                    
                     assignments.append(assignment)
-                    print(f"Successfully added assignment: {assignment.name}")
+                    print(f"Processed assignment: {assignment.name} (OpenAI confidence: {confidence})")
                     
             except Exception as e:
                 print(f"OpenAI categorization failed: {str(e)}")
                 # Fall back to rule-based results
                 for assignment, _ in batch:
+                    category_match = category_matcher.match_category(
+                        assignment.name, 
+                        assignment.assignment_type
+                    )
+                    assignment.suggested_category = category_match.category
+                    assignment.category_confidence = category_match.confidence
+                    assignment.match_reasons = ["fallback:" + reason for reason in category_match.match_reasons]
                     assignments.append(assignment)
-                    print(f"Successfully added assignment: {assignment.name} (fallback)")
+                    print(f"Fallback categorization for: {assignment.name}")
 
-    print(f"\nTotal assignments parsed: {len(assignments)}")
     return assignments
