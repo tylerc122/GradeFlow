@@ -3,6 +3,13 @@ from typing import List, Dict, Optional, Set
 import re
 
 @dataclass
+class CategoryMatch:
+    """Represents a potential category match for an assignment"""
+    category: str
+    confidence: float  # 0-1 confidence score
+    match_reasons: List[str]
+
+@dataclass
 class CategoryPattern:
     """Defines patterns for a category"""
     prefixes: List[str]
@@ -10,63 +17,128 @@ class CategoryPattern:
     assignment_types: List[str]
     compound_patterns: Optional[List[str]] = None
     negative_patterns: Optional[List[str]] = None
-
-@dataclass
-class CategoryMatch:
-    """Represents a potential category match for an assignment"""
-    category: str
-    confidence: float  # 0-1 confidence score
-    match_reasons: List[str]
+    minimum_confidence: float = 0.3  # Minimum confidence threshold for this category
+    is_compound_category: bool = False  # Whether this is a compound category (e.g., "Lab/Lecture")
+    compound_components: Optional[List[str]] = None  # For compound categories, list of component words
 
 class CategoryMatcher:
     def __init__(self, available_categories: Optional[List[str]] = None):
-        """Initialize with default patterns but optionally restrict to available categories"""
         self.available_categories = {cat.lower() for cat in available_categories} if available_categories else None
         
-        # Initialize with improved patterns
+        # Add compound category recognition
+        self.compound_separator_pattern = re.compile(r'[/&+-]|\s+and\s+|\s+or\s+')
+        
         self.category_patterns: Dict[str, CategoryPattern] = {
+            "Lab Quizzes": CategoryPattern(
+                prefixes=["lab", "laboratory"],
+                keywords=["quiz", "test", "assessment", "lab", "laboratory"],
+                assignment_types=["Quiz", "Lab Quiz", "Assessment"],
+                compound_patterns=[
+                    r'(?i)lab(?:oratory)?[\s/+-]*quiz(?:zes)?',
+                    r'(?i)quiz(?:zes)?[\s/+-]*lab(?:oratory)?',
+                    r'(?i)lab\s*\d+\s*quiz',
+                    r'(?i)quiz\s*\d+\s*lab'
+                ],
+                negative_patterns=[
+                    r'(?i)pre[\s-]*lab',
+                    r'(?i)post[\s-]*lab',
+                    r'(?i)lecture'
+                ],
+                is_compound_category=True,
+                compound_components=["lab", "quiz"]
+            ),
+            
+            "Lecture/Lab Participation": CategoryPattern(
+                prefixes=["lecture", "lab", "class"],
+                keywords=[
+                    "participation",
+                    "attendance",
+                    "engagement",
+                    "lecture",
+                    "laboratory",
+                    "lab"
+                ],
+                assignment_types=["Participation", "Attendance"],
+                compound_patterns=[
+                    r'(?i)(?:lecture|lab|class)[\s/+-]*participation',
+                    r'(?i)participation[\s/+-]*(?:lecture|lab|class)',
+                    r'(?i)lecture[\s/+-]*lab[\s/+-]*participation',
+                    r'(?i)lab[\s/+-]*lecture[\s/+-]*participation'
+                ],
+                is_compound_category=True,
+                compound_components=["lecture", "lab", "participation"]
+            ),
+            
             "Homework": CategoryPattern(
-                prefixes=["hw", "homework", "h"],
-                keywords=["homework", "assignment", "milestone", "required", "extra"],
-                assignment_types=["Assignment"],
+                prefixes=["hw", "homework", "h", "assignment", "asgmt"],
+                keywords=["homework", "assignment", "milestone", "required", "work"],
+                assignment_types=["Assignment", "Homework"],
                 compound_patterns=[
                     r'(?i)homework\s*\d+',
                     r'(?i)hw\s*\d+',
                     r'(?i)^hw\d+',
-                    r'(?i)hw[0-9.]+[._](?:required|extra|milestone|m\d+)',
+                    r'(?i)hw[0-9.]+[._](?:required|milestone|m\d+)',
                     r'(?i)^h[0-9.]+',
                     r'(?i)homework[0-9]+',
                     r'(?i)^homework\s+[0-9]+$'
                 ],
-                negative_patterns=[r'lab', r'project']
+                negative_patterns=[
+                    r'(?i)lab',
+                    r'(?i)project',
+                    r'(?i)exam',
+                    r'(?i)final',
+                    r'(?i)quiz',
+                    r'(?i)test',
+                    r'(?i)extra',
+                    r'(?i)bonus'
+                ]
             ),
+            
             "Quizzes": CategoryPattern(
-                prefixes=["quiz", "qz", "q", "test"],
-                keywords=["quiz", "quizzes", "test", "assessment", "exam"],
-                assignment_types=["Quiz", "Test", "Assessment"],
+                prefixes=["quiz", "qz", "q"],
+                keywords=["quiz", "quizzes", "assessment"],
+                assignment_types=["Quiz", "Assessment"],
                 compound_patterns=[
                     r'(?i)quiz\s*\d+',
                     r'(?i)quiz\d+',
-                    r'(?i)q\d+',
+                    r'(?i)^q\d+',
                     r'(?i)^quiz\s+[0-9]+$',
-                    r'(?i)^q[0-9]+$',
-                    r'(?i)test\s*\d+',
-                    r'(?i)assessment\s*\d+',
-                    r'(?i)exam\s*\d+'
+                    r'(?i)^q[0-9]+$'
                 ],
                 negative_patterns=[
                     r'(?i)lab\s*quiz',
                     r'(?i)quiz\s*retake',
                     r'(?i)practice[\s-]*quiz',
-                    r'(?i)sample[\s-]*quiz'
+                    r'(?i)sample[\s-]*quiz',
+                    r'(?i)final'
                 ]
             ),
+            
+            "Tests": CategoryPattern(
+                prefixes=["test", "t", "midterm"],
+                keywords=["test", "exam", "midterm"],
+                assignment_types=["Test", "Exam"],
+                compound_patterns=[
+                    r'(?i)test\s*\d+',
+                    r'(?i)^t\d+',
+                    r'(?i)midterm\s*\d*',
+                    r'(?i)exam\s*\d+'
+                ],
+                negative_patterns=[
+                    r'(?i)final',
+                    r'(?i)quiz',
+                    r'(?i)practice',
+                    r'(?i)sample'
+                ],
+                minimum_confidence=0.4
+            ),
+            
             "Participation": CategoryPattern(
-                prefixes=["participation", "attend", "guest", "lecture", "inclass", "in-class"],
+                prefixes=["participation", "attend", "engage", "inclass", "in-class"],
                 keywords=[
                     "participation",
                     "attendance",
-                    "lecture_participation",
+                    "engagement",
                     "class participation",
                     "ed_participation",
                     "guest lecture",
@@ -75,52 +147,196 @@ class CategoryMatcher:
                     "in-class",
                     "inclass"
                 ],
-                assignment_types=["Participation", "Test", "Discussion"],
+                assignment_types=["Participation", "Attendance", "Exercise"],
                 compound_patterns=[
-                    r'(?i)lecture[_-]part',
                     r'(?i)class\s*participation',
                     r'(?i)lecture[_-]participation',
                     r'(?i)guest[_-]lecture',
                     r'(?i)in-?class[_-]exercise[_-]?\d*',
-                    r'(?i)inclass[_-]exercise[_-]?\d*'
+                    r'(?i)inclass[_-]exercise[_-]?\d*',
+                    r'(?i)attendance\s*\d+'
                 ]
             )
         }
-        
-        # Map category aliases
-        self.category_aliases = {
-            "Quiz": "Quizzes",
-            "Tests": "Quizzes",
-            "Assignments": "Homework",
-            "HW": "Homework",
-            "Exercise": "Participation",
-            "Exercises": "Participation",
-            "Attend": "Participation",
-            "Attendance": "Participation"
-        }
-        
-        # Compile regex patterns
+
+        # Regular expressions for patterns
         self.number_pattern = re.compile(r'[0-9]+')
         self.separator_pattern = re.compile(r'[-_\s]+')
+        self.date_pattern = re.compile(r'\b\d{1,2}/\d{1,2}\b')
+        self.week_pattern = re.compile(r'(?i)week\s*\d+')
+        
+        # Context words dictionary
+        self.context_words = {
+            'group': 0.2,
+            'team': 0.2,
+            'individual': -0.1,
+            'optional': -0.2,
+            'practice': -0.3,
+            'sample': -0.3
+        }
+
+    def should_skip_categorization(self, text: str, assignment_type: Optional[str] = None) -> tuple[bool, str]:
+        """Check if an assignment should be left uncategorized"""
+        normalized_text = self.normalize_text(text)
+        
+        # Patterns that should always be left uncategorized
+        skip_patterns = [
+            (r'(?i)extra\s*credit', "extra credit assignment"),
+            (r'(?i)bonus', "bonus assignment"),
+            (r'(?i)retake', "retake/makeup assignment"),
+            (r'(?i)make[-\s]*up', "retake/makeup assignment"),
+            (r'(?i)_ec(\s|$|_)', "extra credit assignment"),
+            (r'(?i)[\s_-]bonus(\s|$)', "bonus assignment"),
+            (r'(?i)[\s_-]extra(\s|$)', "extra credit assignment"),
+            (r'(?i)_required$', "extra credit companion assignment"),
+            (r'(?i)_make_?up(\s|$)', "makeup assignment"),
+            (r'(?i)redo', "redo assignment"),
+            (r'(?i)resubmission', "resubmitted assignment"),
+            (r'(?i)_optional(\s|$)', "optional assignment")
+        ]
+        
+        for pattern, reason in skip_patterns:
+            if re.search(pattern, normalized_text):
+                return True, reason
+                
+        return False, ""
 
     def normalize_text(self, text: str) -> str:
         """Normalize text for pattern matching"""
         text = text.lower().strip()
         text = self.separator_pattern.sub(' ', text)
         return text
+
+    def get_context_score(self, text: str) -> float:
+        """Calculate context-based confidence adjustment"""
+        normalized_text = self.normalize_text(text)
+        score = 0.0
         
-    def get_canonical_category(self, category: str) -> str:
-        """Get the canonical category name, handling aliases"""
-        return self.category_aliases.get(category, category)
+        # Check for context words
+        for word, adjustment in self.context_words.items():
+            if word in normalized_text:
+                score += adjustment
+        
+        # Check for date/week patterns
+        if self.date_pattern.search(text) or self.week_pattern.search(text):
+            score += 0.1  # Slight boost for assignments with temporal information
+            
+        return score
+
+    def check_compound_category(self, text: str, pattern: CategoryPattern) -> tuple[float, List[str]]:
+        """Special handling for compound categories with separators"""
+        if not pattern.is_compound_category or not pattern.compound_components:
+            return 0.0, []
+            
+        normalized_text = self.normalize_text(text)
+        parts = self.compound_separator_pattern.split(normalized_text)
+        
+        component_matches = sum(
+            1 for component in pattern.compound_components 
+            if any(component in part for part in parts)
+        )
+        
+        if component_matches == 0:
+            return 0.0, []
+            
+        confidence = (component_matches / len(pattern.compound_components)) * 0.8
+        reasons = [f"compound_component_match:{component}" 
+                  for component in pattern.compound_components 
+                  if any(component in part for part in parts)]
+                  
+        return confidence, reasons
+
+    def calculate_pattern_match_confidence(self, 
+                                        text: str, 
+                                        pattern: CategoryPattern, 
+                                        assignment_type: Optional[str] = None) -> tuple[float, List[str]]:
+        """Calculate confidence score and reasons for a pattern match"""
+        normalized_text = self.normalize_text(text)
+        confidence = 0.0
+        reasons = []
+        
+        # If this is a compound category, start with the compound confidence
+        if pattern.is_compound_category:
+            compound_confidence, compound_reasons = self.check_compound_category(text, pattern)
+            confidence = compound_confidence
+            reasons.extend(compound_reasons)
+            
+            # If we have a strong compound match, boost confidence significantly
+            if compound_confidence > 0.6:
+                confidence += 0.2
+        
+        # Assignment type match (highest confidence)
+        if assignment_type and assignment_type in pattern.assignment_types:
+            confidence += 0.4
+            reasons.append(f"assignment_type_match:{assignment_type}")
+        
+        # Compound pattern matches (very high confidence)
+        if pattern.compound_patterns:
+            for p in pattern.compound_patterns:
+                if re.search(p, normalized_text):
+                    old_confidence = confidence
+                    confidence = max(confidence + 0.5, 0.8)
+                    reasons.append(f"compound_pattern_match:{p}")
+                    break
+        
+        # Prefix matches
+        for prefix in pattern.prefixes:
+            if any(word.startswith(prefix) for word in normalized_text.split()):
+                confidence += 0.3
+                reasons.append(f"prefix_match:{prefix}")
+                break
+        
+        # Keyword matches
+        keyword_matches = 0
+        for keyword in pattern.keywords:
+            if keyword in normalized_text:
+                keyword_matches += 1
+                reasons.append(f"keyword_match:{keyword}")
+        confidence += min(keyword_matches * 0.2, 0.4)  # Cap keyword bonus
+        
+        # Negative pattern penalty
+        if pattern.negative_patterns:
+            for p in pattern.negative_patterns:
+                if re.search(p, normalized_text):
+                    old_confidence = confidence
+                    confidence = max(0, confidence - 0.4)
+                    reasons.append(f"negative_pattern_match:{p}")
+        
+        # Context adjustments
+        context_score = self.get_context_score(text)
+        confidence += context_score
+        
+        # Normalize final confidence
+        confidence = max(0.0, min(1.0, confidence))
+        
+        # Check minimum confidence threshold
+        if confidence < pattern.minimum_confidence:
+            confidence = 0.0
+            reasons = []
+            
+        return confidence, reasons
 
     def match_category(self, 
                       assignment_name: str, 
                       assignment_type: Optional[str] = None) -> CategoryMatch:
-        """
-        Match an assignment to an available category with refined confidence scoring
-        """
-        print(f"\n=== Debug Categorization for: {assignment_name} ===")
-        print(f"Assignment type: {assignment_type}")
+        """Match an assignment to a category with advanced confidence scoring"""
+        # First check if we should skip categorization
+        should_skip, skip_reason = self.should_skip_categorization(assignment_name, assignment_type)
+        if should_skip:
+            return CategoryMatch(
+                category="Uncategorized",
+                confidence=0.0,
+                match_reasons=[f"skipped_categorization:{skip_reason}"]
+            )
+            
+        # Also skip if this appears to be a duplicate or variant
+        words = self.normalize_text(assignment_name).split()
+        if any(word in ['regrade', 'revised', 'update', 'correction'] for word in words):
+            return CategoryMatch(
+                category="Uncategorized",
+                confidence=0.0,
+                match_reasons=["skipped_categorization:assignment_variant"]
+            )
         
         best_match = CategoryMatch(
             category="Uncategorized",
@@ -128,86 +344,27 @@ class CategoryMatcher:
             match_reasons=[]
         )
         
-        # Only match against available categories if specified
+        # Filter available categories
         patterns_to_check = {}
         for category, pattern in self.category_patterns.items():
-            canonical_category = self.get_canonical_category(category)
             if (self.available_categories is None or 
-                canonical_category.lower() in self.available_categories):
-                patterns_to_check[canonical_category] = pattern
+                category.lower() in self.available_categories):
+                patterns_to_check[category] = pattern
         
-        print(f"Available categories to check: {list(patterns_to_check.keys())}")
-        
-        normalized_name = self.normalize_text(assignment_name)
-        words = normalized_name.split()
-        print(f"Normalized name: {normalized_name}")
-        print(f"Words: {words}")
-        
-        for category, patterns in patterns_to_check.items():
-            print(f"\nChecking category: {category}")
-            confidence = 0.0
-            reasons = []
-            
-            # Check assignment type match (high confidence)
-            if assignment_type and assignment_type in patterns.assignment_types:
-                confidence += 0.4
-                reasons.append(f"assignment_type_match:{assignment_type}")
-                print(f"Type match found: +0.4 confidence")
-            
-            # Check compound patterns (highest confidence)
-            if patterns.compound_patterns:
-                for pattern in patterns.compound_patterns:
-                    if re.search(pattern, normalized_name):
-                        old_confidence = confidence
-                        confidence = max(confidence + 0.5, 0.8)
-                        reasons.append(f"compound_pattern_match:{pattern}")
-                        print(f"Compound pattern match '{pattern}': +{confidence - old_confidence} confidence")
-                        break
-            
-            # Check prefix matches
-            for prefix in patterns.prefixes:
-                if any(word.startswith(prefix) for word in words):
-                    confidence += 0.3
-                    reasons.append(f"prefix_match:{prefix}")
-                    print(f"Prefix match '{prefix}': +0.3 confidence")
-                    break
-            
-            # Check keyword matches
-            for keyword in patterns.keywords:
-                if keyword in normalized_name:
-                    confidence += 0.2
-                    reasons.append(f"keyword_match:{keyword}")
-                    print(f"Keyword match '{keyword}': +0.2 confidence")
-            
-            # Check negative patterns
-            if patterns.negative_patterns:
-                for pattern in patterns.negative_patterns:
-                    if re.search(pattern, normalized_name):
-                        old_confidence = confidence
-                        confidence = max(0, confidence - 0.4)
-                        reasons.append(f"negative_pattern_match:{pattern}")
-                        print(f"Negative pattern match '{pattern}': -{old_confidence - confidence} confidence")
-
-            # Add small base confidence for any match
-            if confidence > 0:
-                old_confidence = confidence
-                confidence = 0.3 + (confidence * 0.7)
-                print(f"Adjusting final confidence: {old_confidence} -> {confidence}")
-            
-            # Normalize confidence to 0-1 range
-            confidence = min(confidence, 1.0)
-            
-            print(f"Final confidence for {category}: {confidence}")
+        # Calculate confidence for each category
+        for category, pattern in patterns_to_check.items():
+            confidence, reasons = self.calculate_pattern_match_confidence(
+                assignment_name, 
+                pattern, 
+                assignment_type
+            )
             
             # Update best match if confidence is higher
             if confidence > best_match.confidence:
-                print(f"New best match: {category} (confidence: {confidence})")
                 best_match = CategoryMatch(
                     category=category,
                     confidence=confidence,
                     match_reasons=reasons
                 )
         
-        print(f"\nFinal categorization: {best_match.category} with confidence {best_match.confidence}")
-        print(f"Reasons: {best_match.match_reasons}")
         return best_match
