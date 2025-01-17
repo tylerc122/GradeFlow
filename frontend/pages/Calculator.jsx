@@ -27,7 +27,6 @@ import { useCalculator } from "../src/contexts/CalculatorContext";
 const Calculator = () => {
   const theme = useTheme();
   // Step tracking
-  const [activeStep, setActiveStep] = useState(0);
   const steps = [
     "Set Categories",
     "Input Grades",
@@ -38,26 +37,6 @@ const Calculator = () => {
   // Loading state
   const [isLoading, setIsLoading] = useState(false);
 
-  // Category management
-  const [categories, setCategories] = useState([]);
-  const [error, setError] = useState(null);
-
-  // Grade data
-  const [mode, setMode] = useState("blackboard");
-  const [rawGradeData, setRawGradeData] = useState("");
-  const [parsedGrades, setParsedGrades] = useState(null);
-  const [uncategorizedAssignments, setUncategorizedAssignments] = useState([]);
-  const [manualGrades, setManualGrades] = useState([]);
-
-  // What-if analysis states
-  const [whatIfMode, setWhatIfMode] = useState(false);
-  const [targetGrade, setTargetGrade] = useState("");
-  const [hypotheticalScores, setHypotheticalScores] = useState({});
-  const [hypotheticalAssignments, setHypotheticalAssignments] = useState([]);
-  const [dialogOpen, setDialogOpen] = useState(false);
-  const [selectedCategory, setSelectedCategory] = useState(null);
-  const [hiddenAssignments, setHiddenAssignments] = useState([]);
-
   // Save calculation state
   const [saveDialogOpen, setSaveDialogOpen] = useState(false);
   const [savingError, setSavingError] = useState(null);
@@ -66,8 +45,41 @@ const Calculator = () => {
   const { enqueueSnackbar } = useSnackbar();
   const navigate = useNavigate();
 
-  // Misc
-  const { setIsResultsView } = useCalculator();
+  // Get all state from context
+  const {
+    activeStep,
+    setActiveStep,
+    categories,
+    setCategories,
+    error,
+    setError,
+    mode,
+    setMode,
+    rawGradeData,
+    setRawGradeData,
+    parsedGrades,
+    setParsedGrades,
+    uncategorizedAssignments,
+    setUncategorizedAssignments,
+    manualGrades,
+    setManualGrades,
+    whatIfMode,
+    setWhatIfMode,
+    targetGrade,
+    setTargetGrade,
+    hypotheticalScores,
+    setHypotheticalScores,
+    hypotheticalAssignments,
+    setHypotheticalAssignments,
+    dialogOpen,
+    setDialogOpen,
+    selectedCategory,
+    setSelectedCategory,
+    hiddenAssignments,
+    setHiddenAssignments,
+    isResultsView,
+    setIsResultsView,
+  } = useCalculator();
 
   // Update calculation function to use hidden assignments
   const calculateCategoryGrade = (assignments, categoryName) => {
@@ -515,32 +527,7 @@ const Calculator = () => {
               </Stepper>
             </Paper>
 
-            <Results
-              categories={categories}
-              setCategories={setCategories}
-              mode={mode}
-              manualGrades={manualGrades}
-              setManualGrades={setManualGrades}
-              parsedGrades={parsedGrades}
-              whatIfMode={whatIfMode}
-              setWhatIfMode={setWhatIfMode}
-              targetGrade={targetGrade}
-              setTargetGrade={setTargetGrade}
-              hypotheticalScores={hypotheticalScores}
-              setHypotheticalScores={setHypotheticalScores}
-              hypotheticalAssignments={hypotheticalAssignments}
-              setHypotheticalAssignments={setHypotheticalAssignments}
-              dialogOpen={dialogOpen}
-              setDialogOpen={setDialogOpen}
-              selectedCategory={selectedCategory}
-              setSelectedCategory={setSelectedCategory}
-              calculateCategoryGrade={calculateCategoryGrade}
-              calculateWeightedGrade={calculateWeightedGrade}
-              wrappedCalculateCategoryGrade={wrappedCalculateCategoryGrade}
-              rawGradeData={rawGradeData}
-              hiddenAssignments={hiddenAssignments}
-              onToggleAssignmentVisibility={handleToggleAssignmentVisibility}
-            />
+            <Results />
           </Box>
         </Box>
       );

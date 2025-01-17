@@ -40,6 +40,14 @@ const Footer = () => {
               Resources
             </Typography>
             <Link
+              href="/login"
+              color="text.secondary"
+              display="block"
+              sx={{ mb: 1 }}
+            >
+              Login
+            </Link>
+            <Link
               href="/about"
               color="text.secondary"
               display="block"

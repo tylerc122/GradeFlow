@@ -1,69 +1,137 @@
 import React, { useState } from "react";
-import { Box, Stack, Paper, Typography } from "@mui/material";
+import { useNavigate } from "react-router-dom";
+import { useSnackbar } from "notistack";
+import {
+  Box,
+  Stack,
+  Paper,
+  Typography,
+  Button,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+} from "@mui/material";
+import RefreshIcon from "@mui/icons-material/Refresh";
 import { useAuth } from "../../src/contexts/AuthContext";
+import { useCalculator } from "../../src/contexts/CalculatorContext";
 import SaveCalculationDialog from "../dialogs/SaveCalculationDialog";
-import SaveIcon from "@mui/icons-material/Save";
-import Button from "@mui/material/Button";
 import { GradeSummary } from "./GradeSummary";
 import { CategoryBreakdown } from "./CategoryBreakdown";
 import { AssignmentTable } from "./AssignmentTable";
 import { HypotheticalAssignmentDialog } from "../dialogs/HypotheticalAssignmentDialog";
-import ManualGradeTable from "./ManualGradeTable.jsx";
-import { useSnackbar } from "notistack";
-import { useNavigate } from "react-router-dom";
+import ManualGradeTable from "./ManualGradeTable";
 
-const LETTER_GRADES = {
-  "A+": { points: 4.0, minPercent: 97 },
-  A: { points: 4.0, minPercent: 93 },
-  "A-": { points: 3.7, minPercent: 90 },
-  "B+": { points: 3.3, minPercent: 87 },
-  B: { points: 3.0, minPercent: 83 },
-  "B-": { points: 2.7, minPercent: 80 },
-  "C+": { points: 2.3, minPercent: 77 },
-  C: { points: 2.0, minPercent: 73 },
-  "C-": { points: 1.7, minPercent: 70 },
-  "D+": { points: 1.3, minPercent: 67 },
-  D: { points: 1.0, minPercent: 63 },
-  "D-": { points: 0.7, minPercent: 60 },
-  F: { points: 0.0, minPercent: 0 },
-};
-
-const Results = ({
-  categories,
-  mode,
-  manualGrades,
-  setManualGrades,
-  parsedGrades,
-  whatIfMode,
-  setWhatIfMode,
-  targetGrade,
-  setTargetGrade,
-  hypotheticalScores,
-  setHypotheticalScores,
-  hypotheticalAssignments,
-  setHypotheticalAssignments,
-  dialogOpen,
-  setDialogOpen,
-  selectedCategory,
-  setSelectedCategory,
-  calculateWeightedGrade,
-  rawGradeData,
-  wrappedCalculateCategoryGrade,
-  hiddenAssignments,
-  onToggleAssignmentVisibility,
-  setCategories,
-  calculateCategoryGrade,
-}) => {
+const Results = () => {
+  const navigate = useNavigate();
   const { user } = useAuth();
+  const { enqueueSnackbar } = useSnackbar();
+
+  // Get state from context
+  const {
+    categories,
+    setCategories,
+    mode,
+    manualGrades,
+    setManualGrades,
+    parsedGrades,
+    whatIfMode,
+    setWhatIfMode,
+    targetGrade,
+    setTargetGrade,
+    hypotheticalScores,
+    setHypotheticalScores,
+    hypotheticalAssignments,
+    setHypotheticalAssignments,
+    dialogOpen,
+    setDialogOpen,
+    selectedCategory,
+    setSelectedCategory,
+    hiddenAssignments,
+    setHiddenAssignments,
+    rawGradeData,
+    resetCalculator,
+    setActiveStep,
+    setIsResultsView,
+  } = useCalculator();
+
+  // Local state
   const [saveDialogOpen, setSaveDialogOpen] = useState(false);
   const [savingError, setSavingError] = useState(null);
   const [isSaving, setIsSaving] = useState(false);
-  const { enqueueSnackbar } = useSnackbar();
-  const navigate = useNavigate();
+  const [resetConfirmOpen, setResetConfirmOpen] = useState(false);
+  const [hasBeenSaved, setHasBeenSaved] = useState(false);
 
-  // Handler for deleting assignments
+  const calculateCategoryGrade = (assignments, categoryName) => {
+    if (!assignments || !assignments.length) return 0;
+
+    const visibleAssignments = assignments.filter(
+      (assignment) =>
+        !hiddenAssignments.includes(`${categoryName}-${assignment.name}`)
+    );
+
+    if (!visibleAssignments.length) return 0;
+
+    const totalEarned = visibleAssignments.reduce((sum, a) => {
+      const scoreKey = `${categoryName}-${a.name}`;
+      const score = hypotheticalScores[scoreKey]?.score ?? a.score;
+      return sum + score;
+    }, 0);
+
+    const totalPossible = visibleAssignments.reduce(
+      (sum, a) => sum + a.total_points,
+      0
+    );
+
+    return totalPossible > 0 ? (totalEarned / totalPossible) * 100 : 0;
+  };
+
+  const calculateWeightedGrade = () => {
+    if (mode === "manual") {
+      let totalWeightedPoints = 0;
+      let totalWeight = 0;
+
+      categories.forEach((category) => {
+        const grade = manualGrades.find(
+          (g) => g.categoryName === category.name
+        );
+        if (grade) {
+          totalWeightedPoints += grade.value * category.weight;
+          totalWeight += category.weight;
+        }
+      });
+
+      return totalWeight > 0 ? totalWeightedPoints / totalWeight : 0;
+    }
+
+    return categories.reduce((total, category) => {
+      const categoryHypotheticals = hypotheticalAssignments.filter(
+        (a) => a.categoryName === category.name
+      );
+
+      const allAssignments = [
+        ...(category.assignments || []),
+        ...categoryHypotheticals,
+      ];
+
+      const categoryGrade = calculateCategoryGrade(
+        allAssignments,
+        category.name
+      );
+      return total + categoryGrade * (category.weight / 100);
+    }, 0);
+  };
+
+  const handleToggleAssignmentVisibility = (categoryName, assignmentName) => {
+    const assignmentKey = `${categoryName}-${assignmentName}`;
+    setHiddenAssignments((prev) =>
+      prev.includes(assignmentKey)
+        ? prev.filter((key) => key !== assignmentKey)
+        : [...prev, assignmentKey]
+    );
+  };
+
   const handleDeleteAssignment = (categoryName, assignmentName) => {
-    // Remove from categories
     setCategories((prev) =>
       prev.map((category) => {
         if (category.name === categoryName) {
@@ -78,14 +146,12 @@ const Results = ({
       })
     );
 
-    // Also remove from hypothetical assignments if present
     setHypotheticalAssignments((prev) =>
       prev.filter(
         (a) => !(a.categoryName === categoryName && a.name === assignmentName)
       )
     );
 
-    // Show feedback
     enqueueSnackbar("Assignment deleted successfully", { variant: "success" });
   };
 
@@ -101,7 +167,7 @@ const Results = ({
           name: category.name,
           weight: category.weight,
           assignments: [
-            ...category.assignments,
+            ...(category.assignments || []),
             ...hypotheticalAssignments.filter(
               (a) => a.categoryName === category.name
             ),
@@ -111,7 +177,7 @@ const Results = ({
         total_points_earned: categories.reduce((total, category) => {
           return (
             total +
-            category.assignments.reduce((sum, assignment) => {
+            (category.assignments || []).reduce((sum, assignment) => {
               if (assignment.status === "GRADED") {
                 return sum + assignment.score;
               }
@@ -122,7 +188,7 @@ const Results = ({
         total_points_possible: categories.reduce((total, category) => {
           return (
             total +
-            category.assignments.reduce((sum, assignment) => {
+            (category.assignments || []).reduce((sum, assignment) => {
               if (assignment.status === "GRADED") {
                 return sum + assignment.total_points;
               }
@@ -147,6 +213,7 @@ const Results = ({
 
       const result = await response.json();
       setSaveDialogOpen(false);
+      setHasBeenSaved(true);
       enqueueSnackbar("Calculation saved successfully!", {
         variant: "success",
         action: (key) => (
@@ -154,7 +221,7 @@ const Results = ({
             color="inherit"
             size="small"
             onClick={() => {
-              navigate(`/calculator/saved/${result.id}`);
+              navigate(`/grades/${result.id}`);
             }}
           >
             View
@@ -169,6 +236,16 @@ const Results = ({
     }
   };
 
+  const handleReset = () => {
+    if (!user || (user && hasBeenSaved)) {
+      resetCalculator();
+      setActiveStep(0);
+      setIsResultsView(false);
+    } else {
+      setResetConfirmOpen(true);
+    }
+  };
+
   if (!categories || categories.length === 0) {
     return (
       <Paper sx={{ p: 3, mb: 3 }}>
@@ -178,66 +255,6 @@ const Results = ({
       </Paper>
     );
   }
-
-  if (
-    (mode === "blackboard" && !parsedGrades?.assignments) ||
-    (mode === "manual" && (!manualGrades || manualGrades.length === 0))
-  ) {
-    return (
-      <Paper sx={{ p: 3, mb: 3 }}>
-        <Typography variant="h6" color="error">
-          No grade data available. Please go back and enter your grades.
-        </Typography>
-      </Paper>
-    );
-  }
-
-  const calculateFinalGrade = () => {
-    if (mode === "manual") {
-      return calculateWeightedGrade();
-    }
-
-    // Use the wrapped calculation function that accounts for hidden assignments
-    return categories.reduce((total, category) => {
-      const categoryHypotheticals = hypotheticalAssignments.filter(
-        (a) => a.categoryName === category.name
-      );
-
-      const allAssignments = [
-        ...(category.assignments || []),
-        ...categoryHypotheticals,
-      ];
-
-      // Use wrappedCalculateCategoryGrade instead of calculateCategoryGrade
-      const categoryGrade = wrappedCalculateCategoryGrade(
-        allAssignments,
-        category.name
-      );
-      console.log(
-        `Category ${category.name} grade with hidden: ${categoryGrade}`
-      );
-      return total + categoryGrade * (category.weight / 100);
-    }, 0);
-  };
-
-  // Calculate final grade based on mode
-  const finalGrade = {
-    percentage: calculateFinalGrade(), // Use new calculation function
-    hasLetterGrades: mode === "manual" && manualGrades.some((g) => g.isLetter),
-  };
-
-  const upcomingByCategory =
-    mode === "blackboard"
-      ? categories.reduce((acc, category) => {
-          acc[category.name] = (category.assignments || []).filter(
-            (a) => a.status === "UPCOMING"
-          ).length;
-          return acc;
-        }, {})
-      : categories.reduce((acc, category) => {
-          acc[category.name] = 0;
-          return acc;
-        }, {});
 
   return (
     <Box
@@ -258,6 +275,38 @@ const Results = ({
         overflow: "hidden",
       }}
     >
+      {/* Reset Confirmation Dialog */}
+      <Dialog
+        open={resetConfirmOpen}
+        onClose={() => setResetConfirmOpen(false)}
+        maxWidth="sm"
+        fullWidth
+      >
+        <DialogTitle>Start New Calculation?</DialogTitle>
+        <DialogContent>
+          <Typography>
+            {user && !hasBeenSaved
+              ? "Your current calculation hasn't been saved. All progress will be lost if you continue."
+              : "All progress will be lost if you continue. Consider creating an account to save your calculations."}
+          </Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setResetConfirmOpen(false)}>Cancel</Button>
+          <Button
+            onClick={() => {
+              resetCalculator();
+              setActiveStep(0);
+              setIsResultsView(false);
+              setResetConfirmOpen(false);
+            }}
+            color="primary"
+            variant="contained"
+          >
+            Continue
+          </Button>
+        </DialogActions>
+      </Dialog>
+
       {/* Left Panel */}
       <Box
         sx={{
@@ -280,15 +329,17 @@ const Results = ({
         }}
       >
         <Stack spacing={3}>
-          <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
-            <GradeSummary
-              finalGrade={finalGrade}
-              whatIfMode={whatIfMode}
-              setWhatIfMode={setWhatIfMode}
-              targetGrade={targetGrade}
-              setTargetGrade={setTargetGrade}
-            />
-          </Box>
+          <GradeSummary
+            finalGrade={{
+              percentage: calculateWeightedGrade(),
+              hasLetterGrades:
+                mode === "manual" && manualGrades.some((g) => g.isLetter),
+            }}
+            whatIfMode={whatIfMode}
+            setWhatIfMode={setWhatIfMode}
+            targetGrade={targetGrade}
+            setTargetGrade={setTargetGrade}
+          />
 
           <SaveCalculationDialog
             open={saveDialogOpen}
@@ -302,26 +353,30 @@ const Results = ({
             calculationData={{
               categories,
               hypotheticalAssignments,
-              finalGrade,
+              rawGradeData,
             }}
           />
 
           {mode === "blackboard" && (
             <CategoryBreakdown
-              mode={mode}
               categories={categories}
-              manualGrades={manualGrades}
               whatIfMode={whatIfMode}
               hypotheticalAssignments={hypotheticalAssignments}
-              calculateCategoryGrade={wrappedCalculateCategoryGrade}
-              upcomingByCategory={upcomingByCategory}
+              calculateCategoryGrade={calculateCategoryGrade}
               setSelectedCategory={setSelectedCategory}
               setDialogOpen={setDialogOpen}
+              upcomingByCategory={categories.reduce((acc, category) => {
+                acc[category.name] = (category.assignments || []).filter(
+                  (a) => a.status === "UPCOMING"
+                ).length;
+                return acc;
+              }, {})}
             />
           )}
         </Stack>
       </Box>
 
+      {/* Right Panel */}
       {mode === "manual" ? (
         <ManualGradeTable
           categories={categories}
@@ -382,14 +437,14 @@ const Results = ({
               setSelectedCategory={setSelectedCategory}
               setHypotheticalScores={setHypotheticalScores}
               hiddenAssignments={hiddenAssignments}
-              onToggleAssignmentVisibility={onToggleAssignmentVisibility}
+              onToggleAssignmentVisibility={handleToggleAssignmentVisibility}
               onDeleteAssignment={handleDeleteAssignment}
-              calculateCategoryGrade={wrappedCalculateCategoryGrade}
             />
           </Box>
         </Paper>
       )}
 
+      {/* Hypothetical Assignment Dialog */}
       <HypotheticalAssignmentDialog
         open={dialogOpen}
         onClose={() => {
@@ -406,6 +461,48 @@ const Results = ({
         }}
         categoryName={selectedCategory}
       />
+
+      {/* Navigation Buttons */}
+      <Box
+        sx={{
+          display: "flex",
+          justifyContent: "space-between",
+          gap: 2,
+          mt: 4,
+          mb: 4,
+          width: activeStep === 3 ? "2200px" : "100%",
+          maxWidth: activeStep === 3 ? "95vw" : "100%",
+          transition: "all 0.3s ease-in-out",
+        }}
+      >
+        <Button
+          variant="outlined"
+          onClick={handleReset}
+          startIcon={<RefreshIcon />}
+          size="large"
+          sx={{
+            px: 4,
+            minWidth: 120,
+          }}
+        >
+          Calculate Another
+        </Button>
+        <Box sx={{ display: "flex", gap: 2 }}>
+          {user && (
+            <Button
+              variant="contained"
+              onClick={() => setSaveDialogOpen(true)}
+              size="large"
+              sx={{
+                px: 4,
+                minWidth: 120,
+              }}
+            >
+              Save Calculation
+            </Button>
+          )}
+        </Box>
+      </Box>
     </Box>
   );
 };
