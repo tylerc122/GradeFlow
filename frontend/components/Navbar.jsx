@@ -16,6 +16,7 @@ import { Link as RouterLink, useLocation, useNavigate } from "react-router-dom";
 import { Calculator, LogOut, User } from "lucide-react";
 import { useAuth } from "../src/contexts/AuthContext";
 import { useCalculator } from "../src/contexts/CalculatorContext";
+import { Person } from "@mui/icons-material";
 
 const Navbar = () => {
   const theme = useTheme();
@@ -41,6 +42,11 @@ const Navbar = () => {
     handleMenuClose();
     await logout();
     navigate("/");
+  };
+
+  const handleDashboard = async () => {
+    handleMenuClose();
+    navigate("/dashboard");
   };
 
   return (
@@ -208,6 +214,13 @@ const Navbar = () => {
                       </Box>
                     </MenuItem>
                     <Divider />
+                    <MenuItem onClick={handleDashboard}>
+                      <Person
+                        size={18}
+                        style={{ marginLeft: "-4", marginRight: 4.5 }}
+                      />
+                      <Typography variant="body1">My Account</Typography>
+                    </MenuItem>
                     <MenuItem onClick={handleLogout}>
                       <LogOut size={18} style={{ marginRight: 8 }} />
                       Logout
