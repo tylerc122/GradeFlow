@@ -51,6 +51,7 @@ const Results = () => {
     setHiddenAssignments,
     rawGradeData,
     resetCalculator,
+    activeStep,
     setActiveStep,
     setIsResultsView,
   } = useCalculator();
@@ -268,7 +269,7 @@ const Results = () => {
           gridTemplateColumns: "1050px 1050px",
           columnGap: "50px",
           width: "2200px",
-          height: "calc(100vh - 280px)",
+          height: "calc(100vh - 380px)",
           margin: "0 auto",
         }),
         backgroundColor: "background.default",
@@ -466,12 +467,13 @@ const Results = () => {
       <Box
         sx={{
           display: "flex",
-          justifyContent: "space-between",
+          justifyContent: "flex-start",
           gap: 2,
           mt: 4,
           mb: 4,
-          width: activeStep === 3 ? "2200px" : "100%",
-          maxWidth: activeStep === 3 ? "95vw" : "100%",
+          width: "2200px",
+          maxWidth: "95vw",
+          margin: "0 auto",
           transition: "all 0.3s ease-in-out",
         }}
       >
@@ -487,21 +489,6 @@ const Results = () => {
         >
           Calculate Another
         </Button>
-        <Box sx={{ display: "flex", gap: 2 }}>
-          {user && (
-            <Button
-              variant="contained"
-              onClick={() => setSaveDialogOpen(true)}
-              size="large"
-              sx={{
-                px: 4,
-                minWidth: 120,
-              }}
-            >
-              Save Calculation
-            </Button>
-          )}
-        </Box>
       </Box>
     </Box>
   );

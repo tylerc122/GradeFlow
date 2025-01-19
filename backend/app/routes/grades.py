@@ -2,14 +2,17 @@ from fastapi import APIRouter, HTTPException, Request, Body, Header, Depends
 from fastapi.responses import JSONResponse
 from typing import List, Optional
 from sqlalchemy.orm import Session
+from sqlalchemy import desc
 import json
 from datetime import datetime
+from datetime import timedelta
 
 from ..database.database import get_db
 from ..database.models import SavedCalculation, Category, User
 from ..models.grade_models import Assignment
 from ..services.grade_parser import parse_blackboard_grades
 from ..auth.session_manager import session_manager
+
 
 router = APIRouter()
 
@@ -312,4 +315,179 @@ async def update_calculation(
         raise HTTPException(
             status_code=500,
             detail=f"Failed to update calculation: {str(e)}"
+        )
+    
+@router.get("/dashboard/stats")
+async def get_dashboard_stats(
+    request: Request,
+    db: Session = Depends(get_db),
+    user_id: int = Depends(session_manager.require_auth)
+):
+    try:
+        # Get all calculations for user
+        calculations = db.query(SavedCalculation).filter(
+            SavedCalculation.user_id == user_id
+        ).order_by(desc(SavedCalculation.created_at)).all()
+        
+        if not calculations:
+            return {
+                "latest_grade": None,
+                "average_grade": None,
+                "total_assignments": 0,
+                "grade_history": [],
+                "category_averages": {}
+            }
+            
+        # Calculate statistics
+        total_grades = 0
+        total_assignments = 0
+        grade_history = []
+        category_averages = {}
+        category_counts = {}
+        
+        for calc in calculations:
+            # Add to grade history
+            grade_history.append({
+                "date": calc.created_at.isoformat(),
+                "grade": calc.results.get("overall_grade", 0)
+            })
+            
+            # Add to total for average
+            total_grades += calc.results.get("overall_grade", 0)
+            
+            # Process categories
+            for category in calc.categories:
+                total_assignments += len(category.assignments)
+                
+                # Track category averages
+                if category.name not in category_averages:
+                    category_averages[category.name] = 0
+                    category_counts[category.name] = 0
+                    
+                # Calculate category grade
+                earned = sum(float(a.get("score", 0)) for a in category.assignments)
+                possible = sum(float(a.get("total_points", 0)) for a in category.assignments)
+                if possible > 0:
+                    category_grade = (earned / possible) * 100
+                    category_averages[category.name] += category_grade
+                    category_counts[category.name] += 1
+        
+        # Calculate final averages
+        average_grade = total_grades / len(calculations) if calculations else 0
+        
+        for category in category_averages:
+            if category_counts[category] > 0:
+                category_averages[category] /= category_counts[category]
+        
+        # Get latest calculation details
+        latest = calculations[0] if calculations else None
+        latest_grade = latest.results.get("overall_grade", 0) if latest else None
+        
+        return {
+            "latest_grade": latest_grade,
+            "average_grade": average_grade,
+            "total_assignments": total_assignments,
+            "grade_history": grade_history,
+            "category_averages": category_averages
+        }
+        
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to fetch dashboard statistics: {str(e)}"
+        )
+    
+@router.get("/dashboard/recent")
+async def get_recent_calculations(
+    request: Request,
+    limit: int = 3,
+    db: Session = Depends(get_db),
+    user_id: int = Depends(session_manager.require_auth)
+):
+    try:
+        # Get recent calculations with full details
+        recent_calcs = db.query(SavedCalculation).filter(
+            SavedCalculation.user_id == user_id
+        ).order_by(desc(SavedCalculation.created_at)).limit(limit).all()
+        
+        # Format response
+        response = []
+        for calc in recent_calcs:
+            calc_data = {
+                "id": calc.id,
+                "name": calc.name,
+                "created_at": calc.created_at,
+                "results": calc.results,
+                "categories": [
+                    {
+                        "name": cat.name,
+                        "weight": cat.weight,
+                        "assignments": cat.assignments
+                    }
+                    for cat in calc.categories
+                ]
+            }
+            response.append(calc_data)
+            
+        return response
+        
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to fetch recent calculations: {str(e)}"
+        )
+    
+@router.get("/dashboard/trends")
+async def get_grade_trends(
+    request: Request,
+    days: int = 30,
+    db: Session = Depends(get_db),
+    user_id: int = Depends(session_manager.require_auth)
+):
+    try:
+        # Calculate date range
+        end_date = datetime.utcnow()
+        start_date = end_date - timedelta(days=days)
+        
+        # Get calculations within date range
+        calculations = db.query(SavedCalculation).filter(
+            SavedCalculation.user_id == user_id,
+            SavedCalculation.created_at >= start_date,
+            SavedCalculation.created_at <= end_date
+        ).order_by(SavedCalculation.created_at).all()
+        
+        # Track grades over time
+        grade_trends = []
+        category_trends = {}
+        
+        for calc in calculations:
+            # Overall grade trend
+            grade_trends.append({
+                "date": calc.created_at.isoformat(),
+                "grade": calc.results.get("overall_grade", 0)
+            })
+            
+            # Category-specific trends
+            for category in calc.categories:
+                if category.name not in category_trends:
+                    category_trends[category.name] = []
+                    
+                earned = sum(float(a.get("score", 0)) for a in category.assignments)
+                possible = sum(float(a.get("total_points", 0)) for a in category.assignments)
+                category_grade = (earned / possible * 100) if possible > 0 else 0
+                
+                category_trends[category.name].append({
+                    "date": calc.created_at.isoformat(),
+                    "grade": category_grade
+                })
+        
+        return {
+            "overall_trend": grade_trends,
+            "category_trends": category_trends
+        }
+        
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to fetch grade trends: {str(e)}"
         )

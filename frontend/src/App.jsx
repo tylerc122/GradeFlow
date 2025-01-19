@@ -17,10 +17,12 @@ import AboutPage from "../pages/AboutPage";
 import LoginPage from "../pages/LoginPage";
 import RegisterPage from "../pages/RegisterPage";
 import MyGradesPage from "../pages/MyGradesPage";
+import Dashboard from "../pages/Dashboard";
 import PageTransition from "../components/animations/PageTransition";
 import { AuthProvider, useAuth } from "./contexts/AuthContext";
 import { CalculatorProvider } from "./contexts/CalculatorContext";
 import theme from "./theme";
+import { Rotate3D } from "lucide-react";
 
 // Protected Route component
 const ProtectedRoute = ({ children }) => {
@@ -82,6 +84,14 @@ const AnimatedRoutes = () => {
           element={
             <PageTransition>
               <AboutPage />
+            </PageTransition>
+          }
+        />
+        <Route
+          path="/dashboard"
+          element={
+            <PageTransition>
+              <Dashboard />
             </PageTransition>
           }
         />

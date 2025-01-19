@@ -660,6 +660,7 @@ const Calculator = () => {
               width: activeStep === 3 ? "2200px" : "100%",
               maxWidth: activeStep === 3 ? "95vw" : "100%",
               transition: "all 0.3s ease-in-out",
+              border: "1px solid red",
             }}
           >
             {activeStep > 0 && (
