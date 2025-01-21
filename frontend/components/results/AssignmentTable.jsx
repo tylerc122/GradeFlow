@@ -26,6 +26,7 @@ import TimelineIcon from "@mui/icons-material/Timeline";
 import DeleteIcon from "@mui/icons-material/Delete";
 import VisibilityIcon from "@mui/icons-material/Visibility";
 import VisibilityOffIcon from "@mui/icons-material/VisibilityOff";
+import RestoreIcon from "@mui/icons-material/Restore";
 
 export const AssignmentTable = ({
   categories,
@@ -41,13 +42,34 @@ export const AssignmentTable = ({
   const inputRef = useRef(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [assignmentToDelete, setAssignmentToDelete] = useState(null);
+  const [editedScores, setEditedScores] = useState({});
 
-  const handleScoreEdit = (categoryName, assignment, newScore) => {
+  const handleScoreEdit = (categoryName, assignment, newValue) => {
+    // Remove any non-numeric characters except decimal point
+    let cleanValue = newValue.replace(/[^\d.]/g, "");
+
+    // Ensure only one decimal point
+    const decimalCount = (cleanValue.match(/\./g) || []).length;
+    if (decimalCount > 1) {
+      cleanValue = cleanValue.replace(/\./g, (match, index) =>
+        index === cleanValue.indexOf(".") ? match : ""
+      );
+    }
+
+    // Parse the value
+    let numericValue = parseFloat(cleanValue);
+
+    const scoreKey = `${categoryName}-${assignment.name}`;
+    setEditedScores((prev) => ({
+      ...prev,
+      [scoreKey]: true,
+    }));
+
     setHypotheticalScores((prev) => ({
       ...prev,
-      [`${categoryName}-${assignment.name}`]: {
+      [scoreKey]: {
         ...assignment,
-        score: parseFloat(newScore) || 0,
+        score: numericValue || 0,
         categoryName,
         isHypothetical: true,
       },
@@ -62,6 +84,17 @@ export const AssignmentTable = ({
 
   const handleInputClick = (e) => {
     e.target.select();
+  };
+
+  const handleResetScore = (categoryName, assignment) => {
+    const scoreKey = `${categoryName}-${assignment.name}`;
+    const newHypotheticalScores = { ...hypotheticalScores };
+    delete newHypotheticalScores[scoreKey];
+    setHypotheticalScores(newHypotheticalScores);
+
+    const newEditedScores = { ...editedScores };
+    delete newEditedScores[scoreKey];
+    setEditedScores(newEditedScores);
   };
 
   const handleDeleteClick = (categoryName, assignment) => {
@@ -116,10 +149,7 @@ export const AssignmentTable = ({
               }}
             >
               <AssignmentIcon sx={{ color: "primary.main" }} />
-              <Typography
-                variant="h6"
-                sx={{ fontWeight: 500, color: "text.primary" }}
-              >
+              <Typography variant="h6" sx={{ fontWeight: 500 }}>
                 {category.name}
               </Typography>
             </Box>
@@ -127,70 +157,41 @@ export const AssignmentTable = ({
             <TableContainer
               component={Paper}
               elevation={1}
-              sx={{
-                borderRadius: 2,
-                overflow: "hidden",
-                border: "1px solid",
-                borderColor: "divider",
-              }}
+              sx={{ borderRadius: 2 }}
             >
               <Table size="medium">
                 <TableHead>
-                  <TableRow
-                    sx={{
-                      backgroundColor: alpha("#1976d2", 0.04),
-                    }}
-                  >
-                    <TableCell
-                      sx={{
-                        fontWeight: 600,
-                        color: "text.primary",
-                      }}
-                    >
+                  <TableRow sx={{ bgcolor: alpha("#1976d2", 0.04) }}>
+                    <TableCell sx={{ fontWeight: 600, color: "text.primary" }}>
                       Assignment
                     </TableCell>
                     <TableCell
                       align="center"
-                      sx={{
-                        fontWeight: 600,
-                        color: "text.primary",
-                      }}
+                      sx={{ fontWeight: 600, color: "text.primary" }}
                     >
                       Status
                     </TableCell>
                     <TableCell
                       align="center"
-                      sx={{
-                        fontWeight: 600,
-                        color: "text.primary",
-                      }}
+                      sx={{ fontWeight: 600, color: "text.primary" }}
                     >
                       Score
                     </TableCell>
                     <TableCell
                       align="center"
-                      sx={{
-                        fontWeight: 600,
-                        color: "text.primary",
-                      }}
+                      sx={{ fontWeight: 600, color: "text.primary" }}
                     >
                       Total Points
                     </TableCell>
                     <TableCell
                       align="center"
-                      sx={{
-                        fontWeight: 600,
-                        color: "text.primary",
-                      }}
+                      sx={{ fontWeight: 600, color: "text.primary" }}
                     >
                       Percentage
                     </TableCell>
                     <TableCell
                       align="center"
-                      sx={{
-                        fontWeight: 600,
-                        color: "text.primary",
-                      }}
+                      sx={{ fontWeight: 600, color: "text.primary" }}
                     >
                       Actions
                     </TableCell>
@@ -199,39 +200,30 @@ export const AssignmentTable = ({
                 <TableBody>
                   {[
                     ...category.assignments,
-                    ...hypotheticalAssignments
-                      .filter((a) => a.categoryName === category.name)
-                      .map((a) => ({ ...a, isHypothetical: true })),
+                    ...hypotheticalAssignments.filter(
+                      (a) => a.categoryName === category.name
+                    ),
                   ].map((assignment, assignmentIndex) => {
-                    const hypotheticalKey = `${category.name}-${assignment.name}`;
-                    const hypotheticalData =
-                      hypotheticalScores[hypotheticalKey];
-                    const isEditable =
-                      whatIfMode &&
-                      (assignment.status === "UPCOMING" ||
-                        assignment.isHypothetical);
+                    const scoreKey = `${category.name}-${assignment.name}`;
+                    const hypotheticalData = hypotheticalScores[scoreKey];
+                    const isEdited = editedScores[scoreKey];
                     const currentScore =
                       hypotheticalData?.score ?? assignment.score;
                     const percentage =
                       (currentScore / assignment.total_points) * 100;
-                    const isHidden =
-                      hiddenAssignments.includes(hypotheticalKey);
+                    const isHidden = hiddenAssignments.includes(scoreKey);
 
                     return (
                       <TableRow
                         key={`${category.name}-${assignment.name}-${assignmentIndex}`}
                         sx={{
-                          backgroundColor: isHidden
-                            ? alpha("#9e9e9e", 0.1) // Grayed out if hidden
-                            : assignment.isHypothetical
-                            ? alpha("#2196f3", 0.04)
-                            : assignment.status === "UPCOMING"
-                            ? hypotheticalData
-                              ? alpha("#2196f3", 0.04)
-                              : alpha("#ff9800", 0.04)
+                          bgcolor: isHidden
+                            ? alpha("#9e9e9e", 0.1)
+                            : isEdited
+                            ? alpha("#2196f3", 0.08)
                             : "inherit",
                           "&:hover": {
-                            backgroundColor: alpha("#000", 0.02),
+                            bgcolor: alpha("#000", 0.02),
                           },
                           opacity: isHidden ? 0.6 : 1,
                         }}
@@ -272,45 +264,51 @@ export const AssignmentTable = ({
                           />
                         </TableCell>
                         <TableCell align="center">
-                          {isEditable ? (
-                            <TextField
-                              inputRef={inputRef}
-                              variant="standard"
-                              type="text"
-                              value={currentScore || ""}
-                              onChange={(e) => {
-                                const value = e.target.value.replace(
-                                  /[^\d.]/g,
-                                  ""
-                                );
-                                handleScoreEdit(
-                                  category.name,
-                                  assignment,
-                                  value
-                                );
-                              }}
-                              onKeyPress={handleKeyPress}
-                              onClick={handleInputClick}
+                          {whatIfMode ? (
+                            <Box
                               sx={{
-                                width: "80px",
-                                "& input": {
-                                  textAlign: "center",
-                                },
-                                "& .MuiInput-underline:before": {
-                                  borderBottom: assignment.isHypothetical
-                                    ? `2px dashed ${alpha("#1976d2", 0.6)}`
-                                    : !hypotheticalData
-                                    ? `2px dashed ${alpha("#ff9800", 0.6)}`
-                                    : "1px solid rgba(0, 0, 0, 0.42)",
-                                },
-                                "& .MuiInput-underline:hover:before": {
-                                  borderBottom: `2px solid ${alpha(
-                                    "#1976d2",
-                                    0.6
-                                  )} !important`,
-                                },
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "center",
+                                gap: 1,
                               }}
-                            />
+                            >
+                              <TextField
+                                variant="standard"
+                                type="text"
+                                value={currentScore || ""}
+                                onChange={(e) =>
+                                  handleScoreEdit(
+                                    category.name,
+                                    assignment,
+                                    e.target.value
+                                  )
+                                }
+                                onKeyPress={handleKeyPress}
+                                onClick={handleInputClick}
+                                sx={{
+                                  width: "80px",
+                                  "& input": {
+                                    textAlign: "center",
+                                  },
+                                }}
+                              />
+                              {isEdited && (
+                                <Tooltip title="Reset Score">
+                                  <IconButton
+                                    size="small"
+                                    onClick={() =>
+                                      handleResetScore(
+                                        category.name,
+                                        assignment
+                                      )
+                                    }
+                                  >
+                                    <RestoreIcon fontSize="small" />
+                                  </IconButton>
+                                </Tooltip>
+                              )}
+                            </Box>
                           ) : (
                             currentScore
                           )}

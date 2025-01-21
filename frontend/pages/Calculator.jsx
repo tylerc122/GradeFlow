@@ -504,7 +504,7 @@ const Calculator = () => {
         >
           <Box
             sx={{
-              width: "2300px",
+              width: "145%",
               maxWidth: "95vw",
             }}
           >
@@ -657,7 +657,7 @@ const Calculator = () => {
               gap: 2,
               mt: 4,
               mb: 4,
-              width: activeStep === 3 ? "2200px" : "100%",
+              width: activeStep === 3 ? "150%" : "100%",
               maxWidth: activeStep === 3 ? "95vw" : "100%",
               transition: "all 0.3s ease-in-out",
             }}
