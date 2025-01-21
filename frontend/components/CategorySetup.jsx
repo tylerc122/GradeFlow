@@ -38,9 +38,36 @@ const CategorySetup = ({ categories, setCategories, error, setError }) => {
   };
 
   const handleCategoryChange = (index, field, value) => {
+    if (field === "weight") {
+      // Remove any non-numeric characters except decimal point
+      let cleanValue = value.replace(/[^\d.]/g, "");
+
+      // Ensure only one decimal point
+      const decimalCount = (cleanValue.match(/\./g) || []).length;
+      if (decimalCount > 1) {
+        cleanValue = cleanValue.replace(/\./g, (match, index) =>
+          index === cleanValue.indexOf(".") ? match : ""
+        );
+      }
+
+      // Handle double-digit restriction
+      const parts = cleanValue.split(".");
+      if (parts[0].length > 2) {
+        parts[0] = parts[0].slice(0, 2);
+      }
+      cleanValue = parts.join(".");
+
+      // Parse and validate the value
+      const numericValue = parseFloat(cleanValue);
+      if (!isNaN(numericValue) && numericValue > 100) {
+        cleanValue = "100";
+      }
+
+      value = cleanValue;
+    }
+
     const newCategories = [...categories];
     newCategories[index][field] = value;
-
     setCategories(newCategories);
   };
 
