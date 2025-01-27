@@ -31,8 +31,7 @@ const Footer = () => {
               GradeFlow
             </Typography>
             <Typography variant="body2" color="text.secondary">
-              Making grade calculations simple and accurate for students
-              everywhere.
+              Making grade calculations simple, easy, and efficient.
             </Typography>
           </Grid>
           <Grid item xs={12} md={4}>
@@ -46,6 +45,14 @@ const Footer = () => {
               sx={{ mb: 1 }}
             >
               Login
+            </Link>
+            <Link
+              href="/dashboard"
+              color="text.secondary"
+              display="block"
+              sx={{ mb: 1 }}
+            >
+              Dashboard
             </Link>
             <Link
               href="/about"

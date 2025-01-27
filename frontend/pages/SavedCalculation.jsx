@@ -23,61 +23,56 @@ const SavedCalculation = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // What-if analysis states
+  // State management
   const [whatIfMode, setWhatIfMode] = useState(false);
   const [targetGrade, setTargetGrade] = useState("");
   const [hypotheticalScores, setHypotheticalScores] = useState({});
   const [hypotheticalAssignments, setHypotheticalAssignments] = useState([]);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState(null);
-
-  // Save/Duplicate states
   const [saveDialogOpen, setSaveDialogOpen] = useState(false);
   const [duplicateDialogOpen, setDuplicateDialogOpen] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [retryCount, setRetryCount] = useState(0);
 
-  useEffect(() => {
-    const fetchCalculation = async () => {
-      try {
-        const response = await fetch(`http://localhost:8000/api/grades/${id}`, {
-          credentials: "include",
-        });
+  // Transform data helper function
+  const transformCalculationData = (data) => {
+    if (!data || !Array.isArray(data.categories)) {
+      console.error("Invalid data structure:", data);
+      throw new Error("Invalid calculation data structure");
+    }
 
-        if (!response.ok) {
-          if (response.status === 404) {
-            throw new Error("Calculation not found");
-          }
-          throw new Error("Failed to fetch calculation");
-        }
-
-        const data = await response.json();
-
-        // Transform data to match Results component expectations
-        const transformedData = {
-          ...data,
-          categories: data.categories.map((cat) => ({
-            ...cat,
-            assignments: cat.assignments.map((assignment) => ({
-              ...assignment,
-              status: "GRADED",
-              score: parseFloat(assignment.score),
-              total_points: parseFloat(assignment.total_points),
-            })),
-          })),
-        };
-
-        setCalculation(transformedData);
-      } catch (err) {
-        setError(err.message);
-        enqueueSnackbar(err.message, { variant: "error" });
-      } finally {
-        setLoading(false);
+    // Ensure each category has required properties
+    const transformedCategories = data.categories.map((category) => {
+      if (
+        !category.name ||
+        typeof category.weight !== "number" ||
+        !Array.isArray(category.assignments)
+      ) {
+        console.error("Invalid category structure:", category);
+        throw new Error("Invalid category data structure");
       }
+
+      return {
+        ...category,
+        weight: Number(category.weight),
+        assignments: (category.assignments || []).map((assignment) => ({
+          ...assignment,
+          name: String(assignment.name || ""),
+          status: assignment.status || "GRADED",
+          score: Number(assignment.score || 0),
+          total_points: Number(assignment.total_points || 0),
+        })),
+      };
+    });
+
+    return {
+      ...data,
+      categories: transformedCategories,
     };
+  };
 
-    fetchCalculation();
-  }, [id, enqueueSnackbar]);
-
+  // Calculate grades for categories and overall
   const calculateCategoryGrade = (assignments, categoryName) => {
     if (!assignments || !assignments.length) return 0;
 
@@ -105,7 +100,10 @@ const SavedCalculation = () => {
   };
 
   const calculateWeightedGrade = () => {
-    if (!calculation || !calculation.categories) return 0;
+    if (!calculation?.categories) {
+      console.error("No categories available for grade calculation");
+      return 0;
+    }
 
     return calculation.categories.reduce((total, category) => {
       const categoryHypotheticals = hypotheticalAssignments.filter(
@@ -125,10 +123,84 @@ const SavedCalculation = () => {
     }, 0);
   };
 
+  useEffect(() => {
+    const fetchCalculation = async () => {
+      try {
+        console.log("Fetching calculation:", id);
+        const response = await fetch(`http://localhost:8000/api/grades/${id}`, {
+          credentials: "include",
+        });
+
+        if (!response.ok) {
+          if (response.status === 401) {
+            navigate("/login");
+            return;
+          }
+          throw new Error(
+            response.status === 404
+              ? "Calculation not found"
+              : "Failed to fetch calculation"
+          );
+        }
+
+        const data = await response.json();
+        console.log("Raw calculation data:", data);
+
+        if (!data || !data.categories || !Array.isArray(data.categories)) {
+          throw new Error("Invalid calculation data structure");
+        }
+
+        // Transform and validate the data
+        const transformedData = transformCalculationData(data);
+        console.log("Transformed calculation data:", transformedData);
+
+        // Additional validation
+        if (!transformedData.categories.length) {
+          throw new Error("No categories found in calculation");
+        }
+
+        if (
+          !transformedData.categories.every(
+            (cat) =>
+              Array.isArray(cat.assignments) &&
+              typeof cat.weight === "number" &&
+              typeof cat.name === "string"
+          )
+        ) {
+          throw new Error("Invalid category structure detected");
+        }
+
+        setCalculation(transformedData);
+        setError(null);
+      } catch (err) {
+        console.error("Error in fetchCalculation:", err);
+        setError(err.message);
+        enqueueSnackbar(err.message, { variant: "error" });
+
+        // Auto-retry once if it's a data structure error
+        if (retryCount === 0 && err.message.includes("Invalid")) {
+          setRetryCount((prev) => prev + 1);
+          setTimeout(() => {
+            setLoading(true);
+            setError(null);
+          }, 1000);
+        }
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchCalculation();
+  }, [id, navigate, enqueueSnackbar, retryCount]);
+
   const handleSaveChanges = async () => {
     setIsSaving(true);
     try {
-      // Create the updated data
+      // Validate before saving
+      if (!calculation?.categories) {
+        throw new Error("No calculation data to save");
+      }
+
       const updatedData = {
         ...calculation,
         name: calculation.name,
@@ -172,21 +244,8 @@ const SavedCalculation = () => {
         throw new Error(errorData.detail || "Failed to save changes");
       }
 
-      const savedCalculation = await response.json();
-
-      // Transform the data to match our expected format
-      const transformedData = {
-        ...savedCalculation,
-        categories: savedCalculation.categories.map((cat) => ({
-          ...cat,
-          assignments: cat.assignments.map((assignment) => ({
-            ...assignment,
-            status: "GRADED",
-            score: parseFloat(assignment.score),
-            total_points: parseFloat(assignment.total_points),
-          })),
-        })),
-      };
+      const savedData = await response.json();
+      const transformedData = transformCalculationData(savedData);
 
       setCalculation(transformedData);
       setHypotheticalAssignments([]);
@@ -206,6 +265,11 @@ const SavedCalculation = () => {
   const handleDuplicate = async (saveData) => {
     setIsSaving(true);
     try {
+      // Validate before duplicating
+      if (!calculation?.categories) {
+        throw new Error("No calculation data to duplicate");
+      }
+
       const duplicateData = {
         ...saveData,
         raw_data: calculation.raw_data,
@@ -252,13 +316,16 @@ const SavedCalculation = () => {
         ),
       });
     } catch (error) {
-      enqueueSnackbar("Failed to duplicate calculation", { variant: "error" });
+      console.error("Duplication error:", error);
+      enqueueSnackbar(`Failed to duplicate calculation: ${error.message}`, {
+        variant: "error",
+      });
     } finally {
       setIsSaving(false);
     }
   };
 
-  if (loading || !calculation) {
+  if (loading) {
     return (
       <Container
         sx={{
@@ -284,9 +351,14 @@ const SavedCalculation = () => {
             <Button
               color="inherit"
               size="small"
-              onClick={() => navigate("/grades")}
+              onClick={() => {
+                setLoading(true);
+                setError(null);
+                setRetryCount(0);
+                window.location.reload();
+              }}
             >
-              Back to My Grades
+              Retry
             </Button>
           }
         >
@@ -296,9 +368,31 @@ const SavedCalculation = () => {
     );
   }
 
+  // Validate calculation data before rendering
+  if (!calculation?.categories?.length) {
+    return (
+      <Container sx={{ py: 8 }}>
+        <Alert
+          severity="error"
+          sx={{ mb: 4 }}
+          action={
+            <Button
+              color="inherit"
+              size="small"
+              onClick={() => window.location.reload()}
+            >
+              Reload
+            </Button>
+          }
+        >
+          No categories found in calculation. Please try reloading the page.
+        </Alert>
+      </Container>
+    );
+  }
+
   return (
-    <Container maxWidth="xl" sx={{ py: 4 }}>
-      {/* Action Buttons */}
+    <Container maxWidth="140%" sx={{ py: 4 }}>
       <Paper
         elevation={2}
         sx={{
@@ -306,6 +400,8 @@ const SavedCalculation = () => {
           mb: 3,
           borderRadius: 2,
           background: "linear-gradient(145deg, #ffffff 0%, #f5f5f5 100%)",
+          maxWidth: "99.5%",
+          ml: 1,
         }}
       >
         <Box
@@ -341,14 +437,14 @@ const SavedCalculation = () => {
         </Box>
       </Paper>
 
-      {/* Results Component */}
       <Results
-        categories={calculation?.categories || []}
+        categories={calculation.categories}
         mode="blackboard"
-        rawGradeData={calculation?.raw_data || ""}
+        rawGradeData={calculation.raw_data || ""}
         parsedGrades={{
-          assignments:
-            calculation?.categories?.flatMap((cat) => cat.assignments) || [],
+          assignments: calculation.categories.flatMap(
+            (cat) => cat.assignments || []
+          ),
         }}
         whatIfMode={whatIfMode}
         setWhatIfMode={setWhatIfMode}
@@ -362,11 +458,9 @@ const SavedCalculation = () => {
         setDialogOpen={setDialogOpen}
         selectedCategory={selectedCategory}
         setSelectedCategory={setSelectedCategory}
-        calculateCategoryGrade={calculateCategoryGrade}
-        calculateWeightedGrade={calculateWeightedGrade}
+        showCalculateAnotherButton={false}
       />
 
-      {/* Duplicate Dialog */}
       <SaveCalculationDialog
         open={duplicateDialogOpen}
         onClose={() => setDuplicateDialogOpen(false)}

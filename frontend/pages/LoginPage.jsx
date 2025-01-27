@@ -12,9 +12,11 @@ import {
 } from "@mui/material";
 import { useNavigate, Link as RouterLink } from "react-router-dom";
 import LockOutlinedIcon from "@mui/icons-material/LockOutlined";
+import { useAuth } from "../src/contexts/AuthContext";
 
 const LoginPage = () => {
   const navigate = useNavigate();
+  const { login } = useAuth(); // Get login function from AuthContext
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -26,21 +28,7 @@ const LoginPage = () => {
     setLoading(true);
 
     try {
-      const response = await fetch("http://localhost:8000/api/auth/login", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ email, password }),
-        credentials: "include",
-      });
-
-      if (!response.ok) {
-        const data = await response.json();
-        throw new Error(data.detail || "Login failed");
-      }
-
-      // Redirect to calculator on success
+      await login(email, password); // Use AuthContext's login function
       navigate("/calculator");
     } catch (err) {
       setError(err.message);
@@ -86,7 +74,23 @@ const LoginPage = () => {
           </Alert>
         )}
 
-        <Box component="form" onSubmit={handleSubmit} sx={{ width: "100%" }}>
+        <Box
+          component="form"
+          onSubmit={handleSubmit}
+          sx={{
+            width: "100%",
+            "& .MuiTextField-root": {
+              "& .MuiInputBase-input": {
+                color: "text.primary",
+                "&:-webkit-autofill": {
+                  WebkitBoxShadow: "0 0 0 100px #fff inset",
+                  WebkitTextFillColor: "#2c3e50",
+                  caretColor: "#2c3e50",
+                },
+              },
+            },
+          }}
+        >
           <TextField
             margin="normal"
             required
@@ -98,7 +102,15 @@ const LoginPage = () => {
             autoFocus
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            sx={{ mb: 2 }}
+            sx={{
+              mb: 2,
+              bgcolor: "background.paper",
+              "& .MuiOutlinedInput-root": {
+                "&.Mui-focused fieldset": {
+                  borderColor: "primary.main",
+                },
+              },
+            }}
           />
           <TextField
             margin="normal"
@@ -111,7 +123,15 @@ const LoginPage = () => {
             autoComplete="current-password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            sx={{ mb: 3 }}
+            sx={{
+              mb: 3,
+              bgcolor: "background.paper",
+              "& .MuiOutlinedInput-root": {
+                "&.Mui-focused fieldset": {
+                  borderColor: "primary.main",
+                },
+              },
+            }}
           />
           <Button
             type="submit"

@@ -22,9 +22,9 @@ const faqs = [
       "Yes, but no. Currently, we only support Blackboard grade data alongside our smart categories feature. Though you can still use GradeFlow as a way to manually calculate your grades and engage in hypothetical grade situations.",
   },
   {
-    question: "How accurate is the grade calculation?",
+    question: "How should I input my grades from Blackboard?",
     answer:
-      "Our grade calculator is highly accurate as it directly processes the raw data from Blackboard. The system uses the exact same grading structure and weights that your professors use.",
+      "Simply navigate to your 'Grades' section on Blackboard, hit ctrl + a, ctrl + c and then ctrl + v to paste into our calculator. It's that simple!",
   },
   {
     question: "What if my professor uses a different grading system?",

@@ -54,6 +54,7 @@ const Results = () => {
     activeStep,
     setActiveStep,
     setIsResultsView,
+    showCalculateAnotherButton,
   } = useCalculator();
 
   // Local state
@@ -307,7 +308,6 @@ const Results = () => {
           </Button>
         </DialogActions>
       </Dialog>
-
       {/* Left Panel */}
       <Box
         sx={{
@@ -376,7 +376,6 @@ const Results = () => {
           )}
         </Stack>
       </Box>
-
       {/* Right Panel */}
       {mode === "manual" ? (
         <ManualGradeTable
@@ -444,7 +443,6 @@ const Results = () => {
           </Box>
         </Paper>
       )}
-
       {/* Hypothetical Assignment Dialog */}
       <HypotheticalAssignmentDialog
         open={dialogOpen}
@@ -462,34 +460,35 @@ const Results = () => {
         }}
         categoryName={selectedCategory}
       />
-
       {/* Navigation Buttons */}
-      <Box
-        sx={{
-          display: "flex",
-          justifyContent: "flex-start",
-          gap: 2,
-          mt: 4,
-          mb: 4,
-          width: "2200px",
-          maxWidth: "95vw",
-          margin: "0 auto",
-          transition: "all 0.3s ease-in-out",
-        }}
-      >
-        <Button
-          variant="outlined"
-          onClick={handleReset}
-          startIcon={<RefreshIcon />}
-          size="large"
+      {showCalculateAnotherButton && (
+        <Box
           sx={{
-            px: 4,
-            minWidth: 120,
+            display: "flex",
+            justifyContent: "flex-start",
+            gap: 2,
+            mt: 4,
+            mb: 4,
+            width: "2200px",
+            maxWidth: "95vw",
+            margin: "0 auto",
+            transition: "all 0.3s ease-in-out",
           }}
         >
-          Calculate Another
-        </Button>
-      </Box>
+          <Button
+            variant="outlined"
+            onClick={handleReset}
+            startIcon={<RefreshIcon />}
+            size="large"
+            sx={{
+              px: 4,
+              minWidth: 120,
+            }}
+          >
+            Calculate Another
+          </Button>
+        </Box>
+      )}
     </Box>
   );
 };
