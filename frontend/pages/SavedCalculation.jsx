@@ -1,5 +1,11 @@
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
+import { useSnackbar } from "notistack";
+import { useCalculator } from "../src/contexts/CalculatorContext"; // Added this import
+import Results from "../components/results/Results";
+import SaveIcon from "@mui/icons-material/Save";
+import ContentCopyIcon from "@mui/icons-material/ContentCopy";
+import SaveCalculationDialog from "../components/dialogs/SaveCalculationDialog";
 import {
   Container,
   CircularProgress,
@@ -9,16 +15,12 @@ import {
   Typography,
   Paper,
 } from "@mui/material";
-import { useSnackbar } from "notistack";
-import Results from "../components/results/Results";
-import SaveIcon from "@mui/icons-material/Save";
-import ContentCopyIcon from "@mui/icons-material/ContentCopy";
-import SaveCalculationDialog from "../components/dialogs/SaveCalculationDialog";
 
 const SavedCalculation = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const { enqueueSnackbar } = useSnackbar();
+  const { setCategories } = useCalculator(); // Added this
   const [calculation, setCalculation] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -171,6 +173,7 @@ const SavedCalculation = () => {
         }
 
         setCalculation(transformedData);
+        setCategories(transformedData.categories); // Added this line
         setError(null);
       } catch (err) {
         console.error("Error in fetchCalculation:", err);
@@ -191,7 +194,7 @@ const SavedCalculation = () => {
     };
 
     fetchCalculation();
-  }, [id, navigate, enqueueSnackbar, retryCount]);
+  }, [id, navigate, enqueueSnackbar, retryCount, setCategories]); // Added setCategories to deps
 
   const handleSaveChanges = async () => {
     setIsSaving(true);
@@ -248,6 +251,7 @@ const SavedCalculation = () => {
       const transformedData = transformCalculationData(savedData);
 
       setCalculation(transformedData);
+      setCategories(transformedData.categories); // Added this line
       setHypotheticalAssignments([]);
       setHypotheticalScores({});
       setWhatIfMode(false);
@@ -438,7 +442,6 @@ const SavedCalculation = () => {
       </Paper>
 
       <Results
-        categories={calculation.categories}
         mode="blackboard"
         rawGradeData={calculation.raw_data || ""}
         parsedGrades={{
