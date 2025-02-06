@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useSnackbar } from "notistack";
-import { useCalculator } from "../src/contexts/CalculatorContext"; // Added this import
+import { useCalculator } from "../src/contexts/CalculatorContext";
 import Results from "../components/results/Results";
 import SaveIcon from "@mui/icons-material/Save";
 import ContentCopyIcon from "@mui/icons-material/ContentCopy";
 import SaveCalculationDialog from "../components/dialogs/SaveCalculationDialog";
+import SavedCalculationHeader from "../components/headers/SavedCalculationHeader";
+
 import {
   Container,
   CircularProgress,
@@ -20,7 +22,7 @@ const SavedCalculation = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const { enqueueSnackbar } = useSnackbar();
-  const { setCategories } = useCalculator(); // Added this
+  const { setCategories } = useCalculator();
   const [calculation, setCalculation] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -36,6 +38,7 @@ const SavedCalculation = () => {
   const [duplicateDialogOpen, setDuplicateDialogOpen] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [retryCount, setRetryCount] = useState(0);
+  const [lastSaved, setLastSaved] = useState(null);
 
   // Transform data helper function
   const transformCalculationData = (data) => {
@@ -173,7 +176,7 @@ const SavedCalculation = () => {
         }
 
         setCalculation(transformedData);
-        setCategories(transformedData.categories); // Added this line
+        setCategories(transformedData.categories);
         setError(null);
       } catch (err) {
         console.error("Error in fetchCalculation:", err);
@@ -251,7 +254,7 @@ const SavedCalculation = () => {
       const transformedData = transformCalculationData(savedData);
 
       setCalculation(transformedData);
-      setCategories(transformedData.categories); // Added this line
+      setCategories(transformedData.categories);
       setHypotheticalAssignments([]);
       setHypotheticalScores({});
       setWhatIfMode(false);
@@ -397,49 +400,14 @@ const SavedCalculation = () => {
 
   return (
     <Container maxWidth="140%" sx={{ py: 4 }}>
-      <Paper
-        elevation={2}
-        sx={{
-          p: 3,
-          mb: 3,
-          borderRadius: 2,
-          background: "linear-gradient(145deg, #ffffff 0%, #f5f5f5 100%)",
-          maxWidth: "99.5%",
-          ml: 1,
-        }}
-      >
-        <Box
-          sx={{
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-          }}
-        >
-          <Typography variant="h5" sx={{ fontWeight: 500 }}>
-            {calculation?.name}
-          </Typography>
-          <Box sx={{ display: "flex", gap: 2 }}>
-            {whatIfMode && (
-              <Button
-                variant="contained"
-                onClick={handleSaveChanges}
-                startIcon={<SaveIcon />}
-                disabled={isSaving}
-              >
-                Save Changes
-              </Button>
-            )}
-            <Button
-              variant="outlined"
-              onClick={() => setDuplicateDialogOpen(true)}
-              startIcon={<ContentCopyIcon />}
-              disabled={isSaving}
-            >
-              Duplicate
-            </Button>
-          </Box>
-        </Box>
-      </Paper>
+      <SavedCalculationHeader
+        calculationName={calculation?.name}
+        whatIfMode={whatIfMode}
+        isSaving={isSaving}
+        onSave={handleSaveChanges}
+        onDuplicate={() => setDuplicateDialogOpen(true)}
+        lastSaved={lastSaved}
+      />
 
       <Results
         mode="blackboard"
