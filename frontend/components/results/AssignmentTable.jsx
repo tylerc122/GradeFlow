@@ -189,12 +189,14 @@ export const AssignmentTable = ({
                     >
                       Percentage
                     </TableCell>
-                    <TableCell
-                      align="center"
-                      sx={{ fontWeight: 600, color: "text.primary" }}
-                    >
-                      Actions
-                    </TableCell>
+                    {whatIfMode && (
+                      <TableCell
+                        align="center"
+                        sx={{ fontWeight: 600, color: "text.primary" }}
+                      >
+                        Actions
+                      </TableCell>
+                    )}
                   </TableRow>
                 </TableHead>
                 <TableBody>
@@ -336,48 +338,52 @@ export const AssignmentTable = ({
                               : "-"}
                           </Typography>
                         </TableCell>
-                        <TableCell align="center">
-                          <Box
-                            sx={{
-                              display: "flex",
-                              gap: 1,
-                              justifyContent: "center",
-                            }}
-                          >
-                            <Tooltip
-                              title={
-                                isHidden ? "Show Assignment" : "Hide Assignment"
-                              }
+                        {whatIfMode && (
+                          <TableCell align="center">
+                            <Box
+                              sx={{
+                                display: "flex",
+                                gap: 1,
+                                justifyContent: "center",
+                              }}
                             >
-                              <IconButton
-                                onClick={() =>
-                                  onToggleAssignmentVisibility(
-                                    category.name,
-                                    assignment.name
-                                  )
+                              <Tooltip
+                                title={
+                                  isHidden
+                                    ? "Show Assignment"
+                                    : "Hide Assignment"
                                 }
-                                size="small"
                               >
-                                {isHidden ? (
-                                  <VisibilityOffIcon />
-                                ) : (
-                                  <VisibilityIcon />
-                                )}
-                              </IconButton>
-                            </Tooltip>
-                            <Tooltip title="Delete Assignment">
-                              <IconButton
-                                onClick={() =>
-                                  handleDeleteClick(category.name, assignment)
-                                }
-                                size="small"
-                                color="error"
-                              >
-                                <DeleteIcon />
-                              </IconButton>
-                            </Tooltip>
-                          </Box>
-                        </TableCell>
+                                <IconButton
+                                  onClick={() =>
+                                    onToggleAssignmentVisibility(
+                                      category.name,
+                                      assignment.name
+                                    )
+                                  }
+                                  size="small"
+                                >
+                                  {isHidden ? (
+                                    <VisibilityOffIcon />
+                                  ) : (
+                                    <VisibilityIcon />
+                                  )}
+                                </IconButton>
+                              </Tooltip>
+                              <Tooltip title="Delete Assignment">
+                                <IconButton
+                                  onClick={() =>
+                                    handleDeleteClick(category.name, assignment)
+                                  }
+                                  size="small"
+                                  color="error"
+                                >
+                                  <DeleteIcon />
+                                </IconButton>
+                              </Tooltip>
+                            </Box>
+                          </TableCell>
+                        )}
                       </TableRow>
                     );
                   })}
