@@ -69,9 +69,13 @@ const MyGradesPage = () => {
 
   useEffect(() => {
     const handleCalculationUpdate = (event) => {
+      console.log("Received calculation update:", event.detail);
       setCalculations((prevCalculations) =>
         prevCalculations.map((calc) => {
           if (calc.id === event.detail.id) {
+            console.log(
+              `Updating calculation ${calc.id} grade to ${event.detail.newGrade}`
+            );
             return {
               ...calc,
               results: {
@@ -86,7 +90,6 @@ const MyGradesPage = () => {
     };
 
     window.addEventListener("calculationUpdated", handleCalculationUpdate);
-
     return () => {
       window.removeEventListener("calculationUpdated", handleCalculationUpdate);
     };
