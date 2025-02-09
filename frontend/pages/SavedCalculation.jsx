@@ -22,22 +22,32 @@ const SavedCalculation = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const { enqueueSnackbar } = useSnackbar();
-  const { setCategories } = useCalculator();
+  const {
+    setCategories,
+    categories,
+    setMode,
+    whatIfMode,
+    setWhatIfMode,
+    targetGrade,
+    setTargetGrade,
+    hypotheticalScores,
+    setHypotheticalScores,
+    hypotheticalAssignments,
+    setHypotheticalAssignments,
+    setRawGradeData,
+  } = useCalculator();
   const [calculation, setCalculation] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
   // State management
-  const [whatIfMode, setWhatIfMode] = useState(false);
-  const [targetGrade, setTargetGrade] = useState("");
-  const [hypotheticalScores, setHypotheticalScores] = useState({});
-  const [hypotheticalAssignments, setHypotheticalAssignments] = useState([]);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState(null);
   const [saveDialogOpen, setSaveDialogOpen] = useState(false);
   const [duplicateDialogOpen, setDuplicateDialogOpen] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [retryCount, setRetryCount] = useState(0);
+  const [saveStatus, setSaveStatus] = useState("saved");
   const [lastSaved, setLastSaved] = useState(null);
 
   // Transform data helper function
@@ -131,7 +141,6 @@ const SavedCalculation = () => {
   useEffect(() => {
     const fetchCalculation = async () => {
       try {
-        console.log("Fetching calculation:", id);
         const response = await fetch(`http://localhost:8000/api/grades/${id}`, {
           credentials: "include",
         });
@@ -149,91 +158,115 @@ const SavedCalculation = () => {
         }
 
         const data = await response.json();
-        console.log("Raw calculation data:", data);
-
-        if (!data || !data.categories || !Array.isArray(data.categories)) {
-          throw new Error("Invalid calculation data structure");
-        }
-
-        // Transform and validate the data
         const transformedData = transformCalculationData(data);
-        console.log("Transformed calculation data:", transformedData);
 
-        // Additional validation
-        if (!transformedData.categories.length) {
-          throw new Error("No categories found in calculation");
-        }
-
-        if (
-          !transformedData.categories.every(
-            (cat) =>
-              Array.isArray(cat.assignments) &&
-              typeof cat.weight === "number" &&
-              typeof cat.name === "string"
-          )
-        ) {
-          throw new Error("Invalid category structure detected");
-        }
-
+        // Update both local and context state
         setCalculation(transformedData);
         setCategories(transformedData.categories);
+        setMode("blackboard");
+        setRawGradeData(transformedData.raw_data || "");
+        setHypotheticalAssignments([]);
+        setHypotheticalScores({});
+        setWhatIfMode(false);
         setError(null);
       } catch (err) {
         console.error("Error in fetchCalculation:", err);
         setError(err.message);
         enqueueSnackbar(err.message, { variant: "error" });
-
-        // Auto-retry once if it's a data structure error
-        if (retryCount === 0 && err.message.includes("Invalid")) {
-          setRetryCount((prev) => prev + 1);
-          setTimeout(() => {
-            setLoading(true);
-            setError(null);
-          }, 1000);
-        }
       } finally {
         setLoading(false);
       }
     };
 
     fetchCalculation();
-  }, [id, navigate, enqueueSnackbar, retryCount, setCategories]); // Added setCategories to deps
+  }, [
+    id,
+    navigate,
+    enqueueSnackbar,
+    setCategories,
+    setMode,
+    setHypotheticalAssignments,
+    setHypotheticalScores,
+    setWhatIfMode,
+    setRawGradeData,
+  ]);
+
+  // Tracks changes
+  useEffect(() => {
+    if (
+      whatIfMode &&
+      (hypotheticalScores || hypotheticalAssignments.length > 0)
+    ) {
+      setSaveStatus("unsaved");
+    }
+  }, [hypotheticalScores, hypotheticalAssignments, whatIfMode]);
 
   const handleSaveChanges = async () => {
     setIsSaving(true);
+    setSaveStatus("saving");
     try {
-      // Validate before saving
       if (!calculation?.categories) {
         throw new Error("No calculation data to save");
       }
 
-      const updatedData = {
-        ...calculation,
-        name: calculation.name,
-        raw_data: calculation.raw_data,
-        categories: calculation.categories.map((category) => ({
-          name: category.name,
-          weight: category.weight,
-          assignments: [
-            ...category.assignments,
-            ...hypotheticalAssignments.filter(
-              (a) => a.categoryName === category.name
-            ),
-          ].map((assignment) => ({
+      // Create updated categories using context state
+      const updatedCategories = categories.map((category) => {
+        // Update existing assignments
+        const updatedAssignments = category.assignments.map((assignment) => {
+          const scoreKey = `${category.name}-${assignment.name}`;
+          const hypotheticalScore = hypotheticalScores[scoreKey];
+
+          if (hypotheticalScore) {
+            return {
+              ...assignment,
+              score: parseFloat(hypotheticalScore.score),
+              status: "GRADED",
+            };
+          }
+          return assignment;
+        });
+
+        // Add new hypothetical assignments
+        const newAssignments = hypotheticalAssignments
+          .filter((a) => a.categoryName === category.name)
+          .map((assignment) => ({
             name: assignment.name,
             score: parseFloat(assignment.score),
             total_points: parseFloat(assignment.total_points),
             status: "GRADED",
-          })),
-        })),
+          }));
+
+        return {
+          ...category,
+          assignments: [...updatedAssignments, ...newAssignments],
+        };
+      });
+
+      const updatedCalculation = {
+        ...calculation,
+        categories: updatedCategories,
         results: {
           overall_grade: calculateWeightedGrade(),
-          total_points_earned: calculation.results.total_points_earned,
-          total_points_possible: calculation.results.total_points_possible,
+          total_points_earned: updatedCategories.reduce(
+            (total, category) =>
+              total +
+              category.assignments.reduce(
+                (sum, a) => sum + parseFloat(a.score),
+                0
+              ),
+            0
+          ),
+          total_points_possible: updatedCategories.reduce(
+            (total, category) =>
+              total +
+              category.assignments.reduce(
+                (sum, a) => sum + parseFloat(a.total_points),
+                0
+              ),
+            0
+          ),
         },
       };
-
-      console.log("Sending update with data:", updatedData);
 
       const response = await fetch(`http://localhost:8000/api/grades/${id}`, {
         method: "PUT",
@@ -241,29 +274,42 @@ const SavedCalculation = () => {
           "Content-Type": "application/json",
         },
         credentials: "include",
-        body: JSON.stringify(updatedData),
+        body: JSON.stringify(updatedCalculation),
       });
 
       if (!response.ok) {
-        const errorData = await response.json();
-        console.error("Server error:", errorData);
-        throw new Error(errorData.detail || "Failed to save changes");
+        throw new Error("Failed to save changes");
       }
 
       const savedData = await response.json();
       const transformedData = transformCalculationData(savedData);
 
+      // Update both local and context state
       setCalculation(transformedData);
       setCategories(transformedData.categories);
+      setRawGradeData(transformedData.raw_data || "");
       setHypotheticalAssignments([]);
       setHypotheticalScores({});
       setWhatIfMode(false);
+
+      setSaveStatus("saved");
+      setLastSaved(new Date());
+
+      // Dispatch event to update MyGradesPage
+      window.dispatchEvent(
+        new CustomEvent("calculationUpdated", {
+          detail: {
+            id: id,
+            newGrade: transformedData.results.overall_grade,
+          },
+        })
+      );
+
       enqueueSnackbar("Changes saved successfully!", { variant: "success" });
     } catch (error) {
       console.error("Save error:", error);
-      enqueueSnackbar(`Failed to save changes: ${error.message}`, {
-        variant: "error",
-      });
+      setSaveStatus("unsaved");
+      enqueueSnackbar("Failed to save changes", { variant: "error" });
     } finally {
       setIsSaving(false);
     }
@@ -407,15 +453,15 @@ const SavedCalculation = () => {
         onSave={handleSaveChanges}
         onDuplicate={() => setDuplicateDialogOpen(true)}
         lastSaved={lastSaved}
+        saveStatus={saveStatus}
+        setSaveStatus={setSaveStatus}
       />
 
       <Results
         mode="blackboard"
         rawGradeData={calculation.raw_data || ""}
         parsedGrades={{
-          assignments: calculation.categories.flatMap(
-            (cat) => cat.assignments || []
-          ),
+          assignments: categories.flatMap((cat) => cat.assignments || []),
         }}
         whatIfMode={whatIfMode}
         setWhatIfMode={setWhatIfMode}

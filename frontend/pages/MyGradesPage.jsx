@@ -67,6 +67,31 @@ const MyGradesPage = () => {
     return () => window.removeEventListener("focus", handleFocus);
   }, []);
 
+  useEffect(() => {
+    const handleCalculationUpdate = (event) => {
+      setCalculations((prevCalculations) =>
+        prevCalculations.map((calc) => {
+          if (calc.id === event.detail.id) {
+            return {
+              ...calc,
+              results: {
+                ...calc.results,
+                overall_grade: event.detail.newGrade,
+              },
+            };
+          }
+          return calc;
+        })
+      );
+    };
+
+    window.addEventListener("calculationUpdated", handleCalculationUpdate);
+
+    return () => {
+      window.removeEventListener("calculationUpdated", handleCalculationUpdate);
+    };
+  }, []);
+
   const handleDelete = async (calculationId) => {
     try {
       const response = await fetch(
