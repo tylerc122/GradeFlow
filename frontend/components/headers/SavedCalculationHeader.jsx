@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React from "react";
 import { useNavigate } from "react-router-dom";
 import {
   Box,
@@ -25,36 +25,9 @@ const SavedCalculationHeader = ({
   onDuplicate,
   lastSaved,
   saveStatus,
-  setSaveStatus,
 }) => {
   const navigate = useNavigate();
-  const [showSaveSuccess, setShowSaveSuccess] = useState(false);
-  const [autoSaveTimer, setAutoSaveTimer] = useState(null);
-
-  // Auto-save functionality
-  useEffect(() => {
-    if (whatIfMode && saveStatus === "unsaved") {
-      if (autoSaveTimer) clearTimeout(autoSaveTimer);
-      const timer = setTimeout(() => {
-        handleSave();
-      }, 3000); // Auto-save after 3 seconds of no changes
-      setAutoSaveTimer(timer);
-    }
-    return () => {
-      if (autoSaveTimer) clearTimeout(autoSaveTimer);
-    };
-  }, [whatIfMode, saveStatus]);
-
-  const handleSave = async () => {
-    setSaveStatus("saving");
-    try {
-      await onSave();
-      setSaveStatus("saved");
-      setShowSaveSuccess(true);
-    } catch (error) {
-      setSaveStatus("unsaved");
-    }
-  };
+  const [showSaveSuccess, setShowSaveSuccess] = React.useState(false);
 
   return (
     <Paper
@@ -140,30 +113,6 @@ const SavedCalculationHeader = ({
         </Box>
 
         <Box sx={{ display: "flex", gap: 2 }}>
-          {/* Manual Save Button */}
-          {whatIfMode && (
-            <Tooltip title="Save changes">
-              <Button
-                variant="contained"
-                onClick={handleSave}
-                startIcon={<SaveIcon />}
-                disabled={isSaving || saveStatus === "saved"}
-                sx={{
-                  bgcolor:
-                    saveStatus === "unsaved" ? "warning.main" : "primary.main",
-                  "&:hover": {
-                    bgcolor:
-                      saveStatus === "unsaved"
-                        ? "warning.dark"
-                        : "primary.dark",
-                  },
-                }}
-              >
-                {saveStatus === "unsaved" ? "Save Changes" : "Saved"}
-              </Button>
-            </Tooltip>
-          )}
-
           {/* Duplicate Button */}
           <Tooltip title="Create a copy">
             <Button
@@ -177,22 +126,6 @@ const SavedCalculationHeader = ({
           </Tooltip>
         </Box>
       </Box>
-
-      {/* Save Success Snackbar */}
-      <Snackbar
-        open={showSaveSuccess}
-        autoHideDuration={3000}
-        onClose={() => setShowSaveSuccess(false)}
-        anchorOrigin={{ vertical: "top", horizontal: "center" }}
-      >
-        <Alert
-          onClose={() => setShowSaveSuccess(false)}
-          severity="success"
-          sx={{ width: "100%" }}
-        >
-          Changes saved successfully
-        </Alert>
-      </Snackbar>
 
       <style>
         {`
