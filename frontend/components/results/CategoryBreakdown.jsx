@@ -6,10 +6,20 @@ import {
   Button,
   Stack,
   LinearProgress,
+  useTheme,
+  alpha,
+  Tooltip,
+  Badge,
 } from "@mui/material";
-import AddIcon from "@mui/icons-material/Add";
-import AssignmentIcon from "@mui/icons-material/Assignment";
-import { alpha } from "@mui/material/styles";
+import {
+  Plus,
+  Layers,
+  AlertCircle,
+  Clock,
+  CheckCircle,
+  BarChart2,
+} from "lucide-react";
+import { motion } from "framer-motion";
 
 export const CategoryBreakdown = ({
   categories,
@@ -19,166 +29,365 @@ export const CategoryBreakdown = ({
   upcomingByCategory,
   setSelectedCategory,
   setDialogOpen,
-}) => (
-  <Paper
-    elevation={2}
-    sx={{
-      p: 4,
-      mb: 3,
-      borderRadius: 3,
-      background: "linear-gradient(145deg, #ffffff 0%, #f5f5f5 100%)",
-    }}
-  >
-    <Typography variant="h5" gutterBottom sx={{ fontWeight: 500, mb: 3 }}>
-      Grade Breakdown by Category
-    </Typography>
+}) => {
+  const theme = useTheme();
 
-    <Stack spacing={2}>
-      {categories.map((category, index) => {
-        const categoryHypotheticals = hypotheticalAssignments.filter(
-          (a) => a.categoryName === category.name
-        );
+  // Get color based on grade
+  const getGradeColor = (grade) => {
+    if (grade >= 90) return theme.palette.success.main;
+    if (grade >= 80) return theme.palette.primary.main;
+    if (grade >= 70) return theme.palette.warning.main;
+    return theme.palette.error.main;
+  };
 
-        const allAssignments = [
-          ...(category.assignments || []),
-          ...(categoryHypotheticals || []),
-        ];
+  // Get proper icon for grade
+  const getGradeIcon = (grade) => {
+    if (grade >= 90) return <CheckCircle size={16} />;
+    if (grade >= 80) return <BarChart2 size={16} />;
+    if (grade >= 70) return <AlertCircle size={16} />;
+    return <AlertCircle size={16} />;
+  };
 
-        const categoryGrade = calculateCategoryGrade(
-          allAssignments,
-          category.name
-        );
-        const weightedContribution = categoryGrade * (category.weight / 100);
-        const hasUpcoming = upcomingByCategory[category.name] > 0;
+  return (
+    <Paper
+      elevation={2}
+      sx={{
+        p: 4,
+        mb: 3,
+        borderRadius: "20px",
+        background: "linear-gradient(to right, #ffffff, #f8f9fa)",
+        position: "relative",
+        overflow: "hidden",
+      }}
+    >
+      {/* Background decorative element */}
+      <Box
+        sx={{
+          position: "absolute",
+          top: -50,
+          right: -50,
+          width: 200,
+          height: 200,
+          borderRadius: "50%",
+          background: alpha(theme.palette.primary.main, 0.03),
+          zIndex: 0,
+        }}
+      />
 
-        // Get color based on grade
-        const getGradeColor = (grade) => {
-          if (grade >= 90) return "#4caf50";
-          if (grade >= 80) return "#2196f3";
-          if (grade >= 70) return "#ff9800";
-          return "#f44336";
-        };
-
-        const gradeColor = getGradeColor(categoryGrade);
-
-        return (
-          <Paper
-            key={index}
-            elevation={1}
+      <Box sx={{ position: "relative", zIndex: 1 }}>
+        <Box
+          sx={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            mb: 3,
+          }}
+        >
+          <Box
             sx={{
-              p: 3,
-              borderRadius: 2,
-              bgcolor: "background.paper",
-              border: "1px solid",
-              borderColor: "divider",
-              "&:hover": {
-                bgcolor: alpha("#000", 0.02),
-              },
+              display: "flex",
+              alignItems: "center",
+              gap: 1.5,
             }}
           >
             <Box
               sx={{
+                width: 40,
+                height: 40,
+                borderRadius: "12px",
+                backgroundColor: alpha(theme.palette.primary.main, 0.1),
                 display: "flex",
-                justifyContent: "space-between",
-                alignItems: "flex-start",
-                mb: 2,
-              }}
-            >
-              <Box>
-                <Typography
-                  variant="h6"
-                  sx={{
-                    fontWeight: 500,
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 1,
-                  }}
-                >
-                  <AssignmentIcon sx={{ color: "primary.main" }} />
-                  {category.name}
-                </Typography>
-                <Typography
-                  variant="subtitle2"
-                  color="text.secondary"
-                  sx={{ mt: 0.5 }}
-                >
-                  Weight: {category.weight}%
-                </Typography>
-              </Box>
-
-              {whatIfMode && (
-                <Button
-                  size="small"
-                  startIcon={<AddIcon />}
-                  variant="outlined"
-                  onClick={() => {
-                    setSelectedCategory(category.name);
-                    setDialogOpen(true);
-                  }}
-                  sx={{
-                    borderRadius: 2,
-                    textTransform: "none",
-                  }}
-                >
-                  Add Hypothetical
-                </Button>
-              )}
-            </Box>
-
-            <Box sx={{ mb: 2 }}>
-              <Box
-                sx={{ display: "flex", justifyContent: "space-between", mb: 1 }}
-              >
-                <Typography variant="body2" color="text.secondary">
-                  Progress
-                </Typography>
-                <Typography
-                  variant="body2"
-                  sx={{ color: gradeColor, fontWeight: 500 }}
-                >
-                  {categoryGrade.toFixed(1)}%
-                </Typography>
-              </Box>
-              <LinearProgress
-                variant="determinate"
-                value={Math.min(categoryGrade, 100)}
-                sx={{
-                  height: 8,
-                  borderRadius: 4,
-                  backgroundColor: alpha(gradeColor, 0.1),
-                  "& .MuiLinearProgress-bar": {
-                    backgroundColor: gradeColor,
-                  },
-                }}
-              />
-            </Box>
-
-            <Box
-              sx={{
-                display: "flex",
-                justifyContent: "space-between",
                 alignItems: "center",
+                justifyContent: "center",
+                color: theme.palette.primary.main,
               }}
             >
-              <Typography variant="body2" color="text.secondary">
-                {allAssignments.length} assignments
-                {hasUpcoming && (
-                  <Typography
-                    component="span"
-                    color="warning.main"
-                    sx={{ ml: 1, fontWeight: 500 }}
-                  >
-                    ({upcomingByCategory[category.name]} upcoming)
-                  </Typography>
-                )}
-              </Typography>
-              <Typography variant="body2" sx={{ fontWeight: 500 }}>
-                Contribution: {weightedContribution.toFixed(2)}%
-              </Typography>
+              <Layers size={22} />
             </Box>
-          </Paper>
-        );
-      })}
-    </Stack>
-  </Paper>
-);
+            <Typography variant="h5" sx={{ fontWeight: 600 }}>
+              Grade Breakdown by Category
+            </Typography>
+          </Box>
+        </Box>
+
+        <Stack spacing={2.5}>
+          {categories.map((category, index) => {
+            const categoryHypotheticals = hypotheticalAssignments.filter(
+              (a) => a.categoryName === category.name
+            );
+
+            const allAssignments = [
+              ...(category.assignments || []),
+              ...(categoryHypotheticals || []),
+            ];
+
+            const categoryGrade = calculateCategoryGrade(
+              allAssignments,
+              category.name
+            );
+            const weightedContribution =
+              categoryGrade * (category.weight / 100);
+            const hasUpcoming = upcomingByCategory[category.name] > 0;
+            const gradeColor = getGradeColor(categoryGrade);
+
+            return (
+              <motion.div
+                key={index}
+                initial={{ y: 20, opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                transition={{
+                  duration: 0.4,
+                  delay: index * 0.1,
+                  ease: "easeOut",
+                }}
+              >
+                <Paper
+                  elevation={1}
+                  sx={{
+                    p: 3,
+                    borderRadius: "16px",
+                    bgcolor: "background.paper",
+                    border: "1px solid",
+                    borderColor: alpha(gradeColor, 0.2),
+                    transition: "all 0.3s ease",
+                    "&:hover": {
+                      transform: "translateY(-4px)",
+                      boxShadow: `0 8px 20px ${alpha(gradeColor, 0.1)}`,
+                      "& .add-button": {
+                        opacity: 1,
+                        transform: "translateX(0)",
+                      },
+                    },
+                  }}
+                >
+                  <Box
+                    sx={{
+                      display: "flex",
+                      justifyContent: "space-between",
+                      alignItems: "flex-start",
+                      mb: 2,
+                    }}
+                  >
+                    <Box>
+                      <Box
+                        sx={{
+                          display: "flex",
+                          alignItems: "center",
+                          gap: 1.5,
+                          mb: 0.5,
+                        }}
+                      >
+                        <Box
+                          sx={{
+                            width: 32,
+                            height: 32,
+                            borderRadius: "10px",
+                            backgroundColor: alpha(gradeColor, 0.1),
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            color: gradeColor,
+                          }}
+                        >
+                          {getGradeIcon(categoryGrade)}
+                        </Box>
+                        <Typography
+                          variant="h6"
+                          sx={{
+                            fontWeight: 600,
+                          }}
+                        >
+                          {category.name}
+                        </Typography>
+                      </Box>
+                      <Typography
+                        variant="subtitle2"
+                        color="text.secondary"
+                        sx={{ ml: "46px" }}
+                      >
+                        Weight: <b>{category.weight}%</b> • Contribution:{" "}
+                        <b>{weightedContribution.toFixed(2)}%</b>
+                      </Typography>
+                    </Box>
+
+                    {whatIfMode && (
+                      <Button
+                        className="add-button"
+                        size="small"
+                        variant="outlined"
+                        startIcon={<Plus size={16} />}
+                        onClick={() => {
+                          setSelectedCategory(category.name);
+                          setDialogOpen(true);
+                        }}
+                        sx={{
+                          borderRadius: "10px",
+                          borderColor: alpha(theme.palette.primary.main, 0.5),
+                          color: theme.palette.primary.main,
+                          opacity: { xs: 1, md: 0.4 },
+                          transform: {
+                            xs: "translateX(0)",
+                            md: "translateX(10px)",
+                          },
+                          transition: "opacity 0.2s ease, transform 0.2s ease",
+                          "&:hover": {
+                            borderColor: theme.palette.primary.main,
+                            backgroundColor: alpha(
+                              theme.palette.primary.main,
+                              0.04
+                            ),
+                          },
+                        }}
+                      >
+                        Add Hypothetical
+                      </Button>
+                    )}
+                  </Box>
+
+                  <Box sx={{ mb: 2.5, mt: 3 }}>
+                    <Box
+                      sx={{
+                        display: "flex",
+                        justifyContent: "space-between",
+                        mb: 1,
+                        alignItems: "center",
+                      }}
+                    >
+                      <Typography variant="body2" color="text.secondary">
+                        Progress
+                      </Typography>
+                      <Tooltip
+                        title={`${categoryGrade.toFixed(
+                          2
+                        )}% grade in this category`}
+                      >
+                        <Box
+                          sx={{
+                            display: "flex",
+                            alignItems: "center",
+                            gap: 1,
+                            color: gradeColor,
+                            fontWeight: 600,
+                            borderRadius: "8px",
+                            px: 1.5,
+                            py: 0.5,
+                            backgroundColor: alpha(gradeColor, 0.08),
+                          }}
+                        >
+                          {getGradeIcon(categoryGrade)}
+                          <Typography
+                            variant="body2"
+                            sx={{ fontWeight: 600, color: gradeColor }}
+                          >
+                            {categoryGrade.toFixed(1)}%
+                          </Typography>
+                        </Box>
+                      </Tooltip>
+                    </Box>
+                    <LinearProgress
+                      variant="determinate"
+                      value={Math.min(categoryGrade, 100)}
+                      sx={{
+                        height: 10,
+                        borderRadius: 5,
+                        backgroundColor: alpha(gradeColor, 0.1),
+                        "& .MuiLinearProgress-bar": {
+                          backgroundColor: gradeColor,
+                          borderRadius: 5,
+                        },
+                      }}
+                    />
+                  </Box>
+
+                  <Box
+                    sx={{
+                      display: "flex",
+                      justifyContent: "space-between",
+                      alignItems: "center",
+                    }}
+                  >
+                    <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                      <Badge
+                        badgeContent={allAssignments.length}
+                        color="primary"
+                        sx={{
+                          "& .MuiBadge-badge": {
+                            right: -5,
+                            top: 5,
+                            border: `2px solid ${theme.palette.background.paper}`,
+                            padding: "0 4px",
+                          },
+                        }}
+                      >
+                        <Box
+                          sx={{
+                            height: 30,
+                            minWidth: 30,
+                            borderRadius: "8px",
+                            backgroundColor: alpha(
+                              theme.palette.primary.main,
+                              0.08
+                            ),
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            color: theme.palette.primary.main,
+                            px: 1,
+                          }}
+                        >
+                          <Typography
+                            variant="body2"
+                            sx={{ fontWeight: 600, fontSize: "0.75rem" }}
+                          >
+                            Assignments
+                          </Typography>
+                        </Box>
+                      </Badge>
+                    </Box>
+
+                    {hasUpcoming && (
+                      <Tooltip
+                        title={`${
+                          upcomingByCategory[category.name]
+                        } upcoming assignments`}
+                      >
+                        <Box
+                          sx={{
+                            display: "flex",
+                            alignItems: "center",
+                            gap: 1,
+                            color: theme.palette.warning.main,
+                            borderRadius: "8px",
+                            px: 1.5,
+                            py: 0.5,
+                            backgroundColor: alpha(
+                              theme.palette.warning.main,
+                              0.08
+                            ),
+                          }}
+                        >
+                          <Clock size={14} />
+                          <Typography
+                            variant="body2"
+                            sx={{
+                              fontWeight: 600,
+                              color: theme.palette.warning.main,
+                            }}
+                          >
+                            {upcomingByCategory[category.name]} upcoming
+                          </Typography>
+                        </Box>
+                      </Tooltip>
+                    )}
+                  </Box>
+                </Paper>
+              </motion.div>
+            );
+          })}
+        </Stack>
+      </Box>
+    </Paper>
+  );
+};
+
+export default CategoryBreakdown;

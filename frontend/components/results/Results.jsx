@@ -11,8 +11,11 @@ import {
   DialogTitle,
   DialogContent,
   DialogActions,
+  useTheme,
+  alpha,
+  Grid,
 } from "@mui/material";
-import RefreshIcon from "@mui/icons-material/Refresh";
+import { RefreshCw } from "lucide-react";
 import { useAuth } from "../../src/contexts/AuthContext";
 import { useCalculator } from "../../src/contexts/CalculatorContext";
 import SaveCalculationDialog from "../dialogs/SaveCalculationDialog";
@@ -26,6 +29,7 @@ const Results = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { enqueueSnackbar } = useSnackbar();
+  const theme = useTheme();
 
   // Get state from context
   const {
@@ -265,14 +269,7 @@ const Results = () => {
         flexDirection: "column",
         gap: 3,
         maxWidth: "100%",
-        ...(mode === "blackboard" && {
-          display: "grid",
-          gridTemplateColumns: "1050px 1050px",
-          columnGap: "50px",
-          width: "2200px",
-          height: "calc(100vh - 380px)",
-          margin: "0 auto",
-        }),
+        width: "100%",
         backgroundColor: "background.default",
         overflow: "hidden",
       }}
@@ -308,141 +305,105 @@ const Results = () => {
           </Button>
         </DialogActions>
       </Dialog>
-      {/* Left Panel */}
-      <Box
-        sx={{
-          height: "100%",
-          overflowY: "auto",
-          "&::-webkit-scrollbar": {
-            width: "8px",
-          },
-          "&::-webkit-scrollbar-track": {
-            background: "#f1f1f1",
-            borderRadius: "4px",
-          },
-          "&::-webkit-scrollbar-thumb": {
-            background: "#888",
-            borderRadius: "4px",
-            "&:hover": {
-              background: "#555",
-            },
-          },
-        }}
-      >
-        <Stack spacing={3}>
-          <GradeSummary
-            finalGrade={{
-              percentage: calculateWeightedGrade(),
-              hasLetterGrades:
-                mode === "manual" && manualGrades.some((g) => g.isLetter),
-            }}
-            whatIfMode={whatIfMode}
-            setWhatIfMode={setWhatIfMode}
-            targetGrade={targetGrade}
-            setTargetGrade={setTargetGrade}
-          />
 
-          <SaveCalculationDialog
-            open={saveDialogOpen}
-            onClose={() => {
-              setSaveDialogOpen(false);
-              setSavingError(null);
-            }}
-            onSave={handleSave}
-            loading={isSaving}
-            error={savingError}
-            calculationData={{
-              categories,
-              hypotheticalAssignments,
-              rawGradeData,
-            }}
-          />
-
-          {mode === "blackboard" && (
-            <CategoryBreakdown
-              categories={categories}
-              whatIfMode={whatIfMode}
-              hypotheticalAssignments={hypotheticalAssignments}
-              calculateCategoryGrade={calculateCategoryGrade}
-              setSelectedCategory={setSelectedCategory}
-              setDialogOpen={setDialogOpen}
-              upcomingByCategory={categories.reduce((acc, category) => {
-                acc[category.name] = (category.assignments || []).filter(
-                  (a) => a.status === "UPCOMING"
-                ).length;
-                return acc;
-              }, {})}
-            />
-          )}
-        </Stack>
-      </Box>
-      {/* Right Panel */}
-      {mode === "manual" ? (
-        <ManualGradeTable
-          categories={categories}
-          manualGrades={manualGrades}
-          whatIfMode={whatIfMode}
-          onGradeChange={(newGrade) => {
-            const updatedGrades = manualGrades.map((g) =>
-              g.categoryName === newGrade.categoryName ? newGrade : g
-            );
-            if (
-              !updatedGrades.find(
-                (g) => g.categoryName === newGrade.categoryName
-              )
-            ) {
-              updatedGrades.push(newGrade);
-            }
-            setManualGrades(updatedGrades);
-          }}
-        />
-      ) : (
-        <Paper
-          elevation={2}
-          sx={{
-            height: "100%",
-            borderRadius: 3,
-            background: "linear-gradient(145deg, #ffffff 0%, #f5f5f5 100%)",
-            overflow: "hidden",
-            display: "flex",
-            flexDirection: "column",
-          }}
-        >
+      {/* Main Content */}
+      <Grid container spacing={3} sx={{ width: "100%", mx: 0 }}>
+        {/* Left Panel - Grade Summary & Category Breakdown */}
+        <Grid item xs={12} md={5} lg={4} xl={3}>
           <Box
             sx={{
-              flexGrow: 1,
-              overflowY: "auto",
-              p: 4,
-              "&::-webkit-scrollbar": {
-                width: "8px",
-              },
-              "&::-webkit-scrollbar-track": {
-                background: "#f1f1f1",
-                borderRadius: "4px",
-              },
-              "&::-webkit-scrollbar-thumb": {
-                background: "#888",
-                borderRadius: "4px",
-                "&:hover": {
-                  background: "#555",
-                },
-              },
+              display: "flex",
+              flexDirection: "column",
+              gap: 3,
+              height: "100%",
             }}
           >
-            <AssignmentTable
-              categories={categories}
-              hypotheticalAssignments={hypotheticalAssignments}
-              hypotheticalScores={hypotheticalScores}
+            <GradeSummary
+              finalGrade={{
+                percentage: calculateWeightedGrade(),
+                hasLetterGrades:
+                  mode === "manual" && manualGrades.some((g) => g.isLetter),
+              }}
               whatIfMode={whatIfMode}
-              setSelectedCategory={setSelectedCategory}
-              setHypotheticalScores={setHypotheticalScores}
-              hiddenAssignments={hiddenAssignments}
-              onToggleAssignmentVisibility={handleToggleAssignmentVisibility}
-              onDeleteAssignment={handleDeleteAssignment}
+              setWhatIfMode={setWhatIfMode}
+              targetGrade={targetGrade}
+              setTargetGrade={setTargetGrade}
             />
+
+            <SaveCalculationDialog
+              open={saveDialogOpen}
+              onClose={() => {
+                setSaveDialogOpen(false);
+                setSavingError(null);
+              }}
+              onSave={handleSave}
+              loading={isSaving}
+              error={savingError}
+              calculationData={{
+                categories,
+                hypotheticalAssignments,
+                rawGradeData,
+              }}
+            />
+
+            {mode === "blackboard" && (
+              <CategoryBreakdown
+                categories={categories}
+                whatIfMode={whatIfMode}
+                hypotheticalAssignments={hypotheticalAssignments}
+                calculateCategoryGrade={calculateCategoryGrade}
+                setSelectedCategory={setSelectedCategory}
+                setDialogOpen={setDialogOpen}
+                upcomingByCategory={categories.reduce((acc, category) => {
+                  acc[category.name] = (category.assignments || []).filter(
+                    (a) => a.status === "UPCOMING"
+                  ).length;
+                  return acc;
+                }, {})}
+              />
+            )}
           </Box>
-        </Paper>
-      )}
+        </Grid>
+
+        {/* Right Panel - Assignment Details */}
+        <Grid item xs={12} md={7} lg={8} xl={9}>
+          {mode === "manual" ? (
+            <ManualGradeTable
+              categories={categories}
+              manualGrades={manualGrades}
+              whatIfMode={whatIfMode}
+              onGradeChange={(newGrade) => {
+                const updatedGrades = manualGrades.map((g) =>
+                  g.categoryName === newGrade.categoryName ? newGrade : g
+                );
+                if (
+                  !updatedGrades.find(
+                    (g) => g.categoryName === newGrade.categoryName
+                  )
+                ) {
+                  updatedGrades.push(newGrade);
+                }
+                setManualGrades(updatedGrades);
+              }}
+            />
+          ) : (
+            <Box sx={{ height: "100%" }}>
+              <AssignmentTable
+                categories={categories}
+                hypotheticalAssignments={hypotheticalAssignments}
+                hypotheticalScores={hypotheticalScores}
+                whatIfMode={whatIfMode}
+                setSelectedCategory={setSelectedCategory}
+                setHypotheticalScores={setHypotheticalScores}
+                hiddenAssignments={hiddenAssignments}
+                onToggleAssignmentVisibility={handleToggleAssignmentVisibility}
+                onDeleteAssignment={handleDeleteAssignment}
+              />
+            </Box>
+          )}
+        </Grid>
+      </Grid>
+
       {/* Hypothetical Assignment Dialog */}
       <HypotheticalAssignmentDialog
         open={dialogOpen}
@@ -460,6 +421,7 @@ const Results = () => {
         }}
         categoryName={selectedCategory}
       />
+
       {/* Navigation Buttons */}
       {showCalculateAnotherButton && (
         <Box
@@ -469,24 +431,37 @@ const Results = () => {
             gap: 2,
             mt: 4,
             mb: 4,
-            width: "2200px",
-            maxWidth: "95vw",
-            margin: "0 auto",
-            transition: "all 0.3s ease-in-out",
           }}
         >
           <Button
             variant="outlined"
             onClick={handleReset}
-            startIcon={<RefreshIcon />}
+            startIcon={<RefreshCw size={18} />}
             size="large"
             sx={{
               px: 4,
               minWidth: 120,
+              borderRadius: "12px",
             }}
           >
             Calculate Another
           </Button>
+
+          {user && (
+            <Button
+              variant="contained"
+              onClick={() => setSaveDialogOpen(true)}
+              size="large"
+              sx={{
+                px: 4,
+                minWidth: 120,
+                borderRadius: "12px",
+                background: "var(--gradient-primary)",
+              }}
+            >
+              Save Calculation
+            </Button>
+          )}
         </Box>
       )}
     </Box>
