@@ -3,8 +3,6 @@ import { useParams, useNavigate } from "react-router-dom";
 import { useSnackbar } from "notistack";
 import { useCalculator } from "../src/contexts/CalculatorContext";
 import Results from "../components/results/Results";
-import SaveIcon from "@mui/icons-material/Save";
-import ContentCopyIcon from "@mui/icons-material/ContentCopy";
 import SaveCalculationDialog from "../components/dialogs/SaveCalculationDialog";
 import SavedCalculationHeader from "../components/headers/SavedCalculationHeader";
 
@@ -51,6 +49,7 @@ const SavedCalculation = () => {
   const [retryCount, setRetryCount] = useState(0);
   const [saveStatus, setSaveStatus] = useState("saved");
   const [lastSaved, setLastSaved] = useState(null);
+  const [autoSaveTimer, setAutoSaveTimer] = useState(null);
 
   // Transform data helper function
   const transformCalculationData = (data) => {
@@ -143,7 +142,6 @@ const SavedCalculation = () => {
   useEffect(() => {
     const fetchCalculation = async () => {
       try {
-        console.log("Fetching calculation:", id);
         const response = await fetch(`http://localhost:8000/api/grades/${id}`, {
           credentials: "include",
         });
@@ -161,22 +159,26 @@ const SavedCalculation = () => {
         }
 
         const data = await response.json();
-        console.log("Raw calculation data:", data);
-
-        if (!data || !data.categories || !Array.isArray(data.categories)) {
-          throw new Error("Invalid calculation data structure");
-        }
-
-        // Transform and validate the data
         const transformedData = transformCalculationData(data);
-        console.log("Transformed calculation data:", transformedData);
 
-        // Reset all state to initial values
+        // Extract hidden assignments from the loaded data
+        const loadedHiddenAssignments = [];
+        transformedData.categories.forEach((category) => {
+          category.assignments.forEach((assignment) => {
+            if (assignment.hidden) {
+              loadedHiddenAssignments.push(
+                `${category.name}-${assignment.name}`
+              );
+            }
+          });
+        });
+
+        // Reset hypothetical states but keep hidden assignments
         setHypotheticalAssignments([]);
         setHypotheticalScores({});
-        setWhatIfMode(false);
+        setHiddenAssignments(loadedHiddenAssignments);
 
-        // Then update with new data
+        // Update main data
         setCalculation(transformedData);
         setCategories(transformedData.categories);
         setMode("blackboard");
@@ -194,15 +196,6 @@ const SavedCalculation = () => {
     };
 
     fetchCalculation();
-
-    // Cleaning
-    return () => {
-      setHypotheticalAssignments([]);
-      setHypotheticalScores({});
-      setWhatIfMode(false);
-      setCategories([]);
-      setRawGradeData("");
-    };
   }, [
     id,
     navigate,
@@ -211,7 +204,6 @@ const SavedCalculation = () => {
     setMode,
     setHypotheticalAssignments,
     setHypotheticalScores,
-    setWhatIfMode,
     setRawGradeData,
   ]);
 
@@ -219,11 +211,26 @@ const SavedCalculation = () => {
   useEffect(() => {
     if (
       whatIfMode &&
-      (hypotheticalScores || hypotheticalAssignments.length > 0)
+      (Object.keys(hypotheticalScores).length > 0 ||
+        hypotheticalAssignments.length > 0)
     ) {
       setSaveStatus("unsaved");
     }
-  }, [hypotheticalScores, hypotheticalAssignments, whatIfMode]);
+  }, [hypotheticalScores, hypotheticalAssignments]);
+
+  // Auto-save functionality
+  useEffect(() => {
+    if (whatIfMode && saveStatus === "unsaved") {
+      if (autoSaveTimer) clearTimeout(autoSaveTimer);
+      const timer = setTimeout(() => {
+        handleSaveChanges();
+      }, 1000); // Auto-save after 1 second of no changes
+      setAutoSaveTimer(timer);
+    }
+    return () => {
+      if (autoSaveTimer) clearTimeout(autoSaveTimer);
+    };
+  }, [whatIfMode, saveStatus]);
 
   const handleSaveChanges = async () => {
     setIsSaving(true);
@@ -235,14 +242,8 @@ const SavedCalculation = () => {
 
       // Create updated categories using context state
       const updatedCategories = categories.map((category) => {
-        // Filter out hidden assignments
-        const visibleAssignments = category.assignments.filter((assignment) => {
-          const assignmentKey = `${category.name}-${assignment.name}`;
-          return !hiddenAssignments.includes(assignmentKey);
-        });
-
-        // Update existing assignments with hypothetical scores
-        const updatedAssignments = visibleAssignments.map((assignment) => {
+        // Update assignments with hypothetical scores but keep hidden ones
+        const updatedAssignments = category.assignments.map((assignment) => {
           const scoreKey = `${category.name}-${assignment.name}`;
           const hypotheticalScore = hypotheticalScores[scoreKey];
 
@@ -251,9 +252,13 @@ const SavedCalculation = () => {
               ...assignment,
               score: parseFloat(hypotheticalScore.score),
               status: "GRADED",
+              hidden: hiddenAssignments.includes(scoreKey),
             };
           }
-          return assignment;
+          return {
+            ...assignment,
+            hidden: hiddenAssignments.includes(scoreKey),
+          };
         });
 
         // Add new hypothetical assignments
@@ -264,6 +269,7 @@ const SavedCalculation = () => {
             score: parseFloat(assignment.score),
             total_points: parseFloat(assignment.total_points),
             status: "GRADED",
+            hidden: false,
           }));
 
         return {
@@ -272,16 +278,18 @@ const SavedCalculation = () => {
         };
       });
 
-      // Calculate final grade
+      // Calculate final grade (only using visible assignments)
       const finalGrade = updatedCategories.reduce((total, category) => {
-        const assignments = category.assignments;
-        if (!assignments.length) return total;
+        const visibleAssignments = category.assignments.filter(
+          (a) => !a.hidden
+        );
+        if (!visibleAssignments.length) return total;
 
-        const totalPoints = assignments.reduce(
+        const totalPoints = visibleAssignments.reduce(
           (sum, a) => sum + parseFloat(a.total_points),
           0
         );
-        const earnedPoints = assignments.reduce(
+        const earnedPoints = visibleAssignments.reduce(
           (sum, a) => sum + parseFloat(a.score),
           0
         );
@@ -299,25 +307,21 @@ const SavedCalculation = () => {
           total_points_earned: updatedCategories.reduce(
             (total, category) =>
               total +
-              category.assignments.reduce(
-                (sum, a) => sum + parseFloat(a.score),
-                0
-              ),
+              category.assignments
+                .filter((a) => !a.hidden)
+                .reduce((sum, a) => sum + parseFloat(a.score), 0),
             0
           ),
           total_points_possible: updatedCategories.reduce(
             (total, category) =>
               total +
-              category.assignments.reduce(
-                (sum, a) => sum + parseFloat(a.total_points),
-                0
-              ),
+              category.assignments
+                .filter((a) => !a.hidden)
+                .reduce((sum, a) => sum + parseFloat(a.total_points), 0),
             0
           ),
         },
       };
-
-      console.log("Sending update:", updatedCalculation);
 
       const response = await fetch(`http://localhost:8000/api/grades/${id}`, {
         method: "PUT",
@@ -344,11 +348,12 @@ const SavedCalculation = () => {
       setCategories(transformedData.categories);
       setRawGradeData(transformedData.raw_data || "");
 
-      // Reset all hypothetical states
+      // Reset hypothetical scores but maintain what-if mode and hidden assignments
       setHypotheticalAssignments([]);
       setHypotheticalScores({});
-      setHiddenAssignments([]);
-      setWhatIfMode(false);
+      // Do NOT reset hidden assignments or what-if mode
+      // setHiddenAssignments([]);
+      // setWhatIfMode(false);
 
       setSaveStatus("saved");
       setLastSaved(new Date());
