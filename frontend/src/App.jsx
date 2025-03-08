@@ -6,7 +6,7 @@ import {
   useLocation,
   Navigate,
 } from "react-router-dom";
-import { Box, ThemeProvider, CssBaseline } from "@mui/material";
+import { Box, CssBaseline } from "@mui/material";
 import { AnimatePresence } from "framer-motion";
 import { SnackbarProvider } from "notistack";
 import Navbar from "../components/Navbar";
@@ -21,8 +21,7 @@ import Dashboard from "../pages/Dashboard";
 import PageTransition from "../components/animations/PageTransition";
 import { AuthProvider, useAuth } from "./contexts/AuthContext";
 import { CalculatorProvider } from "./contexts/CalculatorContext";
-import theme from "./theme";
-import { Rotate3D } from "lucide-react";
+import { ThemeProvider } from "./contexts/ThemeContext";
 
 // Protected Route component
 const ProtectedRoute = ({ children }) => {
@@ -126,7 +125,7 @@ const AnimatedRoutes = () => {
 const App = () => {
   return (
     <Router>
-      <ThemeProvider theme={theme}>
+      <ThemeProvider>
         <AuthProvider>
           <CalculatorProvider>
             <SnackbarProvider maxSnack={3}>
