@@ -6,12 +6,15 @@ import {
   Button,
   Stack,
   keyframes,
+  useTheme as useMuiTheme,
+  alpha,
 } from "@mui/material";
 import ContentPasteIcon from "@mui/icons-material/ContentPaste";
 import EditIcon from "@mui/icons-material/Edit";
 import AutoAwesomeIcon from "@mui/icons-material/AutoAwesome";
 import BlackboardInput from "./BlackboardInput";
 import ManualInput from "./ManualInput";
+import { useTheme } from "../../src/contexts/ThemeContext";
 
 // Create a subtle pulse animation for the recommended badge
 const pulseAnimation = keyframes`
@@ -47,6 +50,9 @@ const GradeInput = ({
   categories,
   setGrades,
 }) => {
+  const muiTheme = useMuiTheme();
+  const { isDark } = useTheme();
+
   return (
     <Paper
       elevation={2}
@@ -54,7 +60,9 @@ const GradeInput = ({
         p: 4,
         mb: 3,
         borderRadius: 3,
-        background: "linear-gradient(145deg, #ffffff 0%, #f5f5f5 100%)",
+        background: isDark
+          ? "linear-gradient(145deg, #1e1e1e 0%, #252525 100%)"
+          : "linear-gradient(145deg, #ffffff 0%, #f5f5f5 100%)",
       }}
     >
       <Stack spacing={4}>
@@ -83,12 +91,25 @@ const GradeInput = ({
           <Button
             variant={mode === "manual" ? "contained" : "outlined"}
             onClick={() => setMode("manual")}
+            className="grade-input-button"
             sx={{
               flex: 1,
               py: 2,
               transition: "all 0.3s ease",
+              backgroundColor:
+                mode === "manual"
+                  ? undefined // Let MUI handle contained button background
+                  : isDark
+                  ? "#252525"
+                  : undefined,
               "&:hover": {
                 transform: "translateY(-2px)",
+                backgroundColor:
+                  mode === "manual"
+                    ? undefined // Let MUI handle contained button hover
+                    : isDark
+                    ? alpha(muiTheme.palette.primary.main, 0.08)
+                    : undefined,
               },
             }}
           >
@@ -101,21 +122,37 @@ const GradeInput = ({
           <Button
             variant={mode === "blackboard" ? "contained" : "outlined"}
             onClick={() => setMode("blackboard")}
+            className="grade-input-button"
             sx={{
               flex: 1,
               py: 2,
               position: "relative",
               transition: "all 0.3s ease",
+              backgroundColor:
+                mode === "blackboard"
+                  ? undefined // Let MUI handle contained button background
+                  : isDark
+                  ? "#252525"
+                  : undefined,
               ...(mode === "blackboard" && {
                 animation: `${glowAnimation} 2s infinite ease-in-out`,
-                background: "linear-gradient(45deg, #1976d2 30%, #2196f3 90%)",
+                background: isDark
+                  ? "linear-gradient(45deg, #5361c9 30%, #7581d6 90%)"
+                  : "linear-gradient(45deg, #1976d2 30%, #2196f3 90%)",
                 "&:hover": {
-                  background:
-                    "linear-gradient(45deg, #1565c0 30%, #1976d2 90%)",
+                  background: isDark
+                    ? "linear-gradient(45deg, #7581d6 30%, #9fa8da 90%)"
+                    : "linear-gradient(45deg, #1565c0 30%, #1976d2 90%)",
                 },
               }),
               "&:hover": {
                 transform: "translateY(-2px)",
+                backgroundColor:
+                  mode === "blackboard"
+                    ? undefined // Let MUI handle contained button hover
+                    : isDark
+                    ? alpha(muiTheme.palette.primary.main, 0.08)
+                    : undefined,
               },
               "&::before": {
                 content: '""',

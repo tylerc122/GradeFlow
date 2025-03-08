@@ -35,6 +35,7 @@ import Footer from "../components/home-sections/Footer";
 const HomePage = () => {
   const theme = useTheme();
   const navigate = useNavigate();
+  const { mode } = useTheme();
 
   // Updated features with modern icons and enhanced descriptions
   const features = [
@@ -316,17 +317,46 @@ const HomePage = () => {
                   },
                 }}
               >
-                <img
-                  src="./grade.png"
-                  alt="Grade calculation illustration"
-                  style={{
-                    maxWidth: "100%",
-                    border: `1px solid ${alpha(
-                      theme.palette.common.black,
-                      0.1
-                    )}`,
-                  }}
-                />
+                {mode === "dark" ? (
+                  // Dark mode placeholder - this will be replaced with your actual dark mode image
+                  <Box
+                    sx={{
+                      width: "100%",
+                      aspectRatio: "16/9",
+                      borderRadius: "24px",
+                      background:
+                        "linear-gradient(145deg, #252525 0%, #1e1e1e 100%)",
+                      border: `1px solid ${alpha(
+                        theme.palette.common.white,
+                        0.1
+                      )}`,
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      color: alpha(theme.palette.common.white, 0.5),
+                      fontWeight: 500,
+                      fontSize: "1.2rem",
+                      padding: 4,
+                      textAlign: "center",
+                    }}
+                  >
+                    Dark Mode Screenshot Placeholder
+                    <br />
+                    (Replace with your dark UI image)
+                  </Box>
+                ) : (
+                  <img
+                    src="./grade.png"
+                    alt="Grade calculation illustration"
+                    style={{
+                      maxWidth: "100%",
+                      border: `1px solid ${alpha(
+                        theme.palette.common.black,
+                        0.1
+                      )}`,
+                    }}
+                  />
+                )}
 
                 {/* Floating icons for visual interest */}
                 {[
@@ -347,7 +377,10 @@ const HomePage = () => {
                       left: item.left,
                       bottom: item.bottom,
                       right: item.right,
-                      backgroundColor: "white",
+                      backgroundColor:
+                        mode === "dark"
+                          ? theme.palette.background.alt
+                          : "white",
                       width: 60,
                       height: 60,
                       borderRadius: "16px",

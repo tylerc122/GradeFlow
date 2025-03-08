@@ -9,12 +9,17 @@ import {
   Stack,
   Alert,
   alpha,
+  useTheme as useMuiTheme,
 } from "@mui/material";
 import AddIcon from "@mui/icons-material/Add";
 import DeleteIcon from "@mui/icons-material/Delete";
 import CategoryIcon from "@mui/icons-material/Category";
+import { useTheme } from "../src/contexts/ThemeContext";
 
 const CategorySetup = ({ categories, setCategories, error, setError }) => {
+  const muiTheme = useMuiTheme();
+  const { mode, isDark } = useTheme();
+
   const addEmptyCategory = () => {
     setCategories([...categories, { name: "", weight: "" }]);
   };
@@ -88,7 +93,9 @@ const CategorySetup = ({ categories, setCategories, error, setError }) => {
         p: 4,
         mb: 3,
         borderRadius: 3,
-        background: "linear-gradient(145deg, #ffffff 0%, #f5f5f5 100%)",
+        background: isDark
+          ? "linear-gradient(145deg, #1e1e1e 0%, #252525 100%)"
+          : "linear-gradient(145deg, #ffffff 0%, #f5f5f5 100%)",
       }}
     >
       <Stack spacing={3}>
@@ -138,6 +145,7 @@ const CategorySetup = ({ categories, setCategories, error, setError }) => {
                   ? "divider"
                   : "error.main",
                 transition: "all 0.2s ease-in-out",
+                backgroundColor: isDark ? "#252525" : "white",
                 "&:hover": {
                   transform: "translateY(-2px)",
                   boxShadow: 2,
@@ -162,6 +170,7 @@ const CategorySetup = ({ categories, setCategories, error, setError }) => {
                     flexGrow: 1,
                     "& .MuiOutlinedInput-root": {
                       borderRadius: 2,
+                      backgroundColor: isDark ? "#252525" : "white",
                     },
                   }}
                   error={!category.name}
@@ -178,6 +187,7 @@ const CategorySetup = ({ categories, setCategories, error, setError }) => {
                     width: "150px",
                     "& .MuiOutlinedInput-root": {
                       borderRadius: 2,
+                      backgroundColor: isDark ? "#252525" : "white",
                     },
                   }}
                   error={!validateCategory(category, index)}
@@ -205,12 +215,12 @@ const CategorySetup = ({ categories, setCategories, error, setError }) => {
             borderRadius: 2,
             backgroundColor: alpha(
               totalWeight === 100 ? "#4caf50" : "#f44336",
-              0.08
+              isDark ? 0.15 : 0.08
             ),
             border: "1px solid",
             borderColor: alpha(
               totalWeight === 100 ? "#4caf50" : "#f44336",
-              0.2
+              isDark ? 0.3 : 0.2
             ),
           }}
         >

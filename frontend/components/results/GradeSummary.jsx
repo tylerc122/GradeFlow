@@ -9,7 +9,7 @@ import {
   alpha,
   Tooltip,
   Chip,
-  useTheme,
+  useTheme as useMuiTheme,
 } from "@mui/material";
 import { motion } from "framer-motion";
 import {
@@ -21,6 +21,7 @@ import {
   CheckCircle,
   Zap,
 } from "lucide-react";
+import { useTheme } from "../../src/contexts/ThemeContext";
 
 const LETTER_GRADES = {
   "A+": { points: 4.0, minPercent: 97 },
@@ -55,7 +56,8 @@ export const GradeSummary = ({
   targetGrade,
   setTargetGrade,
 }) => {
-  const theme = useTheme();
+  const theme = useMuiTheme();
+  const { mode, isDark } = useTheme();
 
   const getGradeColor = (percentage) => {
     if (percentage >= 90) return theme.palette.success.main;
@@ -86,7 +88,9 @@ export const GradeSummary = ({
         p: 4,
         mb: 3,
         borderRadius: "20px",
-        background: "linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%)",
+        background: isDark
+          ? "linear-gradient(135deg, #1e1e1e 0%, #252525 100%)"
+          : "linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%)",
         position: "relative",
         overflow: "hidden",
       }}
@@ -102,7 +106,10 @@ export const GradeSummary = ({
           background: `linear-gradient(135deg, ${alpha(
             getGradeColor(finalGrade.percentage),
             0
-          )} 0%, ${alpha(getGradeColor(finalGrade.percentage), 0.03)} 100%)`,
+          )} 0%, ${alpha(
+            getGradeColor(finalGrade.percentage),
+            isDark ? 0.05 : 0.03
+          )} 100%)`,
           zIndex: 0,
         }}
       />
@@ -163,7 +170,7 @@ export const GradeSummary = ({
                     )} 100%)`,
                     boxShadow: `0 8px 16px ${alpha(
                       getGradeColor(finalGrade.percentage),
-                      0.2
+                      isDark ? 0.3 : 0.2
                     )}`,
                     color: "#ffffff",
                     fontWeight: 700,
@@ -287,9 +294,14 @@ export const GradeSummary = ({
           <Box
             sx={{
               p: 3,
-              bgcolor: alpha(theme.palette.primary.main, 0.04),
+              bgcolor: isDark
+                ? alpha(theme.palette.primary.main, 0.1)
+                : alpha(theme.palette.primary.main, 0.04),
               borderRadius: "16px",
-              border: `1px solid ${alpha(theme.palette.primary.main, 0.1)}`,
+              border: `1px solid ${alpha(
+                theme.palette.primary.main,
+                isDark ? 0.2 : 0.1
+              )}`,
               display: "flex",
               flexDirection: "column",
               gap: 2,
@@ -324,7 +336,7 @@ export const GradeSummary = ({
                   ),
                   sx: {
                     borderRadius: "12px",
-                    backgroundColor: "#ffffff",
+                    backgroundColor: isDark ? "#252525" : "#ffffff",
                   },
                 }}
                 sx={{
@@ -358,9 +370,12 @@ export const GradeSummary = ({
                     py: 1.2,
                     borderWidth: "2px",
                     borderColor: alpha(theme.palette.primary.main, 0.5),
+                    backgroundColor: isDark ? "#252525" : "transparent",
                     "&:hover": {
                       borderWidth: "2px",
-                      backgroundColor: alpha(theme.palette.primary.main, 0.03),
+                      backgroundColor: isDark
+                        ? alpha(theme.palette.primary.main, 0.1)
+                        : alpha(theme.palette.primary.main, 0.03),
                     },
                   }}
                 >
@@ -376,7 +391,10 @@ export const GradeSummary = ({
                   sx={{
                     ml: "auto",
                     fontWeight: 500,
-                    backgroundColor: alpha(theme.palette.secondary.main, 0.1),
+                    backgroundColor: alpha(
+                      theme.palette.secondary.main,
+                      isDark ? 0.2 : 0.1
+                    ),
                     color: theme.palette.secondary.main,
                     borderRadius: "8px",
                     "& .MuiChip-icon": {
