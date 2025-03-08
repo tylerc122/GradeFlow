@@ -18,6 +18,22 @@ export const ThemeProvider = ({ children }) => {
     localStorage.setItem("themeMode", newMode);
   };
 
+  const setThemeMode = (newMode) => {
+    if (newMode === "light" || newMode === "dark") {
+      setMode(newMode);
+      localStorage.setItem("themeMode", newMode);
+    }
+  };
+
+  // Helper functions for components
+  const isDark = mode === "dark";
+  const isLight = mode === "light";
+
+  // Utility function to get appropriate background based on theme
+  const getBackgroundColor = (lightColor, darkColor) => {
+    return mode === "light" ? lightColor : darkColor;
+  };
+
   // Generate the MUI theme based on current mode
   const theme = createAppTheme(mode);
 
@@ -25,10 +41,28 @@ export const ThemeProvider = ({ children }) => {
   useEffect(() => {
     document.body.classList.remove("light-mode", "dark-mode");
     document.body.classList.add(`${mode}-mode`);
+
+    // Apply meta theme-color for mobile browsers
+    const metaThemeColor = document.querySelector("meta[name=theme-color]");
+    if (metaThemeColor) {
+      metaThemeColor.setAttribute(
+        "content",
+        mode === "light" ? "#ffffff" : "#121212"
+      );
+    }
   }, [mode]);
 
   return (
-    <ThemeContext.Provider value={{ mode, toggleTheme }}>
+    <ThemeContext.Provider
+      value={{
+        mode,
+        toggleTheme,
+        setThemeMode,
+        isDark,
+        isLight,
+        getBackgroundColor,
+      }}
+    >
       <MuiThemeProvider theme={theme}>{children}</MuiThemeProvider>
     </ThemeContext.Provider>
   );

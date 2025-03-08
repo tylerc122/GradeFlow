@@ -1,8 +1,20 @@
 import React from "react";
-import { Box, Typography, Alert, TextField, Stack, alpha } from "@mui/material";
+import {
+  Box,
+  Typography,
+  Alert,
+  TextField,
+  Stack,
+  alpha,
+  useTheme as useMuiTheme,
+} from "@mui/material";
 import ContentPasteIcon from "@mui/icons-material/ContentPaste";
+import { useTheme } from "../../src/contexts/ThemeContext";
 
 const BlackboardInput = ({ rawGradeData, setRawGradeData }) => {
+  const muiTheme = useMuiTheme();
+  const { mode } = useTheme();
+
   const isValidFormat = (data) => {
     if (!data.trim()) return false;
     const lines = data.split("\n").filter((line) => line.trim());
@@ -17,11 +29,11 @@ const BlackboardInput = ({ rawGradeData, setRawGradeData }) => {
       <Alert
         severity="info"
         sx={{
-          backgroundColor: alpha("#2196f3", 0.08),
+          backgroundColor: alpha("#2196f3", mode === "dark" ? 0.15 : 0.08),
           border: "1px solid",
-          borderColor: alpha("#2196f3", 0.2),
+          borderColor: alpha("#2196f3", mode === "dark" ? 0.3 : 0.2),
           "& .MuiAlert-icon": {
-            color: "primary.main",
+            color: mode === "dark" ? "#90caf9" : "primary.main",
           },
         }}
       >
@@ -39,8 +51,12 @@ const BlackboardInput = ({ rawGradeData, setRawGradeData }) => {
         variant="outlined"
         sx={{
           "& .MuiOutlinedInput-root": {
-            backgroundColor: "#fff",
+            backgroundColor: mode === "dark" ? "#252525" : "#fff",
             borderRadius: 2,
+            "& textarea": {
+              backgroundColor: mode === "dark" ? "#252525" : "#fff",
+              color: mode === "dark" ? "rgba(255, 255, 255, 0.9)" : "inherit",
+            },
           },
         }}
       />
@@ -49,9 +65,9 @@ const BlackboardInput = ({ rawGradeData, setRawGradeData }) => {
         <Alert
           severity="success"
           sx={{
-            backgroundColor: alpha("#4caf50", 0.08),
+            backgroundColor: alpha("#4caf50", mode === "dark" ? 0.15 : 0.08),
             border: "1px solid",
-            borderColor: alpha("#4caf50", 0.2),
+            borderColor: alpha("#4caf50", mode === "dark" ? 0.3 : 0.2),
           }}
         >
           Grade data detected! Click "Next" to proceed with the analysis.

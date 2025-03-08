@@ -50,6 +50,7 @@ const createAppTheme = (mode) =>
             background: {
               default: "#121212",
               paper: "#1e1e1e",
+              alt: "#252525", // Secondary dark background for alternating elements
             },
             primary: {
               main: "#7581d6",
@@ -293,14 +294,33 @@ const createAppTheme = (mode) =>
           root: {
             "& .MuiOutlinedInput-root": {
               borderRadius: "10px",
+              backgroundColor: mode === "light" ? "#ffffff" : "#252525",
               transition:
-                "border-color 0.2s ease-in-out, box-shadow 0.2s ease-in-out",
+                "border-color 0.2s ease-in-out, box-shadow 0.2s ease-in-out, background-color 0.2s ease-in-out",
               "&.Mui-focused": {
                 boxShadow:
                   mode === "light"
                     ? "0 0 0 2px rgba(83, 97, 201, 0.1)"
                     : "0 0 0 2px rgba(117, 129, 214, 0.2)",
               },
+              "& fieldset": {
+                borderColor:
+                  mode === "light"
+                    ? "rgba(0, 0, 0, 0.23)"
+                    : "rgba(255, 255, 255, 0.23)",
+              },
+              "&:hover fieldset": {
+                borderColor:
+                  mode === "light"
+                    ? "rgba(0, 0, 0, 0.4)"
+                    : "rgba(255, 255, 255, 0.4)",
+              },
+            },
+            "& .MuiInputBase-input": {
+              color: mode === "light" ? "#263238" : "rgba(255, 255, 255, 0.9)",
+            },
+            "& .MuiInputLabel-root": {
+              color: mode === "light" ? "#546e7a" : "rgba(255, 255, 255, 0.7)",
             },
           },
         },

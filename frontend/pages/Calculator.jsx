@@ -12,7 +12,8 @@ import {
   Alert,
   Paper,
   Container,
-  useTheme,
+  useTheme as useMuiTheme,
+  alpha,
 } from "@mui/material";
 import Grid from "@mui/material/Grid";
 import GradeInput from "../components/step2/GradeInput";
@@ -23,9 +24,13 @@ import LoadingOverlay from "../components/LoadingOverlay";
 import Results from "../components/results/Results";
 import SaveCalculationDialog from "../components/dialogs/SaveCalculationDialog";
 import { useCalculator } from "../src/contexts/CalculatorContext";
+import { useTheme } from "../src/contexts/ThemeContext";
+import { RefreshCw } from "lucide-react";
 
 const Calculator = () => {
-  const theme = useTheme();
+  const muiTheme = useMuiTheme();
+  const { mode, isDark } = useTheme();
+
   // Step tracking
   const steps = [
     "Set Categories",
@@ -53,8 +58,8 @@ const Calculator = () => {
     setCategories,
     error,
     setError,
-    mode,
-    setMode,
+    mode: calculatorMode,
+    setMode: setCalculatorMode,
     rawGradeData,
     setRawGradeData,
     parsedGrades,
@@ -77,8 +82,11 @@ const Calculator = () => {
     setSelectedCategory,
     hiddenAssignments,
     setHiddenAssignments,
-    isResultsView,
+    resetCalculator,
+    activeStep: contextActiveStep,
+    setActiveStep: setContextActiveStep,
     setIsResultsView,
+    showCalculateAnotherButton,
   } = useCalculator();
 
   // Update calculation function to use hidden assignments
@@ -215,7 +223,7 @@ const Calculator = () => {
 
   const calculateWeightedGrade = () => {
     console.log("\nCalculating final weighted grade");
-    if (mode === "manual") {
+    if (calculatorMode === "manual") {
       let totalWeightedPoints = 0;
       let totalWeight = 0;
       let hasLetterGrades = false;
@@ -364,19 +372,19 @@ const Calculator = () => {
     }
 
     if (activeStep === 1) {
-      if (!mode) {
+      if (!calculatorMode) {
         setError("Please select an input method (Manual or Blackboard)");
         return;
       }
 
-      if (mode === "blackboard") {
+      if (calculatorMode === "blackboard") {
         if (!rawGradeData.trim()) {
           setError("Please input your grade data before proceeding");
           return;
         }
         const success = await handleProcessGrades();
         if (!success) return;
-      } else if (mode === "manual") {
+      } else if (calculatorMode === "manual") {
         if (!manualGrades.length) {
           setError("Please add at least one grade before proceeding");
           return;
@@ -387,7 +395,7 @@ const Calculator = () => {
       }
     }
 
-    if (activeStep === 2 && mode === "blackboard") {
+    if (activeStep === 2 && calculatorMode === "blackboard") {
       setIsResultsView(true);
       if (
         !parsedGrades ||
@@ -562,8 +570,8 @@ const Calculator = () => {
 
             {activeStep === 1 && (
               <GradeInput
-                mode={mode}
-                setMode={setMode}
+                mode={calculatorMode}
+                setMode={setCalculatorMode}
                 rawGradeData={rawGradeData}
                 setRawGradeData={setRawGradeData}
                 categories={categories}
@@ -571,7 +579,7 @@ const Calculator = () => {
               />
             )}
 
-            {activeStep === 2 && mode === "blackboard" && (
+            {activeStep === 2 && calculatorMode === "blackboard" && (
               <CategoryReview
                 parsedGrades={parsedGrades}
                 uncategorizedAssignments={uncategorizedAssignments}

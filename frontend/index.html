@@ -1,10 +1,128 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/vite.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Vite + React</title>
+    <meta name="theme-color" content="#ffffff" id="theme-color">
+    <meta name="color-scheme" content="light dark">
+    <title>GradeFlow</title>
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Force dark mode styles -->
+    <style>
+      /* Force dark mode backgrounds for browser incompatibilities */
+      body.dark-mode textarea, 
+      body.dark-mode input[type="text"],
+      body.dark-mode input[type="number"], 
+      body.dark-mode input[type="password"],
+      body.dark-mode input[type="email"] {
+        background-color: #252525 !important;
+        color: rgba(255, 255, 255, 0.9) !important;
+      }
+      
+      /* For Sample Format and other components with white backgrounds */
+      body.dark-mode .MuiInputBase-root textarea,
+      body.dark-mode .MuiTextField-root textarea {
+        background-color: #252525 !important;
+        color: rgba(255, 255, 255, 0.9) !important;
+      }
+      
+      /* Total Weight box override */
+      body.dark-mode [style*="backgroundColor: rgba(76, 175, 80, 0.08)"],
+      body.dark-mode [style*="backgroundColor: rgba(244, 67, 54, 0.08)"] {
+        background-color: rgba(255, 255, 255, 0.1) !important;
+      }
+      
+      /* Fix for Manual Input and Blackboard Import cards */
+      body.dark-mode .grade-input-button:not(.Mui-disabled):not(.MuiButton-contained) {
+        background-color: #252525 !important;
+      }
+      
+      /* Strong white background overrides */
+      body.dark-mode *[style*="background-color: white"],
+      body.dark-mode *[style*="background-color: #fff"],
+      body.dark-mode *[style*="background-color: rgb(255, 255, 255)"] {
+        background-color: #252525 !important;
+      }
+      
+      /* Sample format code box */
+      body.dark-mode pre, 
+      body.dark-mode code, 
+      body.dark-mode .code-block {
+        background-color: #252525 !important;
+        color: rgba(255, 255, 255, 0.9) !important;
+      }
+
+      /* Fix for alerts */
+      body.dark-mode .MuiAlert-root {
+        background-color: rgba(30, 30, 30, 0.9) !important;
+      }
+
+      /* Target the cards in the sidebar specifically */
+      body.dark-mode .MuiPaper-root:not(.MuiDialog-paper) {
+        background-color: #1e1e1e !important;
+      }
+
+      body.dark-mode .MuiPaper-root .MuiPaper-root:not(.MuiDialog-paper) {
+        background-color: #212121 !important;
+      }
+
+      /* Target the cards in the sidebar specifically */
+      body.dark-mode .MuiGrid-container .MuiGrid-item .MuiPaper-root {
+        background-color: #1e1e1e !important;
+      }
+
+      /* Fix the percentage box and related components */
+      body.dark-mode .MuiBox-root[style*="background: white"],
+      body.dark-mode .MuiBox-root[style*="background-color: white"] {
+        background: #1e1e1e !important;
+        background-color: #1e1e1e !important;
+      }
+
+      /* Even more specific selectors for nested components */
+      body.dark-mode .MuiBox-root > .MuiBox-root[style*="background"] {
+        background: #1e1e1e !important;
+        background-color: #1e1e1e !important;
+      }
+
+      /* Target the first child with white background in the page */
+      body.dark-mode > div > main > div > div:first-child {
+        background-color: #1e1e1e !important;
+      }
+
+      /* Target specific sidebar containers */
+      body.dark-mode [data-testid="category-card"],
+      body.dark-mode [data-testid="grade-summary"],
+      body.dark-mode [data-testid="category-container"] {
+        background-color: #1e1e1e !important;
+      }
+
+      /* Force dark background on the grade number box */
+      body.dark-mode .MuiBox-root[style*="background-color"][style*="border-radius: 12px"] {
+        background-color: #252525 !important;
+      }
+
+      /* Fix the 76% score box */
+      body.dark-mode .MuiBox-root[style*="width: 40px"],
+      body.dark-mode .MuiBox-root[style*="width: 70px"] {
+        background-color: transparent !important;
+      }
+
+      /* Fix the grade percentage box on the left */
+      body.dark-mode .MuiBox-root[style*="background-color: rgb(255, 255, 255)"] {
+        background-color: #212121 !important;
+      }
+      
+      /* For the outer container in Results view */
+      body.dark-mode .MuiContainer-root .MuiBox-root > .MuiBox-root:first-of-type {
+        background-color: #1e1e1e !important;
+      }
+    </style>
   </head>
   <body>
     <div id="root"></div>

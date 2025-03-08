@@ -61,3 +61,277 @@
   .dark-mode .MuiPaper-root {
     box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
   }
+  
+  /* Force background colors in dark mode for specific components */
+  .dark-mode .MuiPaper-root {
+    background-color: #1e1e1e !important;
+  }
+  
+  /* Sample Format white textarea fix */
+  .dark-mode textarea,
+  .dark-mode .MuiOutlinedInput-root textarea,
+  .dark-mode .MuiInputBase-root textarea {
+    background-color: #252525 !important;
+    color: rgba(255, 255, 255, 0.9) !important;
+  }
+  
+  /* Fix for white sample format in Image 2 */
+  .dark-mode [style*="background-color: white"] {
+    background-color: #252525 !important;
+  }
+  
+  .dark-mode .MuiPaper-root .MuiBox-root [style*="background-color: white"] {
+    background-color: #252525 !important;
+  }
+  
+  /* Fix Total Weight panel from Image 4 */
+  .dark-mode [style*="backgroundColor: rgba(76, 175, 80, 0.08)"],
+  .dark-mode [style*="backgroundColor: rgba(244, 67, 54, 0.08)"],
+  .dark-mode [style*="backgroundColor: rgb(244, 67, 54, 0.08)"],
+  .dark-mode [style*="backgroundColor: rgb(76, 175, 80, 0.08)"] {
+    background-color: rgba(255, 255, 255, 0.1) !important;
+    border-color: rgba(255, 255, 255, 0.2) !important;
+  }
+  
+  /* Fix for Blackboard Import and Manual Input cards */
+  .dark-mode .MuiButton-outlined,
+  .dark-mode .MuiButton-contained {
+    background-color: transparent; /* Reset before applying custom backgrounds */
+  }
+  
+  .dark-mode .MuiButton-outlined {
+    border-color: rgba(255, 255, 255, 0.23);
+    color: rgba(255, 255, 255, 0.9);
+  }
+  
+  .dark-mode .MuiButton-outlined:hover {
+    background-color: rgba(255, 255, 255, 0.08);
+  }
+  
+  .dark-mode .MuiButton-contained:not(.MuiButton-containedPrimary):not(.MuiButton-containedSecondary) {
+    background-color: #252525;
+    color: rgba(255, 255, 255, 0.9);
+  }
+  
+  /* Fix for Input Mode buttons (Blackboard Import/Manual Input) */
+  .dark-mode .MuiButtonGroup-root .MuiButton-root,
+  .dark-mode .grade-input-button {
+    background-color: #252525 !important;
+    color: rgba(255, 255, 255, 0.9) !important;
+  }
+  
+  .dark-mode .MuiButtonGroup-root .MuiButton-root.Mui-selected,
+  .dark-mode .grade-input-button.selected {
+    background-color: #3f51b5 !important;
+    color: white !important;
+  }
+  
+  /* Fix specific issues for the grade table cells */
+  .dark-mode .MuiTableCell-root {
+    background-color: #252525 !important;
+    color: rgba(255, 255, 255, 0.9) !important;
+    border-bottom-color: rgba(255, 255, 255, 0.1) !important;
+  }
+  
+  .dark-mode .MuiTableHead-root .MuiTableCell-root {
+    background-color: #303030 !important;
+    color: white !important;
+  }
+  
+  .dark-mode .MuiTableRow-root:hover .MuiTableCell-root {
+    background-color: #303030 !important;
+  }
+  
+  /* Fix for alternating table row colors */
+  .dark-mode .MuiTableRow-root:nth-of-type(odd) .MuiTableCell-body {
+    background-color: #252525 !important;
+  }
+  
+  .dark-mode .MuiTableRow-root:nth-of-type(even) .MuiTableCell-body {
+    background-color: #2a2a2a !important;
+  }
+  
+  /* Form inputs and text fields */
+  .dark-mode .MuiOutlinedInput-root {
+    background-color: #252525 !important;
+  }
+  
+  .dark-mode .MuiOutlinedInput-notchedOutline {
+    border-color: rgba(255, 255, 255, 0.2) !important;
+  }
+  
+  .dark-mode .MuiInputBase-input {
+    color: rgba(255, 255, 255, 0.9) !important;
+  }
+  
+  .dark-mode .MuiInputLabel-root {
+    color: rgba(255, 255, 255, 0.7) !important;
+  }
+  
+  /* Make sure sample format text area is dark */
+  .dark-mode textarea {
+    background-color: #252525 !important;
+    color: rgba(255, 255, 255, 0.9) !important;
+  }
+  
+  /* Calculator specific components */
+  .dark-mode .MuiStepper-root .MuiStepIcon-root {
+    color: rgba(255, 255, 255, 0.5);
+  }
+  
+  .dark-mode .MuiStepper-root .MuiStepIcon-active,
+  .dark-mode .MuiStepper-root .MuiStepIcon-completed {
+    color: #7581d6 !important;
+  }
+  
+  .dark-mode .MuiStepLabel-label {
+    color: rgba(255, 255, 255, 0.7) !important;
+  }
+  
+  .dark-mode .MuiStepLabel-active {
+    color: white !important;
+  }
+  
+  /* Results page specific fixes */
+  .dark-mode .MuiCollapse-root .MuiPaper-root {
+    background-color: #252525 !important;
+  }
+  
+  /* Fix for linear progress bars */
+  .dark-mode .MuiLinearProgress-root {
+    background-color: rgba(255, 255, 255, 0.1) !important;
+  }
+  
+  /* Specific fixes for the grade table in results view */
+  .dark-mode .AssignmentTable-root {
+    background-color: #1e1e1e !important;
+  }
+  
+  .dark-mode .CategoryBreakdown-root {
+    background-color: #1e1e1e !important;
+  }
+  
+  /* Alert component backgrounds */
+  .dark-mode .MuiAlert-standardInfo {
+    background-color: rgba(33, 150, 243, 0.15) !important;
+    color: rgba(255, 255, 255, 0.9) !important;
+  }
+  
+  .dark-mode .MuiAlert-standardSuccess {
+    background-color: rgba(76, 175, 80, 0.15) !important;
+    color: rgba(255, 255, 255, 0.9) !important;
+  }
+  
+  .dark-mode .MuiAlert-standardWarning {
+    background-color: rgba(255, 152, 0, 0.15) !important;
+    color: rgba(255, 255, 255, 0.9) !important;
+  }
+  
+  .dark-mode .MuiAlert-standardError {
+    background-color: rgba(244, 67, 54, 0.15) !important;
+    color: rgba(255, 255, 255, 0.9) !important;
+  }
+  
+  /* Force consistent text input background colors */
+  .dark-mode textarea,
+  .dark-mode input[type="text"],
+  .dark-mode input[type="number"],
+  .dark-mode input[type="email"],
+  .dark-mode input[type="password"] {
+    background-color: #252525 !important;
+    color: rgba(255, 255, 255, 0.9) !important;
+  }
+  
+  /* Fix for the Results page grade card (76%) */
+  .dark-mode .MuiPaper-root.MuiCard-root {
+    background-color: #1e1e1e !important;
+  }
+  
+  /* Fix for the grade summary box with the percentage */
+  .dark-mode .MuiBox-root[style*="borderRadius: 20px"] {
+    background-color: #1e1e1e !important;
+  }
+  
+  /* Fix for Enter What-If Mode button container */
+  .dark-mode .MuiPaper-root.MuiPaper-elevation.MuiPaper-rounded {
+    background-color: #1e1e1e !important;
+  }
+  
+  /* Fix for the sidebar category cards (Homework, Participation, Quizzes) */
+  .dark-mode .MuiPaper-root .MuiBox-root .MuiPaper-root {
+    background-color: #1e1e1e !important;
+  }
+  
+  /* Fix for the grade number box in the left panel */
+  .dark-mode .MuiBox-root[style*="background-color: rgb(255, 255, 255)"],
+  .dark-mode .MuiBox-root[style*="background-color: white"] {
+    background-color: #252525 !important;
+  }
+  
+  /* Fix for the category cards on sidebar */
+  .dark-mode .MuiPaper-root .MuiBox-root .MuiPaper-root .MuiBox-root .MuiPaper-root {
+    background-color: #212121 !important; 
+  }
+  
+  /* Target the progress bars container in sidebar */
+  .dark-mode .MuiBox-root .MuiBox-root[style*="background-color: white"] {
+    background-color: #252525 !important;
+  }
+  
+  /* Style the 76% box on the left panel specifically */
+  .dark-mode .MuiBox-root[style*="width: 40px"] {
+    background-color: transparent !important;
+  }
+  
+  /* Make sure the Results page components use dark mode consistently */
+  .dark-mode .GradeSummary-root,
+  .dark-mode .CategoryBreakdown-root,
+  .dark-mode .AssignmentTable-root {
+    background-color: #1e1e1e !important;
+  }
+  
+  /* Fix the grade cards in the sidebar */
+  .dark-mode .MuiBox-root > .MuiPaper-root {
+    background-color: #1e1e1e !important;
+  }
+  
+  /* Super specific selector for the sidebar white cards */
+  .dark-mode [style*="display: grid"] > [style*="background-color: white"] {
+    background-color: #1e1e1e !important;
+  }
+  
+  /* Target all elements with white background */
+  .dark-mode *[style*="background: white"],
+  .dark-mode *[style*="background:#ffffff"],
+  .dark-mode *[style*="background: #fff"],
+  .dark-mode *[style*="background-color: white"],
+  .dark-mode *[style*="background-color: #fff"],
+  .dark-mode *[style*="background-color: rgb(255, 255, 255)"] {
+    background-color: #1e1e1e !important;
+    background: #1e1e1e !important;
+  }
+  
+  /* Specific fix for the grade percentage box in the left panel */
+  .dark-mode .MuiBox-root[style*="borderRadius: \"12px\""] {
+    background-color: transparent !important;
+  }
+  
+  /* Override inline styles that use !important */
+  @layer override {
+    .dark-mode .MuiPaper-root {
+      background-color: #1e1e1e !important;
+    }
+    
+    .dark-mode div[style*="background-color: white"] {
+      background-color: #252525 !important;
+    }
+    
+    .dark-mode div[style*="background-color: #fff"] {
+      background-color: #252525 !important;
+    }
+    
+    .dark-mode textarea[style*="background-color:"],
+    .dark-mode input[style*="background-color:"] {
+      background-color: #252525 !important;
+    }
+  }

@@ -4,14 +4,16 @@ import {
   Typography,
   Box,
   Stack,
-  useTheme,
+  useTheme as useMuiTheme,
   alpha,
   Chip,
 } from "@mui/material";
 import { Copy, Calculator, BarChart2, Award, Sparkles } from "lucide-react";
+import { useTheme } from "../src/contexts/ThemeContext";
 
 const WelcomeSection = () => {
-  const theme = useTheme();
+  const theme = useMuiTheme();
+  const { mode, isDark } = useTheme();
 
   // The steps in the grade calculation process
   const steps = [
@@ -45,7 +47,7 @@ const WelcomeSection = () => {
         sx={{
           p: 4,
           borderRadius: "20px",
-          background: "white",
+          background: isDark ? "#1e1e1e" : "white",
           position: "relative",
           overflow: "hidden",
         }}
@@ -99,7 +101,10 @@ const WelcomeSection = () => {
             size="small"
             sx={{
               fontWeight: 500,
-              backgroundColor: alpha(theme.palette.primary.main, 0.1),
+              backgroundColor: alpha(
+                theme.palette.primary.main,
+                isDark ? 0.2 : 0.1
+              ),
               color: theme.palette.primary.main,
               borderRadius: "6px",
               mb: 2,
@@ -127,7 +132,7 @@ const WelcomeSection = () => {
         sx={{
           p: 4,
           borderRadius: "20px",
-          bgcolor: "white",
+          bgcolor: isDark ? "#1e1e1e" : "white",
           position: "relative",
           overflow: "hidden",
         }}
@@ -233,7 +238,7 @@ const WelcomeSection = () => {
         sx={{
           p: 4,
           borderRadius: "20px",
-          bgcolor: "white",
+          bgcolor: isDark ? "#1e1e1e" : "white",
           position: "relative",
           overflow: "hidden",
         }}
@@ -269,13 +274,17 @@ const WelcomeSection = () => {
         <Box
           sx={{
             p: 3,
-            bgcolor: theme.palette.grey[50],
+            bgcolor: isDark ? "#252525" : theme.palette.grey[50],
             borderRadius: "12px",
             fontFamily: "monospace",
             fontSize: "0.875rem",
             whiteSpace: "pre-wrap",
-            border: `1px solid ${alpha(theme.palette.primary.main, 0.1)}`,
+            border: `1px solid ${alpha(
+              theme.palette.primary.main,
+              isDark ? 0.2 : 0.1
+            )}`,
             position: "relative",
+            color: isDark ? "rgba(255, 255, 255, 0.9)" : "inherit",
             "&:after": {
               content: "'Copy directly from Blackboard'",
               position: "absolute",

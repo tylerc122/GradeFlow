@@ -377,3 +377,89 @@
   color: white;
   font-size: 14px;
 }
+
+.dark-mode-text {
+  color: rgba(255, 255, 255, 0.9) !important;
+}
+
+.dark-mode-text-secondary {
+  color: rgba(255, 255, 255, 0.7) !important;
+}
+
+.dark-mode-background {
+  background-color: #1e1e1e !important;
+}
+
+.dark-mode-background-alt {
+  background-color: #252525 !important;
+}
+
+.dark-mode-paper {
+  background-color: #252525 !important;
+}
+
+.dark-mode-border {
+  border-color: rgba(255, 255, 255, 0.1) !important;
+}
+
+/* Dark mode gradients */
+.dark-mode .gradient-background {
+  background: linear-gradient(145deg, #252525 0%, #1e1e1e 100%) !important;
+}
+
+/* Table specific fixes for dark mode */
+.dark-mode table {
+  background-color: #1e1e1e !important;
+}
+
+.dark-mode thead th {
+  background-color: #303030 !important;
+  color: white !important;
+}
+
+.dark-mode tbody td,
+.dark-mode tbody th {
+  background-color: #252525 !important;
+  color: rgba(255, 255, 255, 0.9) !important;
+  border-color: rgba(255, 255, 255, 0.1) !important;
+}
+
+.dark-mode tbody tr:hover td {
+  background-color: #303030 !important;
+}
+
+/* Assignment table in results view */
+.dark-mode .MuiTableContainer-root {
+  background-color: #1e1e1e !important;
+}
+
+/* These will help for most hardcoded inline styles */
+.dark-mode [style*="background-color: white"],
+.dark-mode [style*="background-color: #fff"],
+.dark-mode [style*="background-color: rgb(255, 255, 255)"] {
+  background-color: #252525 !important;
+}
+
+.dark-mode [style*="background: white"],
+.dark-mode [style*="background: #fff"],
+.dark-mode [style*="background: rgb(255, 255, 255)"] {
+  background: #252525 !important;
+}
+
+/* Grade summary component background */
+.dark-mode .MuiPaper-root.MuiPaper-elevation.MuiPaper-rounded[style*="background: linear-gradient"] {
+  background: linear-gradient(135deg, #252525 0%, #1e1e1e 100%) !important;
+}
+
+/* Results page specifically */
+.dark-mode .MuiCollapse-root {
+  background-color: transparent !important;
+}
+
+.dark-mode .MuiTableContainer-root.MuiBox-root {
+  background-color: #1e1e1e !important;
+}
+
+.dark-mode .MuiTableContainer-root .MuiTable-root {
+  background-color: #1e1e1e !important;
+}
