@@ -6,7 +6,7 @@ import {
   Button,
   Box,
   Container,
-  useTheme,
+  useTheme as useMuiTheme,
   IconButton,
   Menu,
   MenuItem,
@@ -31,9 +31,12 @@ import {
   Home,
   Info,
   BarChart,
+  Moon,
+  Sun,
 } from "lucide-react";
 import { useAuth } from "../src/contexts/AuthContext";
 import { useCalculator } from "../src/contexts/CalculatorContext";
+import { useTheme } from "../src/contexts/ThemeContext";
 
 // Create an elevated app bar effect on scroll
 function ElevationScroll(props) {
@@ -56,13 +59,14 @@ function ElevationScroll(props) {
 }
 
 const Navbar = () => {
-  const theme = useTheme();
+  const muiTheme = useMuiTheme();
   const location = useLocation();
   const navigate = useNavigate();
   const { user, logout } = useAuth();
   const { isResultsView } = useCalculator();
+  const { mode, toggleTheme } = useTheme(); // Custom theme hook
   const [anchorEl, setAnchorEl] = useState(null);
-  const isMobile = useMediaQuery(theme.breakpoints.down("md"));
+  const isMobile = useMediaQuery(muiTheme.breakpoints.down("md"));
   const [mobileOpen, setMobileOpen] = useState(false);
 
   const isActiveRoute = (path) => {
@@ -92,6 +96,14 @@ const Navbar = () => {
     setMobileOpen(!mobileOpen);
   };
 
+  // Use effect to override backdrop filter based on theme
+  useEffect(() => {
+    if (document.querySelector(".MuiAppBar-root")) {
+      document.querySelector(".MuiAppBar-root").style.backgroundColor =
+        mode === "dark" ? "rgba(18, 18, 18, 0.9)" : "rgba(255, 255, 255, 0.9)";
+    }
+  }, [mode]);
+
   // Navigation items definition
   const navItems = [
     { text: "Home", path: "/", icon: <Home size={18} /> },
@@ -116,19 +128,36 @@ const Navbar = () => {
           mb: 2,
         }}
       >
-        <Calculator size={24} color={theme.palette.primary.main} />
+        <Calculator size={24} color={muiTheme.palette.primary.main} />
         <Typography
           variant="h6"
           sx={{
             ml: 1,
             fontWeight: 700,
-            color: theme.palette.primary.main,
+            color: muiTheme.palette.primary.main,
           }}
         >
           GradeFlow
         </Typography>
       </Box>
       <Divider sx={{ mx: 2, mb: 2 }} />
+
+      {/* Theme Toggle in Drawer */}
+      <Box sx={{ display: "flex", justifyContent: "center", mb: 2 }}>
+        <IconButton
+          onClick={toggleTheme}
+          sx={{
+            color: muiTheme.palette.primary.main,
+            bgcolor: alpha(muiTheme.palette.primary.main, 0.1),
+            "&:hover": {
+              bgcolor: alpha(muiTheme.palette.primary.main, 0.2),
+            },
+          }}
+        >
+          {mode === "dark" ? <Sun size={20} /> : <Moon size={20} />}
+        </IconButton>
+      </Box>
+
       <List>
         {navItems.map((item) => (
           <ListItem
@@ -142,13 +171,13 @@ const Navbar = () => {
               mx: 1,
               mb: 1,
               backgroundColor: isActiveRoute(item.path)
-                ? alpha(theme.palette.primary.main, 0.08)
+                ? alpha(muiTheme.palette.primary.main, 0.08)
                 : "transparent",
               color: isActiveRoute(item.path)
-                ? theme.palette.primary.main
-                : theme.palette.text.primary,
+                ? muiTheme.palette.primary.main
+                : muiTheme.palette.text.primary,
               "&:hover": {
-                backgroundColor: alpha(theme.palette.primary.main, 0.08),
+                backgroundColor: alpha(muiTheme.palette.primary.main, 0.08),
               },
             }}
           >
@@ -223,7 +252,7 @@ const Navbar = () => {
         <AppBar
           position="sticky"
           sx={{
-            borderBottom: `1px solid ${theme.palette.divider}`,
+            borderBottom: `1px solid ${muiTheme.palette.divider}`,
             width: "100%",
           }}
         >
@@ -283,7 +312,7 @@ const Navbar = () => {
                     noWrap
                     sx={{
                       fontWeight: 700,
-                      color: theme.palette.primary.main,
+                      color: muiTheme.palette.primary.main,
                       background: "var(--gradient-primary)",
                       WebkitBackgroundClip: "text",
                       WebkitTextFillColor: "transparent",
@@ -295,21 +324,36 @@ const Navbar = () => {
 
                 {/* Mobile menu button */}
                 {isMobile ? (
-                  <IconButton
-                    edge="end"
-                    color="primary"
-                    aria-label="menu"
-                    onClick={handleDrawerToggle}
-                    sx={{
-                      ml: 2,
-                      bgcolor: alpha(theme.palette.primary.main, 0.08),
-                      "&:hover": {
-                        bgcolor: alpha(theme.palette.primary.main, 0.12),
-                      },
-                    }}
-                  >
-                    <MenuIcon />
-                  </IconButton>
+                  <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+                    {/* Theme Toggle Button (Mobile) */}
+                    <IconButton
+                      color="primary"
+                      onClick={toggleTheme}
+                      sx={{
+                        bgcolor: alpha(muiTheme.palette.primary.main, 0.08),
+                        "&:hover": {
+                          bgcolor: alpha(muiTheme.palette.primary.main, 0.12),
+                        },
+                      }}
+                    >
+                      {mode === "dark" ? <Sun size={20} /> : <Moon size={20} />}
+                    </IconButton>
+
+                    <IconButton
+                      edge="end"
+                      color="primary"
+                      aria-label="menu"
+                      onClick={handleDrawerToggle}
+                      sx={{
+                        bgcolor: alpha(muiTheme.palette.primary.main, 0.08),
+                        "&:hover": {
+                          bgcolor: alpha(muiTheme.palette.primary.main, 0.12),
+                        },
+                      }}
+                    >
+                      <MenuIcon />
+                    </IconButton>
+                  </Box>
                 ) : (
                   /* Desktop Navigation Links */
                   <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
@@ -352,6 +396,35 @@ const Navbar = () => {
                         {item.text}
                       </Button>
                     ))}
+
+                    {/* Theme Toggle Button (Desktop) */}
+                    <Tooltip
+                      title={
+                        mode === "dark"
+                          ? "Switch to Light Mode"
+                          : "Switch to Dark Mode"
+                      }
+                    >
+                      <IconButton
+                        onClick={toggleTheme}
+                        sx={{
+                          mx: 1,
+                          bgcolor: alpha(muiTheme.palette.primary.main, 0.08),
+                          color: muiTheme.palette.primary.main,
+                          transition: "all 0.3s ease",
+                          "&:hover": {
+                            bgcolor: alpha(muiTheme.palette.primary.main, 0.12),
+                            transform: "rotate(30deg)",
+                          },
+                        }}
+                      >
+                        {mode === "dark" ? (
+                          <Sun size={20} />
+                        ) : (
+                          <Moon size={20} />
+                        )}
+                      </IconButton>
+                    </Tooltip>
 
                     {/* Auth Buttons */}
                     {user ? (
@@ -476,7 +549,7 @@ const Navbar = () => {
         </MenuItem>
         <MenuItem
           onClick={handleLogout}
-          sx={{ p: 2, color: theme.palette.error.main }}
+          sx={{ p: 2, color: muiTheme.palette.error.main }}
         >
           <ListItemIcon sx={{ color: "inherit" }}>
             <LogOut size={18} />
