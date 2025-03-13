@@ -30,6 +30,7 @@ import {
   Award,
   CheckCircle,
   AlertCircle,
+  Calculator,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import {

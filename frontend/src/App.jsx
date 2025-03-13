@@ -39,6 +39,22 @@ const ProtectedRoute = ({ children }) => {
   return children;
 };
 
+const RedirectIfAuthenticated = ({ children }) => {
+  const { user, loading } = useAuth();
+  const location = useLocation();
+
+  if (loading) {
+    return null;
+  }
+
+  // If user is logged in and tries to access login or register, redirect to dashboard
+  if (user) {
+    return <Navigate to="/dashboard" replace />;
+  }
+
+  return children;
+};
+
 // Separate component for animated routes
 const AnimatedRoutes = () => {
   const location = useLocation();
@@ -57,17 +73,21 @@ const AnimatedRoutes = () => {
         <Route
           path="/login"
           element={
-            <PageTransition>
-              <LoginPage />
-            </PageTransition>
+            <RedirectIfAuthenticated>
+              <PageTransition>
+                <LoginPage />
+              </PageTransition>
+            </RedirectIfAuthenticated>
           }
         />
         <Route
           path="/register"
           element={
-            <PageTransition>
-              <RegisterPage />
-            </PageTransition>
+            <RedirectIfAuthenticated>
+              <PageTransition>
+                <RegisterPage />
+              </PageTransition>
+            </RedirectIfAuthenticated>
           }
         />
         <Route

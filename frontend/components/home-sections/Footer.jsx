@@ -23,12 +23,15 @@ import {
   Home,
   Info,
   BookOpen,
+  User,
 } from "lucide-react";
 import { Link as RouterLink } from "react-router-dom";
+import { useAuth } from "../../src/contexts/AuthContext"; // Import the auth hook
 
 const Footer = () => {
   const theme = useTheme();
   const currentYear = new Date().getFullYear();
+  const { user } = useAuth(); // Get the current user
 
   // Navigation links
   const navLinks = [
@@ -41,14 +44,31 @@ const Footer = () => {
     { title: "About", path: "/about", icon: <Info size={16} /> },
   ];
 
-  // Resource links
+  // Resource links - dynamically change based on auth status
   const resourceLinks = [
-    { title: "Login", path: "/login", icon: <ChevronRight size={14} /> },
-    {
-      title: "Dashboard",
-      path: "/dashboard",
-      icon: <ChevronRight size={14} />,
-    },
+    ...(user
+      ? [
+          // Links for logged-in users
+          {
+            title: "Dashboard",
+            path: "/dashboard",
+            icon: <ChevronRight size={14} />,
+          },
+          {
+            title: "My Grades",
+            path: "/grades",
+            icon: <ChevronRight size={14} />,
+          },
+        ]
+      : [
+          // Links for non-logged-in users
+          { title: "Login", path: "/login", icon: <ChevronRight size={14} /> },
+          {
+            title: "Register",
+            path: "/register",
+            icon: <ChevronRight size={14} />,
+          },
+        ]),
     { title: "Documentation", path: "/docs", icon: <BookOpen size={14} /> },
   ];
 

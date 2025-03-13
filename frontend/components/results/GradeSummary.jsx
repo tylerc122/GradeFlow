@@ -106,10 +106,7 @@ export const GradeSummary = ({
           background: `linear-gradient(135deg, ${alpha(
             getGradeColor(finalGrade.percentage),
             0
-          )} 0%, ${alpha(
-            getGradeColor(finalGrade.percentage),
-            isDark ? 0.05 : 0.03
-          )} 100%)`,
+          )} 0%, ${alpha(getGradeColor(finalGrade.percentage))} 100%)`,
           zIndex: 0,
         }}
       />
@@ -272,8 +269,8 @@ export const GradeSummary = ({
                 ? `linear-gradient(135deg, ${theme.palette.error.main} 0%, ${theme.palette.error.dark} 100%)`
                 : `linear-gradient(135deg, ${theme.palette.primary.main} 0%, ${theme.palette.primary.dark} 100%)`,
               boxShadow: whatIfMode
-                ? `0 8px 16px ${alpha(theme.palette.error.main, 0.2)}`
-                : `0 8px 16px ${alpha(theme.palette.primary.main, 0.2)}`,
+                ? `0 8px 16px ${alpha(theme.palette.error.main)}`
+                : `0 8px 16px ${alpha(theme.palette.primary.main)}`,
               "&:hover": {
                 backgroundColor: whatIfMode
                   ? theme.palette.error.dark

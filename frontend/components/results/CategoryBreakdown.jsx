@@ -55,7 +55,6 @@ export const CategoryBreakdown = ({
         p: 4,
         mb: 3,
         borderRadius: "20px",
-        background: "linear-gradient(to right, #ffffff, #f8f9fa)",
         position: "relative",
         overflow: "hidden",
       }}
@@ -69,7 +68,7 @@ export const CategoryBreakdown = ({
           width: 200,
           height: 200,
           borderRadius: "50%",
-          background: alpha(theme.palette.primary.main, 0.03),
+          background: alpha(theme.palette.primary.main),
           zIndex: 0,
         }}
       />
@@ -95,7 +94,7 @@ export const CategoryBreakdown = ({
                 width: 40,
                 height: 40,
                 borderRadius: "12px",
-                backgroundColor: alpha(theme.palette.primary.main, 0.1),
+                backgroundColor: alpha(theme.palette.primary.main),
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
@@ -152,7 +151,7 @@ export const CategoryBreakdown = ({
                     transition: "all 0.3s ease",
                     "&:hover": {
                       transform: "translateY(-4px)",
-                      boxShadow: `0 8px 20px ${alpha(gradeColor, 0.1)}`,
+                      boxShadow: `0 8px 20px ${alpha(gradeColor)}`,
                       "& .add-button": {
                         opacity: 1,
                         transform: "translateX(0)",

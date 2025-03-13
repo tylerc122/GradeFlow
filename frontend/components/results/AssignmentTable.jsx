@@ -176,7 +176,6 @@ export const AssignmentTable = ({
       sx={{
         p: 4,
         borderRadius: "20px",
-        background: "linear-gradient(145deg, #ffffff 0%, #f5f5f5 100%)",
         position: "relative",
         overflow: "hidden",
       }}
@@ -190,7 +189,7 @@ export const AssignmentTable = ({
           width: 300,
           height: 300,
           borderRadius: "50%",
-          background: alpha(theme.palette.primary.main, 0.03),
+          background: "alpha(theme.palette.primary.main, 0.03)",
           filter: "blur(60px)",
           zIndex: 0,
         }}
@@ -203,7 +202,7 @@ export const AssignmentTable = ({
               width: 40,
               height: 40,
               borderRadius: "12px",
-              backgroundColor: alpha(theme.palette.primary.main, 0.1),
+              backgroundColor: "alpha(theme.palette.primary.main, 0.1)",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",

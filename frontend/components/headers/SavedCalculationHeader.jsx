@@ -36,7 +36,6 @@ const SavedCalculationHeader = ({
         p: 3,
         mb: 3,
         borderRadius: 2,
-        background: "linear-gradient(145deg, #ffffff 0%, #f5f5f5 100%)",
         position: "sticky",
         top: 0,
         zIndex: 1000,
