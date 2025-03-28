@@ -9,22 +9,12 @@ import {
   alpha,
 } from "@mui/material";
 import AssignmentIcon from "@mui/icons-material/Assignment";
-
-const LETTER_GRADES = {
-  "A+": { points: 4.0, minPercent: 97 },
-  A: { points: 4.0, minPercent: 93 },
-  "A-": { points: 3.7, minPercent: 90 },
-  "B+": { points: 3.3, minPercent: 87 },
-  B: { points: 3.0, minPercent: 83 },
-  "B-": { points: 2.7, minPercent: 80 },
-  "C+": { points: 2.3, minPercent: 77 },
-  C: { points: 2.0, minPercent: 73 },
-  "C-": { points: 1.7, minPercent: 70 },
-  "D+": { points: 1.3, minPercent: 67 },
-  D: { points: 1.0, minPercent: 63 },
-  "D-": { points: 0.7, minPercent: 60 },
-  F: { points: 0.0, minPercent: 0 },
-};
+import {
+  isLetterGrade,
+  isPercentage,
+  LETTER_GRADES,
+  letterGradeToPoints,
+} from "../../src/utils/letterGradeUtils";
 
 const ManualInput = ({ categories, setGrades }) => {
   const [categoryGrades, setCategoryGrades] = useState(
@@ -36,17 +26,6 @@ const ManualInput = ({ categories, setGrades }) => {
       {}
     )
   );
-
-  // Helper function to check if input is a valid letter grade
-  const isLetterGrade = (value) => {
-    return LETTER_GRADES.hasOwnProperty(value.toUpperCase());
-  };
-
-  // Helper function to check if input is a valid percentage
-  const isPercentage = (value) => {
-    const num = parseFloat(value);
-    return !isNaN(num) && num >= 0 && num <= 100;
-  };
 
   const handleGradeChange = (categoryName, value) => {
     // Clean up the input - trim spaces and convert to uppercase for letter grades
@@ -65,7 +44,7 @@ const ManualInput = ({ categories, setGrades }) => {
         grade: currentGrade,
         isLetter: isLetterGrade(currentGrade),
         value: isLetterGrade(currentGrade)
-          ? LETTER_GRADES[currentGrade.toUpperCase()].points
+          ? letterGradeToPoints(currentGrade)
           : isPercentage(currentGrade)
           ? parseFloat(currentGrade)
           : null,

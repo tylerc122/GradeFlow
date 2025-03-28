@@ -26,12 +26,12 @@ import {
   User,
 } from "lucide-react";
 import { Link as RouterLink } from "react-router-dom";
-import { useAuth } from "../../src/contexts/AuthContext"; // Import the auth hook
+import { useAuth } from "../../src/contexts/AuthContext"; 
 
 const Footer = () => {
   const theme = useTheme();
   const currentYear = new Date().getFullYear();
-  const { user } = useAuth(); // Get the current user
+  const { user } = useAuth();
 
   // Navigation links
   const navLinks = [

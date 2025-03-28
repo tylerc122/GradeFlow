@@ -38,7 +38,7 @@ import { useAuth } from "../src/contexts/AuthContext";
 import { useCalculator } from "../src/contexts/CalculatorContext";
 import { useTheme } from "../src/contexts/ThemeContext";
 
-// Create an elevated app bar effect on scroll
+
 function ElevationScroll(props) {
   const { children } = props;
   const trigger = useScrollTrigger({
@@ -64,7 +64,7 @@ const Navbar = () => {
   const navigate = useNavigate();
   const { user, logout } = useAuth();
   const { isResultsView } = useCalculator();
-  const { mode, toggleTheme } = useTheme(); // Custom theme hook
+  const { mode, toggleTheme } = useTheme();
   const [anchorEl, setAnchorEl] = useState(null);
   const isMobile = useMediaQuery(muiTheme.breakpoints.down("md"));
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -272,7 +272,7 @@ const Navbar = () => {
                 sx={{
                   display: "flex",
                   width: "100%",
-                  minHeight: "70px", // Taller navbar
+                  minHeight: "70px",
                   justifyContent: "space-between",
                 }}
               >

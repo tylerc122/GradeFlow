@@ -25,6 +25,10 @@ import Results from "../components/results/Results";
 import SaveCalculationDialog from "../components/dialogs/SaveCalculationDialog";
 import { useCalculator } from "../src/contexts/CalculatorContext";
 import { useTheme } from "../src/contexts/ThemeContext";
+import {
+  letterGradeToPoints,
+  isLetterGrade,
+} from "../src/utils/letterGradeUtils";
 import { RefreshCw } from "lucide-react";
 
 const Calculator = () => {
@@ -288,7 +292,11 @@ const Calculator = () => {
             ),
           ],
         })),
-        overall_grade: calculateWeightedGrade(),
+        // Use a proper calculation for overall_grade that handles both number and letter grades
+        overall_grade:
+          calculatorMode === "manual"
+            ? calculateManualGradePercentage()
+            : calculateWeightedGrade(),
         total_points_earned: categories.reduce((total, category) => {
           return (
             total +
@@ -348,6 +356,30 @@ const Calculator = () => {
     } finally {
       setIsSaving(false);
     }
+  };
+
+  // Add this helper function to calculate grade from manual input
+  const calculateManualGradePercentage = () => {
+    let totalWeightedPoints = 0;
+    let totalWeight = 0;
+    let hasLetterGrades = false;
+
+    categories.forEach((category) => {
+      const grade = manualGrades.find((g) => g.categoryName === category.name);
+      if (grade) {
+        if (grade.isLetter && isLetterGrade(grade.grade)) {
+          hasLetterGrades = true;
+          // Convert letter grade to points (0-4 scale) then to percentage (0-100 scale)
+          const points = letterGradeToPoints(grade.grade);
+          totalWeightedPoints += (points / 4) * 100 * category.weight;
+        } else if (grade.value !== null) {
+          totalWeightedPoints += grade.value * category.weight;
+        }
+        totalWeight += category.weight;
+      }
+    });
+
+    return totalWeight > 0 ? totalWeightedPoints / totalWeight : 0;
   };
 
   const handleNext = async () => {

@@ -31,11 +31,12 @@ import {
 } from "lucide-react";
 import FAQ from "../components/home-sections/FAQ";
 import Footer from "../components/home-sections/Footer";
+import { useTheme as useCustomTheme } from "../src/contexts/ThemeContext";
 
 const HomePage = () => {
   const theme = useTheme();
   const navigate = useNavigate();
-  const { mode } = useTheme();
+  const { mode, isDark } = useCustomTheme();
 
   // Updated features with modern icons and enhanced descriptions
   const features = [
@@ -69,24 +70,26 @@ const HomePage = () => {
     },
   ];
 
-  // Stats for the social proof section
-  const stats = [
-    {
-      value: "50+",
-      label: "Universities",
-      icon: <School strokeWidth={1.5} />,
-    },
-    {
-      value: "99%",
-      label: "Accuracy",
-      icon: <Sigma strokeWidth={1.5} />,
-    },
-    {
-      value: "10K+",
-      label: "Students",
-      icon: <Users strokeWidth={1.5} />,
-    },
-  ];
+  const stats = []
+
+  // // Stats for the social proof section
+  // const stats = [
+  //   {
+  //     value: "50+",
+  //     label: "Universities",
+  //     icon: <School strokeWidth={1.5} />,
+  //   },
+  //   {
+  //     value: "99%",
+  //     label: "Accuracy",
+  //     icon: <Sigma strokeWidth={1.5} />,
+  //   },
+  //   {
+  //     value: "10K+",
+  //     label: "Students",
+  //     icon: <Users strokeWidth={1.5} />,
+  //   },
+  // ];
 
   return (
     <Box
@@ -358,7 +361,7 @@ const HomePage = () => {
                   />
                 )}
 
-                {/* Floating icons for visual interest */}
+                {/* Floating icons */}
                 {[
                   { icon: <Calculator />, top: "10%", left: "-5%", delay: 0 },
                   {
@@ -377,21 +380,27 @@ const HomePage = () => {
                       left: item.left,
                       bottom: item.bottom,
                       right: item.right,
-                      backgroundColor:
-                        mode === "dark"
-                          ? theme.palette.background.alt
-                          : "white",
+                      backgroundColor: isDark
+                        ? alpha(theme.palette.background.paper, 0.8)
+                        : "white",
                       width: 60,
                       height: 60,
                       borderRadius: "16px",
                       display: "flex",
                       alignItems: "center",
                       justifyContent: "center",
-                      boxShadow:
-                        "0 10px 25px " + alpha(theme.palette.common.black, 0.1),
+                      boxShadow: `0 10px 25px ${alpha(
+                        theme.palette.common.black,
+                        isDark ? 0.3 : 0.1
+                      )}`,
                       color: theme.palette.primary.main,
                       animation: `float 3s ease-in-out infinite ${item.delay}s`,
                       zIndex: 2,
+                      border: `1px solid ${alpha(
+                        theme.palette.common.white,
+                        isDark ? 0.1 : 0.05
+                      )}`,
+                      backdropFilter: "blur(8px)",
                     }}
                   >
                     {item.icon}
@@ -585,14 +594,18 @@ const HomePage = () => {
                   px: 5,
                   borderRadius: "14px",
                   fontSize: "1.1rem",
-                  backgroundColor: "white",
-                  color: theme.palette.primary.main,
+                  background: "linear-gradient(135deg, rgba(255,255,255,0.2) 0%, rgba(255,255,255,0.1) 100%)",
+                  backdropFilter: "blur(10px)",
+                  color: "white",
                   fontWeight: 700,
-                  boxShadow: "0 10px 20px rgba(0, 0, 0, 0.1)",
+                  border: "1px solid rgba(255,255,255,0.2)",
+                  boxShadow: "0 8px 32px rgba(0,0,0,0.1)",
+                  transition: "all 0.3s ease",
                   "&:hover": {
-                    backgroundColor: "white",
+                    background: "linear-gradient(135deg, rgba(255,255,255,0.25) 0%, rgba(255,255,255,0.15) 100%)",
                     transform: "translateY(-4px)",
-                    boxShadow: "0 15px 30px rgba(0, 0, 0, 0.15)",
+                    boxShadow: "0 12px 40px rgba(0,0,0,0.15)",
+                    border: "1px solid rgba(255,255,255,0.3)",
                   },
                 }}
               >
