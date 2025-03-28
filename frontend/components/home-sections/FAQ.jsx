@@ -189,6 +189,15 @@ const FAQ = () => {
                         ? `0 4px 20px ${alpha(faq.color, 0.15)}`
                         : theme.shadows[2],
                   },
+                  "&:focus": {
+                    outline: "none",
+                  },
+                  "&.MuiAccordion-root.Mui-focused": {
+                    outline: "none",
+                    boxShadow: expanded === `panel${index}`
+                      ? `0 4px 20px ${alpha(faq.color, 0.15)}`
+                      : theme.shadows[2],
+                  },
                   transition: "all 0.3s ease",
                 }}
               >
@@ -221,6 +230,13 @@ const FAQ = () => {
                     p: 2,
                     "&.Mui-expanded": {
                       minHeight: 64,
+                    },
+                    "&:focus": {
+                      outline: "none",
+                      backgroundColor: "transparent",
+                    },
+                    "& .MuiAccordionSummary-content": {
+                      margin: 0,
                     },
                   }}
                 >
@@ -258,7 +274,7 @@ const FAQ = () => {
                     </Typography>
                   </Box>
                 </AccordionSummary>
-                <AccordionDetails sx={{ p: 3, pt: 0 }}>
+                <AccordionDetails sx={{ p: 3, pt: 1, mt: 1 }}>
                   <Typography
                     color="text.secondary"
                     sx={{

@@ -210,8 +210,20 @@ const createAppTheme = (mode) =>
             transition: "all 0.2s ease-in-out",
             letterSpacing: "0.01em",
             fontSize: "1rem",
+            position: "relative",
+            "&::before": {
+              content: '""',
+              position: "absolute",
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              opacity: 0,
+              transition: "opacity 0.2s ease-in-out",
+              pointerEvents: "none",
+            },
             "&:hover": {
-              transform: "translateY(-2px)",
+              boxShadow: "0px 4px 8px rgba(0, 0, 0, 0.1)",
             },
           },
           contained: {

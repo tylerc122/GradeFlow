@@ -387,6 +387,7 @@ const Navbar = () => {
                               : "scaleX(0)",
                             transformOrigin: "center",
                             transition: "transform 0.3s ease",
+                            pointerEvents: "none",
                           },
                           "&:hover::after": {
                             transform: "scaleX(1)",
@@ -414,7 +415,6 @@ const Navbar = () => {
                           transition: "all 0.3s ease",
                           "&:hover": {
                             bgcolor: alpha(muiTheme.palette.primary.main, 0.12),
-                            transform: "rotate(30deg)",
                           },
                         }}
                       >
@@ -457,6 +457,11 @@ const Navbar = () => {
                               fontWeight: 600,
                               fontSize: "1.1rem",
                               zIndex: 1,
+                              display: "flex",
+                              alignItems: "center",
+                              justifyContent: "center",
+                              width: "100%",
+                              height: "100%",
                             }}
                           >
                             {user.name ? (
