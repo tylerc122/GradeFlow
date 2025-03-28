@@ -153,7 +153,7 @@
   
   /* Form inputs and text fields */
   .dark-mode .MuiOutlinedInput-root {
-    background-color: #252525 !important;
+    background-color: #1e1e1e !important;
   }
   
   .dark-mode .MuiOutlinedInput-notchedOutline {
@@ -238,7 +238,7 @@
   .dark-mode input[type="number"],
   .dark-mode input[type="email"],
   .dark-mode input[type="password"] {
-    background-color: #252525 !important;
+    background-color: #1e1e1e !important;
     color: rgba(255, 255, 255, 0.9) !important;
   }
   
@@ -323,15 +323,41 @@
     }
     
     .dark-mode div[style*="background-color: white"] {
-      background-color: #252525 !important;
+      background-color: #1e1e1e !important;
     }
     
     .dark-mode div[style*="background-color: #fff"] {
-      background-color: #252525 !important;
+      background-color: #1e1e1e !important;
     }
     
     .dark-mode textarea[style*="background-color:"],
     .dark-mode input[style*="background-color:"] {
-      background-color: #252525 !important;
+      background-color: #1e1e1e !important;
+    }
+    
+    /* Fix specifically for the Category Name and Weight input fields */
+    .dark-mode .MuiTextField-root .MuiInputBase-root {
+      background-color: #1e1e1e !important;
+    }
+    
+    /* Fix for the footer links */
+    .dark-mode a {
+      color: rgba(255, 255, 255, 0.8) !important;
+    }
+    
+    /* Fix for the current grade display (70%) */
+    .dark-mode .MuiPaper-root {
+      background: #1e1e1e !important;
+      background-image: none !important;
+    }
+    
+    /* Fix for Enter What-If Mode button */
+    .dark-mode .MuiButton-containedPrimary {
+      background: linear-gradient(90deg, #5361c9 0%, #7581d6 100%) !important;
+    }
+    
+    /* Fix for Homework 9 assignments card */
+    .dark-mode .MuiPaper-root.MuiPaper-elevation {
+      background-color: #1e1e1e !important;
     }
   }
