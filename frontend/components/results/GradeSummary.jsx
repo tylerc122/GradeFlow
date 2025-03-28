@@ -22,32 +22,7 @@ import {
   Zap,
 } from "lucide-react";
 import { useTheme } from "../../src/contexts/ThemeContext";
-
-const LETTER_GRADES = {
-  "A+": { points: 4.0, minPercent: 97 },
-  A: { points: 4.0, minPercent: 93 },
-  "A-": { points: 3.7, minPercent: 90 },
-  "B+": { points: 3.3, minPercent: 87 },
-  B: { points: 3.0, minPercent: 83 },
-  "B-": { points: 2.7, minPercent: 80 },
-  "C+": { points: 2.3, minPercent: 77 },
-  C: { points: 2.0, minPercent: 73 },
-  "C-": { points: 1.7, minPercent: 70 },
-  "D+": { points: 1.3, minPercent: 67 },
-  D: { points: 1.0, minPercent: 63 },
-  "D-": { points: 0.7, minPercent: 60 },
-  F: { points: 0.0, minPercent: 0 },
-};
-
-// Helper function to convert percentage to letter grade
-const percentageToLetter = (percentage) => {
-  for (const [letter, data] of Object.entries(LETTER_GRADES)) {
-    if (percentage >= data.minPercent) {
-      return letter;
-    }
-  }
-  return "F";
-};
+import { percentageToLetter } from "../../src/utils/letterGradeUtils";
 
 export const GradeSummary = ({
   finalGrade,
@@ -69,8 +44,8 @@ export const GradeSummary = ({
   const getGradeIcon = (percentage) => {
     if (percentage >= 90) return <CheckCircle size={28} />;
     if (percentage >= 80) return <Award size={28} />;
-    if (percentage >= 70) return <AlertCircle size={28} />;
-    return <AlertCircle size={28} />;
+    if (percentage >= 70) return <Target size={28} />;
+    return <Target size={28} />;
   };
 
   // Calculate GPA if there are letter grades
@@ -198,22 +173,6 @@ export const GradeSummary = ({
                   >
                     {(finalGrade.percentage % 1).toFixed(2).substring(1)}%
                   </Typography>
-
-                  <Tooltip title="Current Grade">
-                    <Box
-                      sx={{
-                        position: "absolute",
-                        top: 8,
-                        right: 8,
-                        background: alpha("#ffffff", 0.2),
-                        borderRadius: "6px",
-                        p: 0.5,
-                        display: "flex",
-                      }}
-                    >
-                      {getGradeIcon(finalGrade.percentage)}
-                    </Box>
-                  </Tooltip>
                 </Box>
               </motion.div>
 
