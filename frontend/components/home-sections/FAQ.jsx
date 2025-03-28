@@ -9,6 +9,7 @@ import {
   Paper,
   alpha,
   useTheme,
+  Divider,
 } from "@mui/material";
 import {
   ChevronDown,
@@ -164,12 +165,12 @@ const FAQ = () => {
                 duration: 0.4,
                 delay: index * 0.1,
               }}
+              style={{ marginBottom: '16px' }}
             >
               <Accordion
                 expanded={expanded === `panel${index}`}
                 onChange={handleChange(`panel${index}`)}
                 sx={{
-                  mb: 1.5,
                   "&:before": { display: "none" },
                   boxShadow: "none",
                   borderRadius: "16px !important",
@@ -274,11 +275,29 @@ const FAQ = () => {
                     </Typography>
                   </Box>
                 </AccordionSummary>
-                <AccordionDetails sx={{ p: 3, pt: 1, mt: 1 }}>
+                
+                <Box sx={{ 
+                  display: 'flex', 
+                  justifyContent: 'center', 
+                  pt: 0,
+                  pb: 0.5
+                }}>
+                  <Divider 
+                    sx={{ 
+                      backgroundColor: alpha(faq.color, 0.4),
+                      height: expanded === `panel${index}` ? 1 : 0,
+                      width: '50%',
+                      transition: "all 0.3s ease",
+                      opacity: expanded === `panel${index}` ? 1 : 0,
+                    }} 
+                  />
+                </Box>
+                
+                <AccordionDetails sx={{ p: 3, pt: 1.5, mt: 0 }}>
                   <Typography
                     color="text.secondary"
                     sx={{
-                      pl: 7,
+                      pl: 5,
                       lineHeight: 1.6,
                     }}
                   >

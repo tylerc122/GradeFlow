@@ -410,18 +410,57 @@ const createAppTheme = (mode) =>
       MuiStepper: {
         styleOverrides: {
           root: {
-            padding: "24px 0",
+            backgroundColor: "transparent",
+            padding: mode === "light" ? "24px 0" : "24px 0",
+          },
+        },
+      },
+      MuiStepConnector: {
+        styleOverrides: {
+          root: {
+            backgroundColor: "transparent",
+          },
+          line: {
+            borderColor:
+              mode === "light"
+                ? "rgba(0, 0, 0, 0.12)"
+                : "rgba(255, 255, 255, 0.12)",
           },
         },
       },
       MuiStepLabel: {
         styleOverrides: {
+          root: {
+            backgroundColor: "transparent",
+          },
           label: {
+            color:
+              mode === "light"
+                ? "rgba(0, 0, 0, 0.6)"
+                : "rgba(255, 255, 255, 0.6)",
             "&.Mui-active": {
+              color: mode === "light" ? "#5361c9" : "#9fa8da",
               fontWeight: 600,
             },
             "&.Mui-completed": {
+              color: mode === "light" ? "#3f51b5" : "#7581d6",
               fontWeight: 600,
+            },
+          },
+        },
+      },
+      MuiStepIcon: {
+        styleOverrides: {
+          root: {
+            color:
+              mode === "light"
+                ? "rgba(0, 0, 0, 0.3)"
+                : "rgba(255, 255, 255, 0.3)",
+            "&.Mui-active": {
+              color: mode === "light" ? "#5361c9" : "#9fa8da",
+            },
+            "&.Mui-completed": {
+              color: mode === "light" ? "#3f51b5" : "#7581d6",
             },
           },
         },
