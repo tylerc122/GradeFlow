@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useSnackbar } from "notistack";
 import { useCalculator } from "../src/contexts/CalculatorContext";
@@ -24,6 +24,7 @@ const SavedCalculation = () => {
     setCategories,
     categories,
     setMode,
+    mode,
     whatIfMode,
     setWhatIfMode,
     targetGrade,
@@ -32,10 +33,18 @@ const SavedCalculation = () => {
     setHypotheticalScores,
     hypotheticalAssignments,
     setHypotheticalAssignments,
+    rawGradeData,
     setRawGradeData,
     hiddenAssignments,
     setHiddenAssignments,
+    manualGrades,
+    setManualGrades,
+    resetCalculator,
   } = useCalculator();
+  
+  // Add a ref to store original calculator state
+  const originalCalculatorState = useRef(null);
+  
   const [calculation, setCalculation] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -50,6 +59,38 @@ const SavedCalculation = () => {
   const [saveStatus, setSaveStatus] = useState("saved");
   const [lastSaved, setLastSaved] = useState(null);
   const [autoSaveTimer, setAutoSaveTimer] = useState(null);
+
+  // Save original calculator state when component mounts and restore when it unmounts
+  useEffect(() => {
+    // Save current calculator state
+    originalCalculatorState.current = {
+      categories,
+      mode,
+      whatIfMode,
+      targetGrade,
+      hypotheticalScores,
+      hypotheticalAssignments,
+      hiddenAssignments,
+      rawGradeData,
+      manualGrades,
+    };
+    
+    // Cleanup function to restore original state when leaving the saved calculation view
+    return () => {
+      // Restore original calculator state when component unmounts
+      if (originalCalculatorState.current) {
+        setCategories(originalCalculatorState.current.categories);
+        setMode(originalCalculatorState.current.mode);
+        setWhatIfMode(originalCalculatorState.current.whatIfMode);
+        setTargetGrade(originalCalculatorState.current.targetGrade);
+        setHypotheticalScores(originalCalculatorState.current.hypotheticalScores);
+        setHypotheticalAssignments(originalCalculatorState.current.hypotheticalAssignments);
+        setHiddenAssignments(originalCalculatorState.current.hiddenAssignments);
+        setRawGradeData(originalCalculatorState.current.rawGradeData);
+        setManualGrades(originalCalculatorState.current.manualGrades);
+      }
+    };
+  }, []);
 
   // Transform data helper function
   const transformCalculationData = (data) => {
