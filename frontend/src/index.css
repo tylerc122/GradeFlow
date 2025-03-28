@@ -66,3 +66,14 @@ button:focus-visible {
     background-color: #f9f9f9;
   }
 }
+
+/* Fix for cursor jittering on hover effects */
+*:hover::before, *:hover::after {
+  pointer-events: none !important;
+}
+
+button, a, [role="button"] {
+  transform-style: preserve-3d;
+  backface-visibility: hidden;
+  will-change: transform;
+}

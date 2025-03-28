@@ -302,7 +302,9 @@ const HomePage = () => {
                     transition: "all 0.5s ease-in-out",
                     "&:hover": {
                       transform:
-                        "perspective(1000px) rotateY(0deg) rotateX(0deg) translateY(-10px)",
+                        "perspective(1000px) rotateY(0deg) rotateX(0deg)",
+                      boxShadow:
+                        "0 25px 50px " + alpha(theme.palette.common.black, 0.15),
                     },
                   },
                   "&::before": {
@@ -454,7 +456,6 @@ const HomePage = () => {
                     border: "1px solid",
                     borderColor: alpha(feature.color, 0.2),
                     "&:hover": {
-                      transform: "translateY(-12px)",
                       boxShadow: `0 12px 30px ${alpha(feature.color, 0.15)}`,
                       "& .feature-icon-wrapper": {
                         transform: "scale(1.1)",
@@ -603,7 +604,6 @@ const HomePage = () => {
                   transition: "all 0.3s ease",
                   "&:hover": {
                     background: "linear-gradient(135deg, rgba(255,255,255,0.25) 0%, rgba(255,255,255,0.15) 100%)",
-                    transform: "translateY(-4px)",
                     boxShadow: "0 12px 40px rgba(0,0,0,0.15)",
                     border: "1px solid rgba(255,255,255,0.3)",
                   },
