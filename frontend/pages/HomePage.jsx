@@ -345,9 +345,8 @@ const HomePage = () => {
                       textAlign: "center",
                     }}
                   >
-                    Dark Mode Screenshot Placeholder
+                    PLACEHOLDA
                     <br />
-                    (Replace with your dark UI image)
                   </Box>
                 ) : (
                   <img

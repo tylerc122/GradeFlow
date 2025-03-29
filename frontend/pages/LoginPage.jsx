@@ -13,6 +13,7 @@ import {
 import { useNavigate, Link as RouterLink } from "react-router-dom";
 import LockOutlinedIcon from "@mui/icons-material/LockOutlined";
 import { useAuth } from "../src/contexts/AuthContext";
+import { useTheme } from "@mui/material/styles";
 
 const LoginPage = () => {
   const navigate = useNavigate();
@@ -21,6 +22,7 @@ const LoginPage = () => {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const theme = useTheme();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -83,9 +85,9 @@ const LoginPage = () => {
               "& .MuiInputBase-input": {
                 color: "text.primary",
                 "&:-webkit-autofill": {
-                  WebkitBoxShadow: "0 0 0 100px #fff inset",
-                  WebkitTextFillColor: "#2c3e50",
-                  caretColor: "#2c3e50",
+                  WebkitBoxShadow: theme.palette.mode === "dark" ? "0 0 0 100px #252525 inset !important" : "0 0 0 100px #ffffff inset !important",
+                  WebkitTextFillColor: theme.palette.mode === "dark" ? "#e0e0e0 !important" : "#2c3e50 !important",
+                  caretColor: theme.palette.mode === "dark" ? "#e0e0e0" : "#2c3e50",
                 },
               },
             },
