@@ -465,8 +465,15 @@ const Calculator = () => {
     if (activeStep === 3) {
       // When leaving results view
       setIsResultsView(false);
+      // If in manual mode, go back to step 1 (grade input) instead of step 2 (categorization)
+      if (calculatorMode === "manual") {
+        setActiveStep(1);
+      } else {
+        setActiveStep(2);
+      }
+    } else {
+      setActiveStep((prevStep) => prevStep - 1);
     }
-    setActiveStep((prevStep) => prevStep - 1);
     setError(null);
   };
 
@@ -621,6 +628,7 @@ const Calculator = () => {
                 setRawGradeData={setRawGradeData}
                 categories={categories}
                 setGrades={setManualGrades}
+                manualGrades={manualGrades}
               />
             )}
 

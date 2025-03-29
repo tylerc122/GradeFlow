@@ -7,6 +7,10 @@ import {
   Stack,
   Alert,
   alpha,
+  FormControl,
+  RadioGroup,
+  FormControlLabel,
+  Radio,
 } from "@mui/material";
 import AssignmentIcon from "@mui/icons-material/Assignment";
 import {
@@ -16,20 +20,70 @@ import {
   letterGradeToPoints,
 } from "../../src/utils/letterGradeUtils";
 
-const ManualInput = ({ categories, setGrades }) => {
+const ManualInput = ({ categories, setGrades, manualGrades }) => {
+  // Initialize categoryGrades with existing manualGrades
   const [categoryGrades, setCategoryGrades] = useState(
     categories.reduce(
-      (acc, cat) => ({
-        ...acc,
-        [cat.name]: "",
-      }),
+      (acc, cat) => {
+        const existingGrade = manualGrades.find(g => g.categoryName === cat.name);
+        return {
+          ...acc,
+          [cat.name]: existingGrade ? existingGrade.grade : "",
+        };
+      },
       {}
     )
   );
+  const [inputType, setInputType] = useState(() => {
+    // Determine input type from existing grades
+    if (!manualGrades.length) return null;
+    return manualGrades[0].isLetter ? 'letter' : 'percentage';
+  });
+
+  // Update categoryGrades when categories change
+  useEffect(() => {
+    setCategoryGrades(
+      categories.reduce(
+        (acc, cat) => {
+          const existingGrade = manualGrades.find(g => g.categoryName === cat.name);
+          return {
+            ...acc,
+            [cat.name]: existingGrade ? existingGrade.grade : "",
+          };
+        },
+        {}
+      )
+    );
+  }, [categories, manualGrades]);
+
+  const handleInputTypeChange = (event) => {
+    const newType = event.target.value;
+    setInputType(newType);
+    // Clear all grades when switching input type
+    setCategoryGrades(
+      categories.reduce(
+        (acc, cat) => ({
+          ...acc,
+          [cat.name]: "",
+        }),
+        {}
+      )
+    );
+  };
 
   const handleGradeChange = (categoryName, value) => {
     // Clean up the input - trim spaces and convert to uppercase for letter grades
     const cleanedValue = value.trim().toUpperCase();
+
+    // Validate based on input type
+    if (cleanedValue) {
+      if (inputType === 'letter' && !isLetterGrade(cleanedValue)) {
+        return;
+      }
+      if (inputType === 'percentage' && !isPercentage(cleanedValue)) {
+        return;
+      }
+    }
 
     setCategoryGrades((prev) => ({
       ...prev,
@@ -42,12 +96,10 @@ const ManualInput = ({ categories, setGrades }) => {
       return {
         categoryName: name,
         grade: currentGrade,
-        isLetter: isLetterGrade(currentGrade),
-        value: isLetterGrade(currentGrade)
+        isLetter: inputType === 'letter',
+        value: inputType === 'letter'
           ? letterGradeToPoints(currentGrade)
-          : isPercentage(currentGrade)
-          ? parseFloat(currentGrade)
-          : null,
+          : parseFloat(currentGrade),
       };
     });
 
@@ -56,8 +108,11 @@ const ManualInput = ({ categories, setGrades }) => {
 
   const getGradeError = (value) => {
     if (!value) return "";
-    if (isLetterGrade(value) || isPercentage(value)) return "";
-    return "Enter a valid percentage (0-100) or letter grade (A+, A, A-, etc.)";
+    if (inputType === 'letter' && isLetterGrade(value)) return "";
+    if (inputType === 'percentage' && isPercentage(value)) return "";
+    return inputType === 'letter' 
+      ? "Please enter a valid letter grade (A+, A, A-, etc.)"
+      : "Please enter a valid percentage (0-100)";
   };
 
   return (
@@ -70,9 +125,28 @@ const ManualInput = ({ categories, setGrades }) => {
           borderColor: alpha("#2196f3", 0.2),
         }}
       >
-        Enter your category grades as either percentages (0-100) or letter
-        grades (A+, A, A-, etc.). Mix and match as needed.
+        Choose your preferred grade input method and enter all category grades consistently.
       </Alert>
+
+      <FormControl component="fieldset">
+        <RadioGroup
+          row
+          value={inputType}
+          onChange={handleInputTypeChange}
+          sx={{ mb: 2 }}
+        >
+          <FormControlLabel
+            value="letter"
+            control={<Radio />}
+            label="Letter Grades (A+, A, A-, etc.)"
+          />
+          <FormControlLabel
+            value="percentage"
+            control={<Radio />}
+            label="Percentages (0-100)"
+          />
+        </RadioGroup>
+      </FormControl>
 
       {categories.map((category, index) => (
         <Paper
@@ -105,31 +179,55 @@ const ManualInput = ({ categories, setGrades }) => {
               onChange={(e) => handleGradeChange(category.name, e.target.value)}
               error={!!getGradeError(categoryGrades[category.name])}
               helperText={getGradeError(categoryGrades[category.name])}
+              disabled={!inputType}
               sx={{ width: 150 }}
-              placeholder="95 or A-"
+              placeholder={inputType === 'letter' ? "A-" : "95"}
               inputProps={{
                 type: "text",
                 inputMode: "decimal",
+                pattern: inputType === 'letter' 
+                  ? "^[A-Za-z][+-]?$"
+                  : "^[0-9]+(?:\\.[0-9]+)?$",
+                onKeyPress: (e) => {
+                  const value = e.target.value + e.key;
+                  if (value && inputType === 'letter' && !isLetterGrade(value)) {
+                    e.preventDefault();
+                  }
+                  if (value && inputType === 'percentage' && !isPercentage(value)) {
+                    e.preventDefault();
+                  }
+                },
+                onPaste: (e) => {
+                  const pastedValue = e.clipboardData.getData('text').trim().toUpperCase();
+                  if (pastedValue && inputType === 'letter' && !isLetterGrade(pastedValue)) {
+                    e.preventDefault();
+                  }
+                  if (pastedValue && inputType === 'percentage' && !isPercentage(pastedValue)) {
+                    e.preventDefault();
+                  }
+                }
               }}
             />
           </Box>
         </Paper>
       ))}
 
-      <Paper
-        elevation={1}
-        sx={{
-          p: 2,
-          mt: 2,
-          backgroundColor: alpha("#f5f5f5", 0.5),
-        }}
-      >
-        <Typography variant="subtitle2" color="text.secondary">
-          Letter Grade Scale: A+ (≥97%), A (≥93%), A- (≥90%), B+ (≥87%), B
-          (≥83%), B- (≥80%), C+ (≥77%), C (≥73%), C- (≥70%), D+ (≥67%), D
-          (≥63%), D- (≥60%), F (&lt;60%)
-        </Typography>
-      </Paper>
+      {inputType === 'letter' && (
+        <Paper
+          elevation={1}
+          sx={{
+            p: 2,
+            mt: 2,
+            backgroundColor: alpha("#f5f5f5", 0.5),
+          }}
+        >
+          <Typography variant="subtitle2" color="text.secondary">
+            Letter Grade Scale: A+ (≥97%), A (≥93%), A- (≥90%), B+ (≥87%), B
+            (≥83%), B- (≥80%), C+ (≥77%), C (≥73%), C- (≥70%), D+ (≥67%), D
+            (≥63%), D- (≥60%), F (&lt;60%)
+          </Typography>
+        </Paper>
+      )}
     </Stack>
   );
 };
