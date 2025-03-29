@@ -49,6 +49,7 @@ const GradeInput = ({
   setRawGradeData,
   categories,
   setGrades,
+  manualGrades,
 }) => {
   const muiTheme = useMuiTheme();
   const { isDark } = useTheme();
@@ -200,7 +201,11 @@ const GradeInput = ({
             setRawGradeData={setRawGradeData}
           />
         ) : (
-          <ManualInput categories={categories} setGrades={setGrades} />
+          <ManualInput 
+            categories={categories} 
+            setGrades={setGrades} 
+            manualGrades={manualGrades}
+          />
         )}
       </Stack>
     </Paper>
