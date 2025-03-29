@@ -428,7 +428,6 @@ const Calculator = () => {
     }
 
     if (activeStep === 2 && calculatorMode === "blackboard") {
-      setIsResultsView(true);
       if (
         !parsedGrades ||
         !parsedGrades.assignments ||
@@ -442,6 +441,9 @@ const Calculator = () => {
         setError("Please categorize all assignments before proceeding");
         return;
       }
+
+      // Only set isResultsView to true after all validations pass
+      setIsResultsView(true);
     }
 
     setActiveStep((prevStep) => prevStep + 1);

@@ -40,6 +40,7 @@ const SavedCalculation = () => {
     manualGrades,
     setManualGrades,
     resetCalculator,
+    setIsResultsView,
   } = useCalculator();
   
   // Add a ref to store original calculator state
@@ -62,6 +63,9 @@ const SavedCalculation = () => {
 
   // Save original calculator state when component mounts and restore when it unmounts
   useEffect(() => {
+    // Set isResultsView to true when viewing a saved calculation
+    setIsResultsView(true);
+    
     // Save current calculator state
     originalCalculatorState.current = {
       categories,
@@ -89,6 +93,8 @@ const SavedCalculation = () => {
         setRawGradeData(originalCalculatorState.current.rawGradeData);
         setManualGrades(originalCalculatorState.current.manualGrades);
       }
+      // Reset isResultsView when leaving the saved calculation view
+      setIsResultsView(false);
     };
   }, []);
 
