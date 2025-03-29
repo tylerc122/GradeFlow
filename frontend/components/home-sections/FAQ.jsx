@@ -206,24 +206,38 @@ const FAQ = () => {
                   expandIcon={
                     <Box
                       sx={{
-                        width: 24,
-                        height: 24,
-                        borderRadius: "8px",
+                        width: 28,
+                        height: 28,
+                        borderRadius: "10px",
                         display: "flex",
                         alignItems: "center",
                         justifyContent: "center",
-                        backgroundColor:
-                          expanded === `panel${index}`
-                            ? alpha(faq.color, 0.1)
-                            : alpha(theme.palette.action.hover, 0.5),
-                        color:
-                          expanded === `panel${index}`
-                            ? faq.color
-                            : theme.palette.text.secondary,
+                        backgroundColor: expanded === `panel${index}`
+                          ? alpha(faq.color, 0.15)
+                          : alpha(theme.palette.mode === 'dark' ? theme.palette.background.paper : theme.palette.grey[100], 0.8),
+                        color: expanded === `panel${index}`
+                          ? faq.color
+                          : theme.palette.mode === 'dark' 
+                            ? alpha(theme.palette.text.primary, 0.7)
+                            : alpha(theme.palette.text.primary, 0.5),
                         transition: "all 0.3s ease",
+                        border: `1px solid ${expanded === `panel${index}`
+                          ? alpha(faq.color, 0.3)
+                          : alpha(theme.palette.divider, 0.1)}`,
+                        '&:hover': {
+                          backgroundColor: expanded === `panel${index}`
+                            ? alpha(faq.color, 0.2)
+                            : alpha(theme.palette.mode === 'dark' ? theme.palette.background.paper : theme.palette.grey[100], 0.9),
+                        }
                       }}
                     >
-                      <ChevronDown size={16} />
+                      <ChevronDown 
+                        size={16} 
+                        style={{
+                          transform: expanded === `panel${index}` ? 'rotate(180deg)' : 'rotate(0)',
+                          transition: 'transform 0.3s ease'
+                        }}
+                      />
                     </Box>
                   }
                   sx={{

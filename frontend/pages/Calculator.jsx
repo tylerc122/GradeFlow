@@ -237,10 +237,11 @@ const Calculator = () => {
           (g) => g.categoryName === category.name
         );
         if (grade) {
-          if (grade.isLetter) {
+          if (grade.isLetter && isLetterGrade(grade.grade)) {
             hasLetterGrades = true;
-            totalWeightedPoints +=
-              LETTER_GRADES[grade.grade].points * category.weight;
+            // Get GPA points directly
+            const points = letterGradeToPoints(grade.grade);
+            totalWeightedPoints += points * category.weight;
           } else {
             totalWeightedPoints += grade.value * category.weight;
           }
@@ -248,7 +249,10 @@ const Calculator = () => {
         }
       });
 
-      return totalWeightedPoints / totalWeight;
+      return {
+        percentage: totalWeight > 0 ? totalWeightedPoints / totalWeight : 0,
+        hasLetterGrades
+      };
     }
 
     return categories.reduce((total, category) => {
@@ -369,17 +373,24 @@ const Calculator = () => {
       if (grade) {
         if (grade.isLetter && isLetterGrade(grade.grade)) {
           hasLetterGrades = true;
-          // Convert letter grade to points (0-4 scale) then to percentage (0-100 scale)
+          // Use the actual GPA points directly for letter grades
           const points = letterGradeToPoints(grade.grade);
-          totalWeightedPoints += (points / 4) * 100 * category.weight;
+          totalWeightedPoints += points * category.weight;
         } else if (grade.value !== null) {
+          // For percentage grades, keep as is
           totalWeightedPoints += grade.value * category.weight;
         }
         totalWeight += category.weight;
       }
     });
 
-    return totalWeight > 0 ? totalWeightedPoints / totalWeight : 0;
+    // If letter grades were used, return GPA directly
+    // Otherwise, return percentage as before
+    if (hasLetterGrades) {
+      return totalWeight > 0 ? totalWeightedPoints / totalWeight : 0;
+    } else {
+      return totalWeight > 0 ? totalWeightedPoints / totalWeight : 0;
+    }
   };
 
   const handleNext = async () => {

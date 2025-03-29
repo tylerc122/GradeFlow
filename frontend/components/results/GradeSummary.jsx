@@ -34,6 +34,11 @@ export const GradeSummary = ({
   const theme = useMuiTheme();
   const { mode, isDark } = useTheme();
 
+  // Convert GPA to percentage for display purposes
+  const displayPercentage = finalGrade.hasLetterGrades 
+    ? finalGrade.percentage * 25 // Scale 4.0 GPA to 100%
+    : finalGrade.percentage;
+
   const getGradeColor = (percentage) => {
     if (percentage >= 90) return theme.palette.success.main;
     if (percentage >= 80) return theme.palette.primary.main;
@@ -53,7 +58,7 @@ export const GradeSummary = ({
 
   // Get letter grade from percentage
   const letterGrade = finalGrade.hasLetterGrades
-    ? percentageToLetter(finalGrade.percentage * 25)
+    ? percentageToLetter(displayPercentage)  
     : percentageToLetter(finalGrade.percentage);
 
   return (
@@ -79,9 +84,9 @@ export const GradeSummary = ({
           width: "30%",
           height: "100%",
           background: `linear-gradient(135deg, ${alpha(
-            getGradeColor(finalGrade.percentage),
+            getGradeColor(displayPercentage),
             0
-          )} 0%, ${alpha(getGradeColor(finalGrade.percentage))} 100%)`,
+          )} 0%, ${alpha(getGradeColor(displayPercentage))} 100%)`,
           zIndex: 0,
         }}
       />
@@ -108,7 +113,7 @@ export const GradeSummary = ({
                 gap: 1,
               }}
             >
-              <Award size={20} color={getGradeColor(finalGrade.percentage)} />
+              <Award size={20} color={getGradeColor(displayPercentage)} />
               Current Grade
             </Typography>
 
@@ -135,13 +140,13 @@ export const GradeSummary = ({
                     height: 90,
                     borderRadius: "24px",
                     background: `linear-gradient(135deg, ${getGradeColor(
-                      finalGrade.percentage
+                      displayPercentage
                     )} 0%, ${alpha(
-                      getGradeColor(finalGrade.percentage),
+                      getGradeColor(displayPercentage),
                       0.8
                     )} 100%)`,
                     boxShadow: `0 8px 16px ${alpha(
-                      getGradeColor(finalGrade.percentage),
+                      getGradeColor(displayPercentage),
                       isDark ? 0.3 : 0.2
                     )}`,
                     color: "#ffffff",
@@ -160,7 +165,10 @@ export const GradeSummary = ({
                       color: "#ffffff",
                     }}
                   >
-                    {Math.floor(finalGrade.percentage)}
+                    {finalGrade.hasLetterGrades 
+                      ? finalGrade.percentage.toFixed(2) 
+                      : Math.floor(displayPercentage)
+                    }
                   </Typography>
                   <Typography
                     variant="h5"
@@ -171,7 +179,10 @@ export const GradeSummary = ({
                       color: "#ffffff",
                     }}
                   >
-                    {(finalGrade.percentage % 1).toFixed(2).substring(1)}%
+                    {finalGrade.hasLetterGrades 
+                      ? "GPA"
+                      : (displayPercentage % 1).toFixed(2).substring(1) + "%"
+                    }
                   </Typography>
                 </Box>
               </motion.div>
@@ -181,7 +192,7 @@ export const GradeSummary = ({
                   variant="h3"
                   sx={{
                     fontWeight: 700,
-                    color: getGradeColor(finalGrade.percentage),
+                    color: getGradeColor(displayPercentage),
                     display: "flex",
                     alignItems: "center",
                     gap: 1,
@@ -196,18 +207,6 @@ export const GradeSummary = ({
                     />
                   </Tooltip>
                 </Typography>
-
-                {gpa !== null && (
-                  <Typography
-                    variant="h5"
-                    sx={{
-                      fontWeight: 500,
-                      color: "text.secondary",
-                    }}
-                  >
-                    {gpa.toFixed(2)} GPA
-                  </Typography>
-                )}
               </Box>
             </Box>
           </Box>
