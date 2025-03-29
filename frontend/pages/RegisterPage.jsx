@@ -13,6 +13,7 @@ import {
 import { useNavigate, Link as RouterLink } from "react-router-dom";
 import PersonAddOutlinedIcon from "@mui/icons-material/PersonAddOutlined";
 import { useAuth } from "../src/contexts/AuthContext";
+import { useTheme } from "@mui/material/styles";
 
 const RegisterPage = () => {
   const navigate = useNavigate();
@@ -25,6 +26,7 @@ const RegisterPage = () => {
   });
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const theme = useTheme();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -91,7 +93,19 @@ const RegisterPage = () => {
           </Alert>
         )}
 
-        <Box component="form" onSubmit={handleSubmit} sx={{ width: "100%" }}>
+        <Box component="form" onSubmit={handleSubmit} sx={{ 
+          width: "100%",
+          "& .MuiTextField-root": {
+            "& .MuiInputBase-input": {
+              color: "text.primary",
+              "&:-webkit-autofill": {
+                WebkitBoxShadow: theme.palette.mode === "dark" ? "0 0 0 100px #252525 inset !important" : "0 0 0 100px #ffffff inset !important",
+                WebkitTextFillColor: theme.palette.mode === "dark" ? "#e0e0e0 !important" : "#2c3e50 !important",
+                caretColor: theme.palette.mode === "dark" ? "#e0e0e0" : "#2c3e50",
+              },
+            },
+          },
+        }}>
           <TextField
             margin="normal"
             required
@@ -103,7 +117,15 @@ const RegisterPage = () => {
             autoComplete="name"
             value={formData.name}
             onChange={handleChange}
-            sx={{ mb: 2 }}
+            sx={{ 
+              mb: 2,
+              bgcolor: "background.paper",
+              "& .MuiOutlinedInput-root": {
+                "&.Mui-focused fieldset": {
+                  borderColor: "primary.main",
+                },
+              },
+            }}
           />
           <TextField
             margin="normal"
@@ -116,7 +138,15 @@ const RegisterPage = () => {
             autoComplete="email"
             value={formData.email}
             onChange={handleChange}
-            sx={{ mb: 2 }}
+            sx={{ 
+              mb: 2,
+              bgcolor: "background.paper",
+              "& .MuiOutlinedInput-root": {
+                "&.Mui-focused fieldset": {
+                  borderColor: "primary.main",
+                },
+              },
+            }}
           />
           <TextField
             margin="normal"
@@ -128,7 +158,15 @@ const RegisterPage = () => {
             id="password"
             value={formData.password}
             onChange={handleChange}
-            sx={{ mb: 2 }}
+            sx={{ 
+              mb: 2,
+              bgcolor: "background.paper",
+              "& .MuiOutlinedInput-root": {
+                "&.Mui-focused fieldset": {
+                  borderColor: "primary.main",
+                },
+              },
+            }}
           />
           <TextField
             margin="normal"
@@ -140,7 +178,15 @@ const RegisterPage = () => {
             id="confirmPassword"
             value={formData.confirmPassword}
             onChange={handleChange}
-            sx={{ mb: 3 }}
+            sx={{ 
+              mb: 3,
+              bgcolor: "background.paper",
+              "& .MuiOutlinedInput-root": {
+                "&.Mui-focused fieldset": {
+                  borderColor: "primary.main",
+                },
+              },
+            }}
           />
           <Button
             type="submit"
