@@ -24,6 +24,7 @@ import { CategoryBreakdown } from "./CategoryBreakdown";
 import { AssignmentTable } from "./AssignmentTable";
 import { HypotheticalAssignmentDialog } from "../dialogs/HypotheticalAssignmentDialog";
 import ManualGradeTable from "./ManualGradeTable";
+import { letterGradeToPoints, isLetterGrade } from "../../src/utils/letterGradeUtils";
 
 const Results = () => {
   const navigate = useNavigate();
@@ -96,21 +97,33 @@ const Results = () => {
     if (mode === "manual") {
       let totalWeightedPoints = 0;
       let totalWeight = 0;
+      let hasLetterGrades = false;
 
       categories.forEach((category) => {
         const grade = manualGrades.find(
           (g) => g.categoryName === category.name
         );
         if (grade) {
-          totalWeightedPoints += grade.value * category.weight;
+          if (grade.isLetter && isLetterGrade(grade.grade)) {
+            hasLetterGrades = true;
+            // Get GPA points directly
+            const points = letterGradeToPoints(grade.grade);
+            totalWeightedPoints += points * category.weight;
+          } else {
+            totalWeightedPoints += grade.value * category.weight;
+          }
           totalWeight += category.weight;
         }
       });
 
-      return totalWeight > 0 ? totalWeightedPoints / totalWeight : 0;
+      return {
+        percentage: totalWeight > 0 ? totalWeightedPoints / totalWeight : 0,
+        hasLetterGrades
+      };
     }
 
-    return categories.reduce((total, category) => {
+    // For blackboard mode, return just the percentage
+    const percentage = categories.reduce((total, category) => {
       const categoryHypotheticals = hypotheticalAssignments.filter(
         (a) => a.categoryName === category.name
       );
@@ -126,6 +139,11 @@ const Results = () => {
       );
       return total + categoryGrade * (category.weight / 100);
     }, 0);
+    
+    return {
+      percentage,
+      hasLetterGrades: false
+    };
   };
 
   const handleToggleAssignmentVisibility = (categoryName, assignmentName) => {
@@ -179,7 +197,8 @@ const Results = () => {
             ),
           ],
         })),
-        overall_grade: calculateWeightedGrade(),
+        overall_grade: calculateWeightedGrade().percentage,
+        has_letter_grades: calculateWeightedGrade().hasLetterGrades,
         total_points_earned: categories.reduce((total, category) => {
           return (
             total +
@@ -320,9 +339,8 @@ const Results = () => {
           >
             <GradeSummary
               finalGrade={{
-                percentage: calculateWeightedGrade(),
-                hasLetterGrades:
-                  mode === "manual" && manualGrades.some((g) => g.isLetter),
+                percentage: calculateWeightedGrade().percentage,
+                hasLetterGrades: calculateWeightedGrade().hasLetterGrades,
               }}
               whatIfMode={whatIfMode}
               setWhatIfMode={setWhatIfMode}
