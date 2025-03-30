@@ -24,6 +24,22 @@ import {
 import { useTheme } from "../../src/contexts/ThemeContext";
 import { percentageToLetter } from "../../src/utils/letterGradeUtils";
 
+// Helper function to convert GPA to letter grade
+const gpaToLetter = (gpa) => {
+  if (gpa >= 4.0) return "A";
+  if (gpa >= 3.7) return "A-";
+  if (gpa >= 3.3) return "B+";
+  if (gpa >= 3.0) return "B";
+  if (gpa >= 2.7) return "B-";
+  if (gpa >= 2.3) return "C+";
+  if (gpa >= 2.0) return "C";
+  if (gpa >= 1.7) return "C-";
+  if (gpa >= 1.3) return "D+";
+  if (gpa >= 1.0) return "D";
+  if (gpa >= 0.7) return "D-";
+  return "F";
+};
+
 export const GradeSummary = ({
   finalGrade,
   whatIfMode,
@@ -34,16 +50,20 @@ export const GradeSummary = ({
   const theme = useMuiTheme();
   const { mode, isDark } = useTheme();
 
-  // Convert GPA to percentage for display purposes
-  const displayPercentage = finalGrade.hasLetterGrades 
-    ? finalGrade.percentage * 25 // Scale 4.0 GPA to 100%
-    : finalGrade.percentage;
-
-  const getGradeColor = (percentage) => {
-    if (percentage >= 90) return theme.palette.success.main;
-    if (percentage >= 80) return theme.palette.primary.main;
-    if (percentage >= 70) return theme.palette.warning.main;
-    return theme.palette.error.main;
+  const getGradeColor = (percentage, isGPA = false) => {
+    if (isGPA) {
+      // For GPA scale (0-4.0)
+      if (percentage >= 3.7) return theme.palette.success.main; // A range
+      if (percentage >= 3.0) return theme.palette.primary.main; // B range  
+      if (percentage >= 2.0) return theme.palette.warning.main; // C range
+      return theme.palette.error.main; // D and F range
+    } else {
+      // For percentage scale (0-100)
+      if (percentage >= 90) return theme.palette.success.main;
+      if (percentage >= 80) return theme.palette.primary.main;
+      if (percentage >= 70) return theme.palette.warning.main;
+      return theme.palette.error.main;
+    }
   };
 
   const getGradeIcon = (percentage) => {
@@ -56,10 +76,13 @@ export const GradeSummary = ({
   // Calculate GPA if there are letter grades
   const gpa = finalGrade.hasLetterGrades ? finalGrade.percentage : null;
 
-  // Get letter grade from percentage
+  // Get letter grade from percentage or GPA
   const letterGrade = finalGrade.hasLetterGrades
-    ? percentageToLetter(displayPercentage)  
+    ? gpaToLetter(finalGrade.percentage)  // Convert GPA to letter grade
     : percentageToLetter(finalGrade.percentage);
+
+  // Get appropriate color based on whether we're using GPA or percentage
+  const gradeColor = getGradeColor(finalGrade.percentage, finalGrade.hasLetterGrades);
 
   return (
     <Paper
@@ -84,9 +107,9 @@ export const GradeSummary = ({
           width: "30%",
           height: "100%",
           background: `linear-gradient(135deg, ${alpha(
-            getGradeColor(displayPercentage),
+            gradeColor,
             0
-          )} 0%, ${alpha(getGradeColor(displayPercentage))} 100%)`,
+          )} 0%, ${alpha(gradeColor)} 100%)`,
           zIndex: 0,
         }}
       />
@@ -113,7 +136,7 @@ export const GradeSummary = ({
                 gap: 1,
               }}
             >
-              <Award size={20} color={getGradeColor(displayPercentage)} />
+              <Award size={20} color={gradeColor} />
               Current Grade
             </Typography>
 
@@ -139,14 +162,14 @@ export const GradeSummary = ({
                     width: 90,
                     height: 90,
                     borderRadius: "24px",
-                    background: `linear-gradient(135deg, ${getGradeColor(
-                      displayPercentage
-                    )} 0%, ${alpha(
-                      getGradeColor(displayPercentage),
+                    background: `linear-gradient(135deg, ${
+                      gradeColor
+                    } 0%, ${alpha(
+                      gradeColor,
                       0.8
                     )} 100%)`,
                     boxShadow: `0 8px 16px ${alpha(
-                      getGradeColor(displayPercentage),
+                      gradeColor,
                       isDark ? 0.3 : 0.2
                     )}`,
                     color: "#ffffff",
@@ -156,34 +179,44 @@ export const GradeSummary = ({
                     overflow: "hidden",
                   }}
                 >
-                  <Typography
-                    variant="h3"
-                    sx={{
-                      fontWeight: 700,
-                      fontSize: "2rem",
-                      lineHeight: 1,
-                      color: "#ffffff",
-                    }}
-                  >
-                    {finalGrade.hasLetterGrades 
-                      ? finalGrade.percentage.toFixed(2) 
-                      : Math.floor(displayPercentage)
-                    }
-                  </Typography>
-                  <Typography
-                    variant="h5"
-                    sx={{
-                      fontWeight: 600,
-                      fontSize: "1rem",
-                      lineHeight: 1,
-                      color: "#ffffff",
-                    }}
-                  >
-                    {finalGrade.hasLetterGrades 
-                      ? "GPA"
-                      : (displayPercentage % 1).toFixed(2).substring(1) + "%"
-                    }
-                  </Typography>
+                  {finalGrade.hasLetterGrades ? (
+                    <Typography
+                      variant="h3"
+                      sx={{
+                        fontWeight: 700,
+                        fontSize: "2rem",
+                        lineHeight: 1,
+                        color: "#ffffff",
+                      }}
+                    >
+                      {finalGrade.percentage.toFixed(1)}
+                    </Typography>
+                  ) : (
+                    <>
+                      <Typography
+                        variant="h3"
+                        sx={{
+                          fontWeight: 700,
+                          fontSize: "2rem",
+                          lineHeight: 1,
+                          color: "#ffffff",
+                        }}
+                      >
+                        {Math.floor(finalGrade.percentage)}
+                      </Typography>
+                      <Typography
+                        variant="h5"
+                        sx={{
+                          fontWeight: 600,
+                          fontSize: "1rem",
+                          lineHeight: 1,
+                          color: "#ffffff",
+                        }}
+                      >
+                        {(finalGrade.percentage % 1).toFixed(2).substring(1)}%
+                      </Typography>
+                    </>
+                  )}
                 </Box>
               </motion.div>
 
@@ -192,7 +225,7 @@ export const GradeSummary = ({
                   variant="h3"
                   sx={{
                     fontWeight: 700,
-                    color: getGradeColor(displayPercentage),
+                    color: gradeColor,
                     display: "flex",
                     alignItems: "center",
                     gap: 1,
@@ -207,6 +240,18 @@ export const GradeSummary = ({
                     />
                   </Tooltip>
                 </Typography>
+
+                {gpa !== null && (
+                  <Typography
+                    variant="h5"
+                    sx={{
+                      fontWeight: 500,
+                      color: "text.secondary",
+                    }}
+                  >
+                    {gpa.toFixed(1)} GPA
+                  </Typography>
+                )}
               </Box>
             </Box>
           </Box>

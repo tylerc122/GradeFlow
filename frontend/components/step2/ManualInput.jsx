@@ -20,41 +20,17 @@ import {
   letterGradeToPoints,
 } from "../../src/utils/letterGradeUtils";
 
-const ManualInput = ({ categories, setGrades, manualGrades }) => {
-  // Initialize categoryGrades with existing manualGrades
+const ManualInput = ({ categories, setGrades }) => {
   const [categoryGrades, setCategoryGrades] = useState(
     categories.reduce(
-      (acc, cat) => {
-        const existingGrade = manualGrades.find(g => g.categoryName === cat.name);
-        return {
-          ...acc,
-          [cat.name]: existingGrade ? existingGrade.grade : "",
-        };
-      },
+      (acc, cat) => ({
+        ...acc,
+        [cat.name]: "",
+      }),
       {}
     )
   );
-  const [inputType, setInputType] = useState(() => {
-    // Determine input type from existing grades
-    if (!manualGrades.length) return null;
-    return manualGrades[0].isLetter ? 'letter' : 'percentage';
-  });
-
-  // Update categoryGrades when categories change
-  useEffect(() => {
-    setCategoryGrades(
-      categories.reduce(
-        (acc, cat) => {
-          const existingGrade = manualGrades.find(g => g.categoryName === cat.name);
-          return {
-            ...acc,
-            [cat.name]: existingGrade ? existingGrade.grade : "",
-          };
-        },
-        {}
-      )
-    );
-  }, [categories, manualGrades]);
+  const [inputType, setInputType] = useState(null); // 'letter' or 'percentage'
 
   const handleInputTypeChange = (event) => {
     const newType = event.target.value;
