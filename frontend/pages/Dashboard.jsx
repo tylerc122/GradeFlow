@@ -45,6 +45,7 @@ import {
   Area,
   AreaChart,
 } from "recharts";
+import GPADashboardCard from "../components/GPADashboardCard";
 
 const Dashboard = () => {
   const theme = useTheme();
@@ -372,14 +373,7 @@ const Dashboard = () => {
         </Grid>
 
         <Grid item xs={12} md={4}>
-          {renderStatCard(
-            "Total Assignments",
-            stats?.total_assignments || 0,
-            <Calendar strokeWidth={1.5} size={24} />,
-            theme.palette.success.main,
-            "Across all calculations",
-            loading.stats
-          )}
+          <GPADashboardCard />
         </Grid>
 
         {/* Grade History Chart */}

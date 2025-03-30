@@ -18,9 +18,11 @@ import LoginPage from "../pages/LoginPage";
 import RegisterPage from "../pages/RegisterPage";
 import MyGradesPage from "../pages/MyGradesPage";
 import Dashboard from "../pages/Dashboard";
+import GPACalculatorPage from "../pages/GPACalculatorPage";
 import PageTransition from "../components/animations/PageTransition";
 import { AuthProvider, useAuth } from "./contexts/AuthContext";
 import { CalculatorProvider } from "./contexts/CalculatorContext";
+import { GPAProvider } from "./contexts/GPAContext";
 import { ThemeProvider } from "./contexts/ThemeContext";
 
 // Protected Route component
@@ -99,6 +101,14 @@ const AnimatedRoutes = () => {
           }
         />
         <Route
+          path="/gpa-calculator"
+          element={
+            <PageTransition>
+              <GPACalculatorPage />
+            </PageTransition>
+          }
+        />
+        <Route
           path="/about"
           element={
             <PageTransition>
@@ -148,31 +158,33 @@ const App = () => {
       <ThemeProvider>
         <AuthProvider>
           <CalculatorProvider>
-            <SnackbarProvider maxSnack={3}>
-              <CssBaseline />
-              <Box
-                sx={{
-                  display: "flex",
-                  flexDirection: "column",
-                  minHeight: "100vh",
-                  width: "100vw",
-                  overflow: "hidden",
-                }}
-              >
-                <Navbar />
+            <GPAProvider>
+              <SnackbarProvider maxSnack={3}>
+                <CssBaseline />
                 <Box
-                  component="main"
                   sx={{
-                    flexGrow: 1,
-                    minHeight: "100%",
-                    width: "100%",
-                    overflow: "auto",
+                    display: "flex",
+                    flexDirection: "column",
+                    minHeight: "100vh",
+                    width: "100vw",
+                    overflow: "hidden",
                   }}
                 >
-                  <AnimatedRoutes />
+                  <Navbar />
+                  <Box
+                    component="main"
+                    sx={{
+                      flexGrow: 1,
+                      minHeight: "100%",
+                      width: "100%",
+                      overflow: "auto",
+                    }}
+                  >
+                    <AnimatedRoutes />
+                  </Box>
                 </Box>
-              </Box>
-            </SnackbarProvider>
+              </SnackbarProvider>
+            </GPAProvider>
           </CalculatorProvider>
         </AuthProvider>
       </ThemeProvider>
