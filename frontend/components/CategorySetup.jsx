@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect } from "react";
 import {
   Paper,
   Typography,
@@ -19,6 +19,25 @@ import { useTheme } from "../src/contexts/ThemeContext";
 const CategorySetup = ({ categories, setCategories, error, setError }) => {
   const muiTheme = useMuiTheme();
   const { mode, isDark } = useTheme();
+
+  // Load categories from localStorage on mount
+  useEffect(() => {
+    const savedCategories = localStorage.getItem('gradeCategories');
+    if (savedCategories && (!categories || categories.length === 0)) {
+      try {
+        setCategories(JSON.parse(savedCategories));
+      } catch (error) {
+        console.error('Failed to parse saved categories:', error);
+      }
+    }
+  }, []);
+
+  // Save categories to localStorage whenever they change
+  useEffect(() => {
+    if (categories && categories.length > 0) {
+      localStorage.setItem('gradeCategories', JSON.stringify(categories));
+    }
+  }, [categories]);
 
   const addEmptyCategory = () => {
     setCategories([...categories, { name: "", weight: "" }]);
