@@ -33,6 +33,7 @@ import {
   BarChart,
   Moon,
   Sun,
+  GraduationCap,
 } from "lucide-react";
 import { useAuth } from "../src/contexts/AuthContext";
 import { useCalculator } from "../src/contexts/CalculatorContext";
@@ -108,6 +109,7 @@ const Navbar = () => {
   const navItems = [
     { text: "Home", path: "/", icon: <Home size={18} /> },
     { text: "Calculator", path: "/calculator", icon: <Calculator size={18} /> },
+    { text: "GPA Calculator", path: "/gpa-calculator", icon: <GraduationCap size={18} /> },
     ...(user
       ? [{ text: "My Grades", path: "/grades", icon: <BarChart size={18} /> }]
       : []),
