@@ -34,7 +34,12 @@ const CategorySetup = ({ categories, setCategories, error, setError }) => {
       return false;
     }
 
-    return true;
+    const totalWeight = categories.reduce((sum, cat, i) => {
+      if (i === index) return sum;
+      return sum + (parseFloat(cat.weight) || 0);
+    }, weight);
+
+    return Math.abs(totalWeight - 100) < 0.01;
   };
 
   const handleCategoryChange = (index, field, value) => {
@@ -185,7 +190,7 @@ const CategorySetup = ({ categories, setCategories, error, setError }) => {
                       backgroundColor: isDark ? "#252525" : "white",
                     },
                   }}
-                  error={!category.weight || isNaN(parseFloat(category.weight)) || parseFloat(category.weight) <= 0 || parseFloat(category.weight) > 100}
+                  error={!validateCategory(category, index)}
                 />
                 <IconButton
                   onClick={() => handleDeleteCategory(index)}
