@@ -323,31 +323,17 @@ const HomePage = () => {
                 }}
               >
                 {mode === "dark" ? (
-                  // Dark mode placeholder - this will be replaced with your actual dark mode image
-                  <Box
-                    sx={{
-                      width: "100%",
-                      aspectRatio: "16/9",
-                      borderRadius: "24px",
-                      background:
-                        "linear-gradient(145deg, #252525 0%, #1e1e1e 100%)",
-                      border: `1px solid ${alpha(
-                        theme.palette.common.white,
-                        0.1
-                      )}`,
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      color: alpha(theme.palette.common.white, 0.5),
-                      fontWeight: 500,
-                      fontSize: "1.2rem",
-                      padding: 4,
-                      textAlign: "center",
-                    }}
-                  >
-                    PLACEHOLDA
-                    <br />
-                  </Box>
+                  <img
+                  src="./dark.png"
+                  alt="Grade calculation illustration"
+                  style={{
+                    maxWidth: "100%",
+                    border: `1px solid ${alpha(
+                      theme.palette.common.black,
+                      0.1
+                    )}`,
+                  }}
+                />
                 ) : (
                   <img
                     src="./grade.png"
