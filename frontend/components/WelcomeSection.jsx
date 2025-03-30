@@ -52,21 +52,7 @@ const WelcomeSection = () => {
           overflow: "hidden",
         }}
       >
-        {/* Decorative corner effect */}
-        <Box
-          sx={{
-            position: "absolute",
-            top: 0,
-            right: 0,
-            width: "150px",
-            height: "150px",
-            background: `linear-gradient(225deg, ${alpha(
-              theme.palette.primary.main,
-              0.1
-            )} 0%, ${alpha(theme.palette.primary.main, 0)} 70%)`,
-            zIndex: 0,
-          }}
-        />
+        {/* Remove decorative corner effect */}
 
         <Box sx={{ position: "relative", zIndex: 1 }}>
           <Box sx={{ display: "flex", alignItems: "center", gap: 2, mb: 3 }}>
@@ -101,13 +87,13 @@ const WelcomeSection = () => {
             size="small"
             sx={{
               fontWeight: 500,
-              backgroundColor: alpha(
-                theme.palette.primary.main,
-                isDark ? 0.2 : 0.1
-              ),
+              backgroundColor: isDark 
+                ? "transparent" 
+                : alpha(theme.palette.primary.main, 0.1),
               color: theme.palette.primary.main,
               borderRadius: "6px",
               mb: 2,
+              border: `1px solid ${alpha(theme.palette.primary.main, isDark ? 0.5 : 0.2)}`,
             }}
           />
 
@@ -137,21 +123,7 @@ const WelcomeSection = () => {
           overflow: "hidden",
         }}
       >
-        {/* Decorative corner effect */}
-        <Box
-          sx={{
-            position: "absolute",
-            bottom: 0,
-            left: 0,
-            width: "120px",
-            height: "120px",
-            background: `linear-gradient(45deg, ${alpha(
-              theme.palette.secondary.main,
-              0.1
-            )} 0%, ${alpha(theme.palette.secondary.main, 0)} 70%)`,
-            zIndex: 0,
-          }}
-        />
+        {/* Remove decorative corner effect */}
 
         <Box sx={{ position: "relative", zIndex: 1 }}>
           <Typography

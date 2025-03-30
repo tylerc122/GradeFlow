@@ -38,11 +38,11 @@ const GPACalculator = () => {
   const { 
     courses, 
     setCourses, 
-    technicalCourses, 
-    setTechnicalCourses,
+    majorCourses, 
+    setMajorCourses,
     centralGPA,
     calculateOverallGPA,
-    calculateTechnicalGPA,
+    calculateMajorGPA,
     updateCentralGPA,
     isEditing,
     cancelEditing
@@ -72,16 +72,16 @@ const GPACalculator = () => {
     setTabValue(newValue);
   };
 
-  const addCourse = (isTechnical = false) => {
+  const addCourse = (isMajor = false) => {
     const newCourse = { title: "", credits: "", grade: "A" };
-    if (isTechnical) {
-      setTechnicalCourses([...technicalCourses, newCourse]);
+    if (isMajor) {
+      setMajorCourses([...majorCourses, newCourse]);
     } else {
       setCourses([...courses, newCourse]);
     }
   };
 
-  const handleCourseChange = (index, field, value, isTechnical = false) => {
+  const handleCourseChange = (index, field, value, isMajor = false) => {
     if (field === "credits") {
       // Ensure credits are numeric
       value = value.replace(/[^\d.]/g, "");
@@ -95,22 +95,22 @@ const GPACalculator = () => {
       }
     }
 
-    const updatedCourses = isTechnical 
-      ? [...technicalCourses]
+    const updatedCourses = isMajor 
+      ? [...majorCourses]
       : [...courses];
     
     updatedCourses[index][field] = value;
     
-    if (isTechnical) {
-      setTechnicalCourses(updatedCourses);
+    if (isMajor) {
+      setMajorCourses(updatedCourses);
     } else {
       setCourses(updatedCourses);
     }
   };
 
-  const deleteCourse = (index, isTechnical = false) => {
-    if (isTechnical) {
-      setTechnicalCourses(technicalCourses.filter((_, i) => i !== index));
+  const deleteCourse = (index, isMajor = false) => {
+    if (isMajor) {
+      setMajorCourses(majorCourses.filter((_, i) => i !== index));
     } else {
       setCourses(courses.filter((_, i) => i !== index));
     }
@@ -142,7 +142,7 @@ const GPACalculator = () => {
     });
   };
 
-  const renderCourseInputs = (courseList, isTechnical = false) => {
+  const renderCourseInputs = (courseList, isMajor = false) => {
     return (
       <Stack spacing={2}>
         {courseList.map((course, index) => (
@@ -174,7 +174,7 @@ const GPACalculator = () => {
                 size="medium"
                 label="Course Title"
                 value={course.title}
-                onChange={(e) => handleCourseChange(index, "title", e.target.value, isTechnical)}
+                onChange={(e) => handleCourseChange(index, "title", e.target.value, isMajor)}
                 sx={{
                   flexGrow: 1,
                   minWidth: {xs: '100%', md: 'auto'},
@@ -187,7 +187,7 @@ const GPACalculator = () => {
                 size="medium"
                 label="Credits"
                 value={course.credits}
-                onChange={(e) => handleCourseChange(index, "credits", e.target.value, isTechnical)}
+                onChange={(e) => handleCourseChange(index, "credits", e.target.value, isMajor)}
                 sx={{
                   width: {xs: '45%', md: '100px'},
                   "& .MuiOutlinedInput-root": {
@@ -207,7 +207,7 @@ const GPACalculator = () => {
                 <Select
                   value={course.grade}
                   label="Grade"
-                  onChange={(e) => handleCourseChange(index, "grade", e.target.value, isTechnical)}
+                  onChange={(e) => handleCourseChange(index, "grade", e.target.value, isMajor)}
                 >
                   {letterGrades.map((grade) => (
                     <MenuItem key={grade} value={grade}>
@@ -217,7 +217,7 @@ const GPACalculator = () => {
                 </Select>
               </FormControl>
               <IconButton
-                onClick={() => deleteCourse(index, isTechnical)}
+                onClick={() => deleteCourse(index, isMajor)}
                 sx={{
                   color: "error.main",
                   "&:hover": {
@@ -341,7 +341,7 @@ const GPACalculator = () => {
               <Tab
                 icon={<ComputerIcon />}
                 iconPosition="start"
-                label="Technical GPA" 
+                label="Major GPA" 
                 id="tab-1" 
                 aria-controls="tabpanel-1"
               />
@@ -413,7 +413,7 @@ const GPACalculator = () => {
               <>
                 <Box sx={{ mb: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <Typography variant="h6">
-                    Technical Courses
+                    Major Courses
                   </Typography>
                   <Button
                     startIcon={<AddIcon />}
@@ -426,16 +426,16 @@ const GPACalculator = () => {
                       },
                     }}
                   >
-                    Add Technical Course
+                    Add Major Course
                   </Button>
                 </Box>
                 
-                {technicalCourses.length === 0 ? (
+                {majorCourses.length === 0 ? (
                   <Typography variant="body1" color="text.secondary" sx={{ textAlign: 'center', py: 4 }}>
-                    Add technical courses to calculate your technical GPA
+                    Add major courses to calculate your major GPA
                   </Typography>
                 ) : (
-                  renderCourseInputs(technicalCourses, true)
+                  renderCourseInputs(majorCourses, true)
                 )}
 
                 <Box
@@ -461,7 +461,7 @@ const GPACalculator = () => {
                       color: "primary.main",
                     }}
                   >
-                    Technical GPA: {calculateTechnicalGPA()}
+                    Major GPA: {calculateMajorGPA()}
                   </Typography>
                 </Box>
               </>
@@ -490,7 +490,7 @@ const GPACalculator = () => {
               Overall GPA: {calculateOverallGPA()}
             </Typography>
             <Typography variant="body2">
-              Technical GPA: {calculateTechnicalGPA()}
+              Major GPA: {calculateMajorGPA()}
             </Typography>
           </Box>
         </DialogContent>

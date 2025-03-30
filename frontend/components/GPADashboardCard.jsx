@@ -9,6 +9,7 @@ import {
   Divider,
   useTheme as useMuiTheme,
   Chip,
+  CardActions,
 } from "@mui/material";
 import { School, Computer, Edit, Calendar } from "lucide-react";
 import { useNavigate } from "react-router-dom";
@@ -22,7 +23,7 @@ const GPADashboardCard = () => {
   const { centralGPA, editGPA } = useGPA();
 
   const formatDate = (dateString) => {
-    if (!dateString) return "Never updated";
+    if (!dateString) return "Not yet saved";
     const date = new Date(dateString);
     return date.toLocaleDateString('en-US', {
       month: 'short',
@@ -49,6 +50,14 @@ const GPADashboardCard = () => {
         },
         overflow: "hidden",
         position: "relative",
+        display: "flex",
+        flexDirection: "column",
+        background: isDark 
+          ? 'transparent' 
+          : 'linear-gradient(145deg, #ffffff 0%, #f8f9fa 100%)',
+        border: isDark 
+          ? `1px solid ${alpha(muiTheme.palette.primary.main, 0.2)}` 
+          : 'none',
       }}
     >
       {/* Decorative accent */}
@@ -66,7 +75,7 @@ const GPADashboardCard = () => {
         }}
       />
 
-      <CardContent sx={{ p: 3 }}>
+      <CardContent sx={{ flexGrow: 1, p: 3 }}>
         <Box
           sx={{
             display: "flex",
@@ -99,7 +108,7 @@ const GPADashboardCard = () => {
 
         <Box sx={{ display: "flex", alignItems: "center", mb: 1 }}>
           <Typography variant="subtitle1" color="text.secondary">
-            {centralGPA.name || "My GPA"}
+            {centralGPA.name || "Your GPA"}
           </Typography>
           <Chip
             icon={<Calendar size={14} />}
@@ -148,7 +157,7 @@ const GPADashboardCard = () => {
               color="text.secondary"
               sx={{ ml: 1, fontWeight: 500 }}
             >
-              Technical GPA
+              Major GPA
             </Typography>
           </Box>
           <Typography
@@ -156,12 +165,18 @@ const GPADashboardCard = () => {
             sx={{
               fontWeight: 700,
               color: muiTheme.palette.primary.main,
+              p: isDark ? 1 : 0,
+              borderRadius: isDark ? 1 : 0,
+              backgroundColor: isDark ? alpha(muiTheme.palette.primary.main, 0.05) : 'transparent',
             }}
+            data-major-gpa="true"
+            className="MajorGpa-container"
           >
-            {centralGPA.technicalGPA || "0.00"}
+            {centralGPA.majorGPA || "0.00"}
           </Typography>
         </Box>
-
+      </CardContent>
+      <CardActions sx={{ p: 2, pt: 0 }}>
         <Button
           variant="outlined"
           color="primary"
@@ -169,16 +184,18 @@ const GPADashboardCard = () => {
           startIcon={<Edit size={16} />}
           onClick={handleEditGPA}
           sx={{
-            mt: 2,
             borderRadius: "12px",
             py: 1,
             textTransform: "none",
             fontWeight: 600,
+            "&:hover": {
+              backgroundColor: alpha(muiTheme.palette.primary.main, 0.08)
+            }
           }}
         >
           Update GPA
         </Button>
-      </CardContent>
+      </CardActions>
     </Card>
   );
 };
