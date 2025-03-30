@@ -143,6 +143,8 @@ const GPAInfoCard = () => {
                 isDark ? 0.3 : 0.2
               ),
             }}
+            data-major-gpa="true"
+            className="MajorGpa-container"
           >
             <Box sx={{ display: "flex", alignItems: "center", mb: 1 }}>
               <Computer size={20} color={muiTheme.palette.primary.main} />
@@ -150,7 +152,7 @@ const GPAInfoCard = () => {
                 variant="subtitle1"
                 sx={{ ml: 1, fontWeight: 600, color: "text.secondary" }}
               >
-                Technical GPA
+                Major GPA
               </Typography>
             </Box>
             <Typography
@@ -160,7 +162,7 @@ const GPAInfoCard = () => {
                 color: "primary.main",
               }}
             >
-              {centralGPA.technicalGPA || "0.00"}
+              {centralGPA.majorGPA || "0.00"}
             </Typography>
           </Box>
         </Box>

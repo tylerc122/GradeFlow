@@ -322,11 +322,21 @@
       background-color: #1e1e1e !important;
     }
     
-    .dark-mode div[style*="background-color: white"] {
-      background-color: #1e1e1e !important;
+    /* Fix any component with a custom gradient background in dark mode */
+    .dark-mode *[style*="linear-gradient"],
+    .dark-mode .MuiCard-root,
+    .dark-mode .MuiPaper-root {
+      background: transparent !important;
+      border: 1px solid rgba(255, 255, 255, 0.1) !important;
     }
     
-    .dark-mode div[style*="background-color: #fff"] {
+    /* Fix for Major GPA components */
+    .dark-mode .MajorGpa-container,
+    .dark-mode [data-major-gpa="true"] {
+      background-color: transparent !important;
+    }
+    
+    .dark-mode div[style*="background-color: white"] {
       background-color: #1e1e1e !important;
     }
     
@@ -360,4 +370,21 @@
     .dark-mode .MuiPaper-root.MuiPaper-elevation {
       background-color: #1e1e1e !important;
     }
+  }
+  
+  /* Fix all cards with custom backgrounds in dark mode */
+  .dark-mode .MuiCard-root[style*="background"],
+  .dark-mode .MuiCard-root[style*="linear-gradient"],
+  .dark-mode .MuiPaper-root[style*="background: linear-gradient"],
+  .dark-mode .MuiBox-root[style*="background: linear-gradient"] {
+    background: transparent !important;
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  }
+  
+  /* Fix specifically for the Major GPA card */
+  .dark-mode .MuiTypography-root:contains("Major GPA") ~ .MuiTypography-h4,
+  .dark-mode .MuiTypography-root:contains("Major GPA") ~ .MuiTypography-h3 {
+    background-color: rgba(117, 129, 214, 0.05) !important;
+    padding: 6px !important;
+    border-radius: 8px !important;
   }

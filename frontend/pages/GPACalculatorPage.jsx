@@ -41,8 +41,8 @@ const GPACalculatorPage = () => {
             color="text.secondary"
             sx={{ maxWidth: 650, mx: "auto" }}
           >
-            Track both your overall and technical GPA. Perfect for computer science 
-            majors who need to calculate and save their technical GPA for resumes.
+            Track both your overall and major-specific GPA in one place. 
+            Easily update your GPA as you complete more courses throughout your academic journey.
           </Typography>
         </Box>
 

@@ -31,6 +31,7 @@ export const CategoryBreakdown = ({
   setDialogOpen,
 }) => {
   const theme = useTheme();
+  const isDark = theme.palette.mode === "dark";
 
   // Get color based on grade
   const getGradeColor = (grade) => {
@@ -94,11 +95,16 @@ export const CategoryBreakdown = ({
                 width: 40,
                 height: 40,
                 borderRadius: "12px",
-                backgroundColor: alpha(theme.palette.primary.main),
+                backgroundColor: isDark 
+                  ? "transparent"
+                  : alpha(theme.palette.primary.main, 0.1),
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
                 color: theme.palette.primary.main,
+                border: isDark
+                  ? `1px solid ${alpha(theme.palette.primary.main, 0.5)}`
+                  : "none",
               }}
             >
               <Layers size={22} />
@@ -181,11 +187,16 @@ export const CategoryBreakdown = ({
                             width: 32,
                             height: 32,
                             borderRadius: "10px",
-                            backgroundColor: alpha(gradeColor, 0.1),
+                            backgroundColor: isDark 
+                              ? "transparent"
+                              : alpha(gradeColor, 0.1),
                             display: "flex",
                             alignItems: "center",
                             justifyContent: "center",
                             color: gradeColor,
+                            border: isDark
+                              ? `1px solid ${alpha(gradeColor, 0.5)}`
+                              : "none",
                           }}
                         >
                           {getGradeIcon(categoryGrade)}
@@ -270,7 +281,12 @@ export const CategoryBreakdown = ({
                             borderRadius: "8px",
                             px: 1.5,
                             py: 0.5,
-                            backgroundColor: alpha(gradeColor, 0.08),
+                            backgroundColor: isDark 
+                              ? "transparent"
+                              : alpha(gradeColor, 0.08),
+                            border: isDark
+                              ? `1px solid ${alpha(gradeColor, 0.5)}`
+                              : "none",
                           }}
                         >
                           {getGradeIcon(categoryGrade)}

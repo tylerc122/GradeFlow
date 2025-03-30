@@ -170,6 +170,8 @@ export const AssignmentTable = ({
     return <CheckCircle size={14} />;
   };
 
+  const isDark = theme.palette.mode === "dark";
+
   return (
     <Paper
       elevation={2}
@@ -202,11 +204,16 @@ export const AssignmentTable = ({
               width: 40,
               height: 40,
               borderRadius: "12px",
-              backgroundColor: "alpha(theme.palette.primary.main, 0.1)",
+              backgroundColor: isDark 
+                ? "transparent" 
+                : alpha(theme.palette.primary.main, 0.1),
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
               color: theme.palette.primary.main,
+              border: isDark
+                ? `1px solid ${alpha(theme.palette.primary.main, 0.5)}`
+                : "none",
             }}
           >
             <BarChart2 size={24} />
@@ -232,7 +239,9 @@ export const AssignmentTable = ({
             <Box
               sx={{
                 p: 2.5,
-                backgroundColor: alpha(theme.palette.primary.main, 0.04),
+                backgroundColor: isDark 
+                  ? alpha(theme.palette.primary.main, 0.03)
+                  : alpha(theme.palette.primary.main, 0.04),
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "space-between",
@@ -246,11 +255,16 @@ export const AssignmentTable = ({
                     width: 36,
                     height: 36,
                     borderRadius: "10px",
-                    backgroundColor: alpha(theme.palette.primary.main, 0.1),
+                    backgroundColor: isDark 
+                      ? "transparent"
+                      : alpha(theme.palette.primary.main, 0.1),
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",
                     color: theme.palette.primary.main,
+                    border: isDark
+                      ? `1px solid ${alpha(theme.palette.primary.main, 0.5)}`
+                      : "none",
                   }}
                 >
                   <Award size={20} />
@@ -279,8 +293,13 @@ export const AssignmentTable = ({
                   size="small"
                   sx={{
                     fontWeight: 600,
-                    backgroundColor: alpha(theme.palette.primary.main, 0.1),
+                    backgroundColor: isDark 
+                      ? "transparent" 
+                      : alpha(theme.palette.primary.main, 0.1),
                     color: theme.palette.primary.main,
+                    border: isDark
+                      ? `1px solid ${alpha(theme.palette.primary.main, 0.5)}`
+                      : "none",
                   }}
                 />
                 <IconButton size="small">

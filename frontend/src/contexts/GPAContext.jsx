@@ -5,14 +5,14 @@ const GPAContext = createContext();
 export const GPAProvider = ({ children }) => {
   // GPA courses data
   const [courses, setCourses] = useState([]);
-  const [technicalCourses, setTechnicalCourses] = useState([]);
+  const [majorCourses, setMajorCourses] = useState([]);
   
   // Central GPA data
   const [centralGPA, setCentralGPA] = useState({
     name: "My GPA",
     lastUpdated: new Date().toISOString(),
     overallGPA: "0.00",
-    technicalGPA: "0.00"
+    majorGPA: "0.00"
   });
 
   // Editing state
@@ -22,11 +22,11 @@ export const GPAProvider = ({ children }) => {
   useEffect(() => {
     try {
       const savedCoursesData = localStorage.getItem('gpaCourses');
-      const savedTechnicalCoursesData = localStorage.getItem('gpaTechnicalCourses');
+      const savedMajorCoursesData = localStorage.getItem('gpaMajorCourses');
       const savedCentralGPA = localStorage.getItem('centralGPA');
       
       if (savedCoursesData) setCourses(JSON.parse(savedCoursesData));
-      if (savedTechnicalCoursesData) setTechnicalCourses(JSON.parse(savedTechnicalCoursesData));
+      if (savedMajorCoursesData) setMajorCourses(JSON.parse(savedMajorCoursesData));
       if (savedCentralGPA) setCentralGPA(JSON.parse(savedCentralGPA));
     } catch (error) {
       console.error('Failed to load saved GPA data:', error);
@@ -39,8 +39,8 @@ export const GPAProvider = ({ children }) => {
   }, [courses]);
 
   useEffect(() => {
-    localStorage.setItem('gpaTechnicalCourses', JSON.stringify(technicalCourses));
-  }, [technicalCourses]);
+    localStorage.setItem('gpaMajorCourses', JSON.stringify(majorCourses));
+  }, [majorCourses]);
 
   useEffect(() => {
     localStorage.setItem('centralGPA', JSON.stringify(centralGPA));
@@ -70,9 +70,9 @@ export const GPAProvider = ({ children }) => {
     return totalCredits ? (totalPoints / totalCredits).toFixed(2) : "0.00";
   };
 
-  // Calculate overall and technical GPA
+  // Calculate overall and major GPA
   const calculateOverallGPA = () => calculateGPA(courses);
-  const calculateTechnicalGPA = () => calculateGPA(technicalCourses);
+  const calculateMajorGPA = () => calculateGPA(majorCourses);
 
   // Update the central GPA with current calculations
   const updateCentralGPA = (name = "My GPA") => {
@@ -80,9 +80,9 @@ export const GPAProvider = ({ children }) => {
       name,
       lastUpdated: new Date().toISOString(),
       overallGPA: calculateOverallGPA(),
-      technicalGPA: calculateTechnicalGPA(),
+      majorGPA: calculateMajorGPA(),
       courses: [...courses],
-      technicalCourses: [...technicalCourses]
+      majorCourses: [...majorCourses]
     });
     setIsEditing(false);
   };
@@ -92,8 +92,8 @@ export const GPAProvider = ({ children }) => {
     if (centralGPA.courses) {
       setCourses([...centralGPA.courses]);
     }
-    if (centralGPA.technicalCourses) {
-      setTechnicalCourses([...centralGPA.technicalCourses]);
+    if (centralGPA.majorCourses) {
+      setMajorCourses([...centralGPA.majorCourses]);
     }
     setIsEditing(true);
   };
@@ -102,13 +102,13 @@ export const GPAProvider = ({ children }) => {
   const cancelEditing = () => {
     setIsEditing(false);
     setCourses([]);
-    setTechnicalCourses([]);
+    setMajorCourses([]);
   };
 
   // Reset GPA calculator
   const resetGPACalculator = () => {
     setCourses([]);
-    setTechnicalCourses([]);
+    setMajorCourses([]);
     setIsEditing(false);
   };
 
@@ -117,13 +117,13 @@ export const GPAProvider = ({ children }) => {
       value={{
         courses,
         setCourses,
-        technicalCourses,
-        setTechnicalCourses,
+        majorCourses,
+        setMajorCourses,
         centralGPA,
         setCentralGPA,
         letterToGPA,
         calculateOverallGPA,
-        calculateTechnicalGPA,
+        calculateMajorGPA,
         updateCentralGPA,
         resetGPACalculator,
         isEditing,
