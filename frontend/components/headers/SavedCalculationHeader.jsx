@@ -25,9 +25,18 @@ const SavedCalculationHeader = ({
   onDuplicate,
   lastSaved,
   saveStatus,
+  onNavigateBack,
 }) => {
   const navigate = useNavigate();
   const [showSaveSuccess, setShowSaveSuccess] = React.useState(false);
+
+  const handleBackClick = () => {
+    if (onNavigateBack) {
+      onNavigateBack();
+    } else {
+      navigate("/grades");
+    }
+  };
 
   return (
     <Paper
@@ -46,7 +55,7 @@ const SavedCalculationHeader = ({
         <Breadcrumbs aria-label="breadcrumb">
           <Button
             startIcon={<ArrowBackIcon />}
-            onClick={() => navigate("/grades")}
+            onClick={handleBackClick}
             sx={{
               color: "text.secondary",
               "&:hover": {
