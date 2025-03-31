@@ -59,7 +59,6 @@ const SavedCalculation = () => {
   const [retryCount, setRetryCount] = useState(0);
   const [saveStatus, setSaveStatus] = useState("saved");
   const [lastSaved, setLastSaved] = useState(null);
-  const [autoSaveTimer, setAutoSaveTimer] = useState(null);
 
   // Save original calculator state when component mounts and restore when it unmounts
   useEffect(() => {
@@ -261,23 +260,26 @@ const SavedCalculation = () => {
       (Object.keys(hypotheticalScores).length > 0 ||
         hypotheticalAssignments.length > 0)
     ) {
-      setSaveStatus("unsaved");
+      if (saveStatus !== "saving") {
+        setSaveStatus("unsaved");
+      }
     }
-  }, [hypotheticalScores, hypotheticalAssignments]);
+  }, [hypotheticalScores, hypotheticalAssignments, saveStatus, whatIfMode]);
 
-  // Auto-save functionality
+  // Add a prompt when users try to leave with unsaved changes
   useEffect(() => {
-    if (whatIfMode && saveStatus === "unsaved") {
-      if (autoSaveTimer) clearTimeout(autoSaveTimer);
-      const timer = setTimeout(() => {
-        handleSaveChanges();
-      }, 1000); // Auto-save after 1 second of no changes
-      setAutoSaveTimer(timer);
-    }
-    return () => {
-      if (autoSaveTimer) clearTimeout(autoSaveTimer);
+    const handleBeforeUnload = (e) => {
+      if (saveStatus === "unsaved") {
+        // Standard way of showing a browser alert when navigating away
+        e.preventDefault();
+        e.returnValue = "You have unsaved changes. Are you sure you want to leave?";
+        return e.returnValue;
+      }
     };
-  }, [whatIfMode, saveStatus]);
+
+    window.addEventListener("beforeunload", handleBeforeUnload);
+    return () => window.removeEventListener("beforeunload", handleBeforeUnload);
+  }, [saveStatus]);
 
   const handleSaveChanges = async () => {
     setIsSaving(true);
@@ -295,9 +297,20 @@ const SavedCalculation = () => {
           const hypotheticalScore = hypotheticalScores[scoreKey];
 
           if (hypotheticalScore) {
+            // Get the correct score value - prioritize numericScore for calculations
+            const scoreValue = hypotheticalScore.numericScore !== undefined
+              ? hypotheticalScore.numericScore 
+              : (hypotheticalScore.score !== undefined 
+                 ? (typeof hypotheticalScore.score === 'string' 
+                   ? Number(hypotheticalScore.score) 
+                   : hypotheticalScore.score)
+                 : 0);
+                 
+            console.log(`Saving score for ${assignment.name}: ${scoreValue} (original: ${hypotheticalScore.score})`);
+                 
             return {
               ...assignment,
-              score: parseFloat(hypotheticalScore.score),
+              score: scoreValue,
               status: "GRADED",
               hidden: hiddenAssignments.includes(scoreKey),
             };
@@ -313,8 +326,8 @@ const SavedCalculation = () => {
           .filter((a) => a.categoryName === category.name)
           .map((assignment) => ({
             name: assignment.name,
-            score: parseFloat(assignment.score),
-            total_points: parseFloat(assignment.total_points),
+            score: Number(assignment.score),
+            total_points: Number(assignment.total_points),
             status: "GRADED",
             hidden: false,
           }));
@@ -333,11 +346,11 @@ const SavedCalculation = () => {
         if (!visibleAssignments.length) return total;
 
         const totalPoints = visibleAssignments.reduce(
-          (sum, a) => sum + parseFloat(a.total_points),
+          (sum, a) => sum + Number(a.total_points),
           0
         );
         const earnedPoints = visibleAssignments.reduce(
-          (sum, a) => sum + parseFloat(a.score),
+          (sum, a) => sum + Number(a.score),
           0
         );
         const categoryGrade =
@@ -356,7 +369,7 @@ const SavedCalculation = () => {
               total +
               category.assignments
                 .filter((a) => !a.hidden)
-                .reduce((sum, a) => sum + parseFloat(a.score), 0),
+                .reduce((sum, a) => sum + Number(a.score), 0),
             0
           ),
           total_points_possible: updatedCategories.reduce(
@@ -364,7 +377,7 @@ const SavedCalculation = () => {
               total +
               category.assignments
                 .filter((a) => !a.hidden)
-                .reduce((sum, a) => sum + parseFloat(a.total_points), 0),
+                .reduce((sum, a) => sum + Number(a.total_points), 0),
             0
           ),
         },

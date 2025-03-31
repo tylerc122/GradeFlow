@@ -78,20 +78,21 @@ export const AssignmentTable = ({
   };
 
   const handleScoreEdit = (categoryName, assignment, newValue) => {
-    // Remove any non-numeric characters except decimal point
-    let cleanValue = newValue.replace(/[^\d.]/g, "");
-
-    // Ensure only one decimal point
-    const decimalCount = (cleanValue.match(/\./g) || []).length;
-    if (decimalCount > 1) {
-      cleanValue = cleanValue.replace(/\./g, (match, index) =>
-        index === cleanValue.indexOf(".") ? match : ""
-      );
+    // Only allow digits and at most one decimal point
+    if (newValue !== '' && !/^\d*\.?\d*$/.test(newValue)) {
+      console.log("Invalid input rejected:", newValue);
+      return; // Reject non-numeric input
     }
-
-    // Parse the value
-    let numericValue = parseFloat(cleanValue);
-
+    
+    // Don't allow negative numbers
+    if (parseFloat(newValue) < 0) {
+      console.log("Negative value rejected:", newValue);
+      return;
+    }
+    
+    console.log("Valid score input:", newValue);
+    
+    // Store validated input in state
     const scoreKey = `${categoryName}-${assignment.name}`;
     setEditedScores((prev) => ({
       ...prev,
@@ -102,11 +103,55 @@ export const AssignmentTable = ({
       ...prev,
       [scoreKey]: {
         ...assignment,
-        score: numericValue || 0,
+        score: newValue,  // Store raw input
+        displayScore: newValue, // For display
+        numericScore: parseFloat(newValue) || 0, // For calculations
         categoryName,
         isHypothetical: true,
       },
     }));
+  };
+
+  // New handler for when input loses focus to properly validate
+  const handleScoreBlur = (categoryName, assignment) => {
+    const scoreKey = `${categoryName}-${assignment.name}`;
+    const hypotheticalData = hypotheticalScores[scoreKey];
+    
+    if (!hypotheticalData) return;
+    
+    // Get the current value
+    let inputValue = hypotheticalData.score;
+    
+    // Clean and validate the input
+    if (inputValue === '' || inputValue === null || inputValue === undefined) {
+      // If empty, reset to original
+      inputValue = assignment.score.toString();
+      console.log(`Empty input, resetting to original: ${inputValue}`);
+    } else if (isNaN(parseFloat(inputValue)) || parseFloat(inputValue) < 0) {
+      // If invalid or negative, reset to original
+      inputValue = assignment.score.toString();
+      console.log(`Invalid input, resetting to original: ${inputValue}`);
+    } else {
+      // Ensure proper formatting for valid numbers
+      const numValue = parseFloat(inputValue);
+      // If it's a whole number, remove decimal part
+      if (Math.floor(numValue) === numValue) {
+        inputValue = Math.floor(numValue).toString();
+      }
+    }
+    
+    // Update with validated value
+    setHypotheticalScores((prev) => ({
+      ...prev,
+      [scoreKey]: {
+        ...prev[scoreKey],
+        score: inputValue,
+        displayScore: inputValue,
+        numericScore: parseFloat(inputValue) || 0,
+      },
+    }));
+    
+    console.log(`Score finalized on blur: ${inputValue}`);
   };
 
   const handleKeyPress = (event) => {
@@ -406,10 +451,14 @@ export const AssignmentTable = ({
                             const hypotheticalData =
                               hypotheticalScores[scoreKey];
                             const isEdited = editedScores[scoreKey];
-                            const currentScore =
-                              hypotheticalData?.score ?? assignment.score;
+                            const currentScore = hypotheticalData
+                              ? (hypotheticalData.displayScore || hypotheticalData.score)
+                              : assignment.score;
+                            const scoreForCalculations = hypotheticalData
+                              ? (hypotheticalData.numericScore || Number(hypotheticalData.score))
+                              : Number(assignment.score);
                             const percentage =
-                              (currentScore / assignment.total_points) * 100;
+                              (scoreForCalculations / assignment.total_points) * 100;
                             const isHidden =
                               hiddenAssignments.includes(scoreKey);
 
@@ -516,6 +565,8 @@ export const AssignmentTable = ({
                                       <TextField
                                         variant="outlined"
                                         type="text"
+                                        inputMode="decimal"
+                                        placeholder="0"
                                         size="small"
                                         value={currentScore || ""}
                                         onChange={(e) =>
@@ -523,6 +574,12 @@ export const AssignmentTable = ({
                                             category.name,
                                             assignment,
                                             e.target.value
+                                          )
+                                        }
+                                        onBlur={() => 
+                                          handleScoreBlur(
+                                            category.name,
+                                            assignment
                                           )
                                         }
                                         onKeyPress={handleKeyPress}

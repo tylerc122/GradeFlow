@@ -112,6 +112,26 @@ const SavedCalculationHeader = ({
         </Box>
 
         <Box sx={{ display: "flex", gap: 2 }}>
+          {/* Save Button - Only visible when there are unsaved changes */}
+          {whatIfMode && saveStatus === "unsaved" && (
+            <Button
+              variant="contained"
+              onClick={onSave}
+              startIcon={<SaveIcon />}
+              disabled={isSaving}
+              color="primary"
+              sx={{
+                fontWeight: 600,
+                boxShadow: 2,
+                "&:hover": {
+                  boxShadow: 4,
+                },
+              }}
+            >
+              Save Changes
+            </Button>
+          )}
+          
           {/* Duplicate Button */}
           <Tooltip title="Create a copy">
             <Button

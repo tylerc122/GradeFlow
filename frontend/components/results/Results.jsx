@@ -79,18 +79,38 @@ const Results = () => {
 
     if (!visibleAssignments.length) return 0;
 
+    console.log(`Calculating grade for ${categoryName}:`, visibleAssignments);
+
     const totalEarned = visibleAssignments.reduce((sum, a) => {
       const scoreKey = `${categoryName}-${a.name}`;
-      const score = hypotheticalScores[scoreKey]?.score ?? a.score;
-      return sum + score;
+      const hypothetical = hypotheticalScores[scoreKey];
+      
+      // Use numericScore for calculations if available, otherwise fall back to score
+      let scoreValue;
+      if (hypothetical) {
+        scoreValue = hypothetical.numericScore !== undefined
+          ? hypothetical.numericScore
+          : (typeof hypothetical.score === 'string' 
+             ? Number(hypothetical.score) 
+             : hypothetical.score);
+        console.log(`Using hypothetical score for ${a.name}: ${scoreValue}`);
+      } else {
+        scoreValue = typeof a.score === 'string' ? Number(a.score) : a.score;
+        console.log(`Using original score for ${a.name}: ${scoreValue}`);
+      }
+      
+      return sum + scoreValue;
     }, 0);
 
     const totalPossible = visibleAssignments.reduce(
-      (sum, a) => sum + a.total_points,
+      (sum, a) => sum + Number(a.total_points),
       0
     );
 
-    return totalPossible > 0 ? (totalEarned / totalPossible) * 100 : 0;
+    const result = totalPossible > 0 ? (totalEarned / totalPossible) * 100 : 0;
+    console.log(`Category ${categoryName}: Total earned ${totalEarned}, total possible ${totalPossible}, result ${result}%`);
+    
+    return result;
   };
 
   const calculateWeightedGrade = () => {
