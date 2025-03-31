@@ -1,10 +1,12 @@
-import React, { useState, useEffect, useRef, useCallback } from "react";
+import React, { useState, useEffect, useRef, useCallback, Suspense } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useSnackbar } from "notistack";
 import { useCalculator } from "../src/contexts/CalculatorContext";
-import Results from "../components/results/Results";
-import SaveCalculationDialog from "../components/dialogs/SaveCalculationDialog";
-import SavedCalculationHeader from "../components/headers/SavedCalculationHeader";
+// Lazy load components
+const Results = React.lazy(() => import("../components/results/Results"));
+const SaveCalculationDialog = React.lazy(() => import("../components/dialogs/SaveCalculationDialog"));
+const SavedCalculationHeader = React.lazy(() => import("../components/headers/SavedCalculationHeader"));
+
 import {
   Container,
   CircularProgress,
@@ -584,46 +586,52 @@ const SavedCalculation = () => {
 
   return (
     <Container maxWidth="140%" sx={{ py: 4 }}>
-      <SavedCalculationHeader
-        calculationName={calculation?.name || "Unnamed Calculation"}
-        whatIfMode={whatIfMode}
-        isSaving={isSaving}
-        onSave={handleSaveChanges}
-        onDuplicate={() => setDuplicateDialogOpen(true)}
-        lastSaved={lastSaved}
-        saveStatus={saveStatus}
-        onNavigateBack={handleBackToGrades}
-      />
+      <Suspense fallback={<CircularProgress />}>
+        <SavedCalculationHeader
+          calculationName={calculation?.name || "Unnamed Calculation"}
+          whatIfMode={whatIfMode}
+          isSaving={isSaving}
+          onSave={handleSaveChanges}
+          onDuplicate={() => setDuplicateDialogOpen(true)}
+          lastSaved={lastSaved}
+          saveStatus={saveStatus}
+          onNavigateBack={handleBackToGrades}
+        />
+      </Suspense>
 
-      <Results
-        mode="blackboard"
-        rawGradeData={calculation.raw_data || ""}
-        parsedGrades={{
-          assignments: categories.flatMap((cat) => cat.assignments || []),
-        }}
-        whatIfMode={whatIfMode}
-        setWhatIfMode={setWhatIfMode}
-        targetGrade={targetGrade}
-        setTargetGrade={setTargetGrade}
-        hypotheticalScores={hypotheticalScores}
-        setHypotheticalScores={setHypotheticalScores}
-        hypotheticalAssignments={hypotheticalAssignments}
-        setHypotheticalAssignments={setHypotheticalAssignments}
-        dialogOpen={dialogOpen}
-        setDialogOpen={setDialogOpen}
-        selectedCategory={selectedCategory}
-        setSelectedCategory={setSelectedCategory}
-        showCalculateAnotherButton={false}
-      />
+      <Suspense fallback={<CircularProgress />}>
+        <Results
+          mode="blackboard"
+          rawGradeData={calculation.raw_data || ""}
+          parsedGrades={{
+            assignments: categories.flatMap((cat) => cat.assignments || []),
+          }}
+          whatIfMode={whatIfMode}
+          setWhatIfMode={setWhatIfMode}
+          targetGrade={targetGrade}
+          setTargetGrade={setTargetGrade}
+          hypotheticalScores={hypotheticalScores}
+          setHypotheticalScores={setHypotheticalScores}
+          hypotheticalAssignments={hypotheticalAssignments}
+          setHypotheticalAssignments={setHypotheticalAssignments}
+          dialogOpen={dialogOpen}
+          setDialogOpen={setDialogOpen}
+          selectedCategory={selectedCategory}
+          setSelectedCategory={setSelectedCategory}
+          showCalculateAnotherButton={false}
+        />
+      </Suspense>
 
-      <SaveCalculationDialog
-        open={duplicateDialogOpen}
-        onClose={() => setDuplicateDialogOpen(false)}
-        onSave={handleDuplicate}
-        loading={isSaving}
-        title="Duplicate Calculation"
-        defaultName={`Copy of ${calculation?.name}`}
-      />
+      <Suspense fallback={<CircularProgress />}>
+        <SaveCalculationDialog
+          open={duplicateDialogOpen}
+          onClose={() => setDuplicateDialogOpen(false)}
+          onSave={handleDuplicate}
+          loading={isSaving}
+          title="Duplicate Calculation"
+          defaultName={`Copy of ${calculation?.name}`}
+        />
+      </Suspense>
 
       {/* Navigation Confirmation Dialog */}
       <Dialog
