@@ -319,17 +319,45 @@ const Results = () => {
         onClose={() => setResetConfirmOpen(false)}
         maxWidth="sm"
         fullWidth
+        PaperProps={{
+          sx: {
+            borderRadius: "16px",
+            p: 1,
+          },
+        }}
       >
-        <DialogTitle>Start New Calculation?</DialogTitle>
+        <DialogTitle sx={{ fontWeight: 600 }}>Start New Calculation?</DialogTitle>
         <DialogContent>
-          <Typography>
-            {user && !hasBeenSaved
-              ? "Your current calculation hasn't been saved. All progress will be lost if you continue."
-              : "All progress will be lost if you continue. Consider creating an account to save your calculations."}
-          </Typography>
+          {user && !hasBeenSaved ? (
+            <Typography>
+              Your current calculation hasn't been saved. All progress will be lost if you continue.
+            </Typography>
+          ) : (
+            <>
+              <Typography paragraph>
+                All progress will be lost if you continue.
+              </Typography>
+              {!user && (
+                <Typography variant="body2" color="primary" sx={{ mt: 1 }}>
+                  Want to save your calculations? Create an account or log in to access this feature.
+                </Typography>
+              )}
+            </>
+          )}
         </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setResetConfirmOpen(false)}>Cancel</Button>
+        <DialogActions sx={{ p: 2 }}>
+          <Button onClick={() => setResetConfirmOpen(false)} variant="outlined">
+            Cancel
+          </Button>
+          {!user && (
+            <Button
+              onClick={() => navigate("/login")}
+              color="primary" 
+              variant="outlined"
+            >
+              Login
+            </Button>
+          )}
           <Button
             onClick={() => {
               resetCalculator();
@@ -485,21 +513,39 @@ const Results = () => {
             Calculate Another
           </Button>
 
-          {user && (
-            <Button
-              variant="contained"
-              onClick={() => setSaveDialogOpen(true)}
-              size="large"
-              sx={{
-                px: 4,
-                minWidth: 120,
-                borderRadius: "12px",
-                background: "var(--gradient-primary)",
-              }}
-            >
-              Save Calculation
-            </Button>
-          )}
+          <Button
+            variant="contained"
+            onClick={() => {
+              if (user) {
+                setSaveDialogOpen(true);
+              } else {
+                enqueueSnackbar("Please log in to save your calculation", { 
+                  variant: "info",
+                  action: (key) => (
+                    <Button
+                      color="inherit"
+                      size="small"
+                      onClick={() => {
+                        navigate("/login");
+                      }}
+                    >
+                      Login
+                    </Button>
+                  ),
+                });
+                navigate("/login");
+              }
+            }}
+            size="large"
+            sx={{
+              px: 4,
+              minWidth: 120,
+              borderRadius: "12px",
+              background: "var(--gradient-primary)",
+            }}
+          >
+            {user ? "Save Calculation" : "Login to Save"}
+          </Button>
         </Box>
       )}
     </Box>
