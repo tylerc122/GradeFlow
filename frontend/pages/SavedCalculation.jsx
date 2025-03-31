@@ -139,13 +139,20 @@ const SavedCalculation = () => {
 
           if (hypotheticalScore) {
             // Get the correct score value - prioritize numericScore for calculations
-            const scoreValue = hypotheticalScore.numericScore !== undefined
-              ? hypotheticalScore.numericScore 
-              : (hypotheticalScore.score !== undefined 
-                 ? (typeof hypotheticalScore.score === 'string' 
-                   ? Number(hypotheticalScore.score) 
-                   : hypotheticalScore.score)
-                 : 0);
+            let scoreValue = 0; // Default to 0
+            
+            if (hypotheticalScore.numericScore !== undefined && !isNaN(hypotheticalScore.numericScore)) {
+              scoreValue = hypotheticalScore.numericScore;
+            } else if (hypotheticalScore.score !== undefined) {
+              scoreValue = typeof hypotheticalScore.score === 'string' 
+                ? Number(hypotheticalScore.score) || 0 // Convert to number, default to 0 if NaN
+                : hypotheticalScore.score || 0; // Use score, default to 0 if falsy
+            }
+            
+            // Ensure we always have a valid number
+            if (isNaN(scoreValue) || scoreValue === null || scoreValue === undefined) {
+              scoreValue = 0;
+            }
                  
             console.log(`Saving score for ${assignment.name}: ${scoreValue} (original: ${hypotheticalScore.score})`);
                  
@@ -158,6 +165,8 @@ const SavedCalculation = () => {
           }
           return {
             ...assignment,
+            // Ensure all scores are valid numbers
+            score: Number(assignment.score) || 0,
             hidden: hiddenAssignments.includes(scoreKey),
           };
         });
@@ -167,8 +176,8 @@ const SavedCalculation = () => {
           .filter((a) => a.categoryName === category.name)
           .map((assignment) => ({
             name: assignment.name,
-            score: Number(assignment.score),
-            total_points: Number(assignment.total_points),
+            score: Number(assignment.score) || 0, // Ensure score is a valid number
+            total_points: Number(assignment.total_points) || 1, // Ensure total_points is valid
             status: "GRADED",
             hidden: false,
           }));
@@ -369,8 +378,8 @@ const SavedCalculation = () => {
           ...assignment,
           name: String(assignment.name || ""),
           status: assignment.status || "GRADED",
-          score: Number(assignment.score || 0),
-          total_points: Number(assignment.total_points || 0),
+          score: Number(assignment.score) || 0, // Ensure score is always a valid number
+          total_points: Number(assignment.total_points) || 1, // Ensure total_points is valid
         })),
       };
     });

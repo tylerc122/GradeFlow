@@ -736,10 +736,30 @@ const Calculator = () => {
                 Back
               </Button>
             )}
-            {activeStep === steps.length - 1 && user ? (
+            {activeStep === steps.length - 1 ? (
               <Button
                 variant="contained"
-                onClick={() => setSaveDialogOpen(true)}
+                onClick={() => {
+                  if (user) {
+                    setSaveDialogOpen(true);
+                  } else {
+                    enqueueSnackbar("Please log in to save your calculation", {
+                      variant: "info",
+                      action: (key) => (
+                        <Button
+                          color="inherit"
+                          size="small"
+                          onClick={() => {
+                            navigate("/login");
+                          }}
+                        >
+                          Login
+                        </Button>
+                      ),
+                    });
+                    navigate("/login");
+                  }
+                }}
                 startIcon={<SaveIcon />}
                 size="large"
                 sx={{
@@ -747,7 +767,7 @@ const Calculator = () => {
                   minWidth: 120,
                 }}
               >
-                Save Calculation
+                {user ? "Save Calculation" : "Login to Save"}
               </Button>
             ) : (
               <Button

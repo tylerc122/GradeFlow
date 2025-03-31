@@ -124,13 +124,13 @@ export const AssignmentTable = ({
     
     // Clean and validate the input
     if (inputValue === '' || inputValue === null || inputValue === undefined) {
-      // If empty, reset to original
-      inputValue = assignment.score.toString();
-      console.log(`Empty input, resetting to original: ${inputValue}`);
+      // If empty, set to 0 instead of original score
+      inputValue = "0";
+      console.log(`Empty input, setting to zero: ${inputValue}`);
     } else if (isNaN(parseFloat(inputValue)) || parseFloat(inputValue) < 0) {
-      // If invalid or negative, reset to original
-      inputValue = assignment.score.toString();
-      console.log(`Invalid input, resetting to original: ${inputValue}`);
+      // If invalid or negative, set to 0
+      inputValue = "0";
+      console.log(`Invalid input, setting to zero: ${inputValue}`);
     } else {
       // Ensure proper formatting for valid numbers
       const numValue = parseFloat(inputValue);
@@ -175,9 +175,19 @@ export const AssignmentTable = ({
   const confirmReset = () => {
     const { categoryName, assignment } = resetAssignment;
     const scoreKey = `${categoryName}-${assignment.name}`;
-    const newHypotheticalScores = { ...hypotheticalScores };
-    delete newHypotheticalScores[scoreKey];
-    setHypotheticalScores(newHypotheticalScores);
+    
+    // Instead of deleting the score, set it to 0
+    setHypotheticalScores((prev) => ({
+      ...prev,
+      [scoreKey]: {
+        ...assignment,
+        score: "0",
+        displayScore: "0",
+        numericScore: 0,
+        categoryName,
+        isHypothetical: true,
+      },
+    }));
 
     const newEditedScores = { ...editedScores };
     delete newEditedScores[scoreKey];
@@ -452,11 +462,11 @@ export const AssignmentTable = ({
                               hypotheticalScores[scoreKey];
                             const isEdited = editedScores[scoreKey];
                             const currentScore = hypotheticalData
-                              ? (hypotheticalData.displayScore || hypotheticalData.score)
-                              : assignment.score;
+                              ? (hypotheticalData.displayScore || hypotheticalData.score || "0")
+                              : (assignment.score || "0");
                             const scoreForCalculations = hypotheticalData
-                              ? (hypotheticalData.numericScore || Number(hypotheticalData.score))
-                              : Number(assignment.score);
+                              ? (hypotheticalData.numericScore || Number(hypotheticalData.score) || 0)
+                              : (Number(assignment.score) || 0);
                             const percentage =
                               (scoreForCalculations / assignment.total_points) * 100;
                             const isHidden =
