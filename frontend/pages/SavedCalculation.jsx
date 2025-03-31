@@ -1,11 +1,10 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useSnackbar } from "notistack";
 import { useCalculator } from "../src/contexts/CalculatorContext";
 import Results from "../components/results/Results";
 import SaveCalculationDialog from "../components/dialogs/SaveCalculationDialog";
 import SavedCalculationHeader from "../components/headers/SavedCalculationHeader";
-
 import {
   Container,
   CircularProgress,
@@ -14,6 +13,10 @@ import {
   Button,
   Typography,
   Paper,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
 } from "@mui/material";
 
 const SavedCalculation = () => {
@@ -60,212 +63,6 @@ const SavedCalculation = () => {
   const [saveStatus, setSaveStatus] = useState("saved");
   const [lastSaved, setLastSaved] = useState(null);
 
-  // Save original calculator state when component mounts and restore when it unmounts
-  useEffect(() => {
-    // Set isResultsView to true when viewing a saved calculation
-    setIsResultsView(true);
-    
-    // Save current calculator state
-    originalCalculatorState.current = {
-      categories,
-      mode,
-      whatIfMode,
-      targetGrade,
-      hypotheticalScores,
-      hypotheticalAssignments,
-      hiddenAssignments,
-      rawGradeData,
-      manualGrades,
-    };
-    
-    // Cleanup function to restore original state when leaving the saved calculation view
-    return () => {
-      // Restore original calculator state when component unmounts
-      if (originalCalculatorState.current) {
-        setCategories(originalCalculatorState.current.categories);
-        setMode(originalCalculatorState.current.mode);
-        setWhatIfMode(originalCalculatorState.current.whatIfMode);
-        setTargetGrade(originalCalculatorState.current.targetGrade);
-        setHypotheticalScores(originalCalculatorState.current.hypotheticalScores);
-        setHypotheticalAssignments(originalCalculatorState.current.hypotheticalAssignments);
-        setHiddenAssignments(originalCalculatorState.current.hiddenAssignments);
-        setRawGradeData(originalCalculatorState.current.rawGradeData);
-        setManualGrades(originalCalculatorState.current.manualGrades);
-      }
-      // Reset isResultsView when leaving the saved calculation view
-      setIsResultsView(false);
-    };
-  }, []);
-
-  // Transform data helper function
-  const transformCalculationData = (data) => {
-    if (!data || !Array.isArray(data.categories)) {
-      console.error("Invalid data structure:", data);
-      throw new Error("Invalid calculation data structure");
-    }
-
-    // Ensure each category has required properties
-    const transformedCategories = data.categories.map((category) => {
-      if (
-        !category.name ||
-        typeof category.weight !== "number" ||
-        !Array.isArray(category.assignments)
-      ) {
-        console.error("Invalid category structure:", category);
-        throw new Error("Invalid category data structure");
-      }
-
-      return {
-        ...category,
-        weight: Number(category.weight),
-        assignments: (category.assignments || []).map((assignment) => ({
-          ...assignment,
-          name: String(assignment.name || ""),
-          status: assignment.status || "GRADED",
-          score: Number(assignment.score || 0),
-          total_points: Number(assignment.total_points || 0),
-        })),
-      };
-    });
-
-    return {
-      ...data,
-      categories: transformedCategories,
-    };
-  };
-
-  // Calculate grades for categories and overall
-  const calculateCategoryGrade = (assignments, categoryName) => {
-    if (!assignments || !assignments.length) return 0;
-
-    const allAssignments = assignments.map((assignment) => {
-      if (assignment.status === "UPCOMING" || assignment.isHypothetical) {
-        const hypotheticalKey = `${categoryName}-${assignment.name}`;
-        const hypotheticalScore = hypotheticalScores[hypotheticalKey];
-        return hypotheticalScore || assignment;
-      }
-      return assignment;
-    });
-
-    const totalEarned = allAssignments.reduce((sum, a) => {
-      const scoreKey = `${categoryName}-${a.name}`;
-      const score = hypotheticalScores[scoreKey]?.score ?? a.score;
-      return sum + score;
-    }, 0);
-
-    const totalPossible = allAssignments.reduce(
-      (sum, a) => sum + a.total_points,
-      0
-    );
-
-    return totalPossible > 0 ? (totalEarned / totalPossible) * 100 : 0;
-  };
-
-  const calculateWeightedGrade = () => {
-    if (!categories?.length) {
-      console.error("No categories available for grade calculation");
-      return 0;
-    }
-
-    return categories.reduce((total, category) => {
-      const categoryHypotheticals = hypotheticalAssignments.filter(
-        (a) => a.categoryName === category.name
-      );
-
-      const allAssignments = [
-        ...(category.assignments || []),
-        ...categoryHypotheticals,
-      ];
-
-      const categoryGrade = calculateCategoryGrade(
-        allAssignments,
-        category.name
-      );
-      return total + categoryGrade * (category.weight / 100);
-    }, 0);
-  };
-
-  useEffect(() => {
-    const fetchCalculation = async () => {
-      try {
-        const response = await fetch(`http://localhost:8000/api/grades/${id}`, {
-          credentials: "include",
-        });
-
-        if (!response.ok) {
-          if (response.status === 401) {
-            navigate("/login");
-            return;
-          }
-          throw new Error(
-            response.status === 404
-              ? "Calculation not found"
-              : "Failed to fetch calculation"
-          );
-        }
-
-        const data = await response.json();
-        const transformedData = transformCalculationData(data);
-
-        // Extract hidden assignments from the loaded data
-        const loadedHiddenAssignments = [];
-        transformedData.categories.forEach((category) => {
-          category.assignments.forEach((assignment) => {
-            if (assignment.hidden) {
-              loadedHiddenAssignments.push(
-                `${category.name}-${assignment.name}`
-              );
-            }
-          });
-        });
-
-        // Reset hypothetical states but keep hidden assignments
-        setHypotheticalAssignments([]);
-        setHypotheticalScores({});
-        setHiddenAssignments(loadedHiddenAssignments);
-
-        // Update main data
-        setCalculation(transformedData);
-        setCategories(transformedData.categories);
-        setMode("blackboard");
-        setRawGradeData(transformedData.raw_data || "");
-
-        setError(null);
-        setSaveStatus("saved");
-      } catch (err) {
-        console.error("Error in fetchCalculation:", err);
-        setError(err.message);
-        enqueueSnackbar(err.message, { variant: "error" });
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchCalculation();
-  }, [
-    id,
-    navigate,
-    enqueueSnackbar,
-    setCategories,
-    setMode,
-    setHypotheticalAssignments,
-    setHypotheticalScores,
-    setRawGradeData,
-  ]);
-
-  // Tracks changes
-  useEffect(() => {
-    if (
-      whatIfMode &&
-      (Object.keys(hypotheticalScores).length > 0 ||
-        hypotheticalAssignments.length > 0)
-    ) {
-      if (saveStatus !== "saving") {
-        setSaveStatus("unsaved");
-      }
-    }
-  }, [hypotheticalScores, hypotheticalAssignments, saveStatus, whatIfMode]);
-
   // Add a prompt when users try to leave with unsaved changes
   useEffect(() => {
     const handleBeforeUnload = (e) => {
@@ -280,6 +77,48 @@ const SavedCalculation = () => {
     window.addEventListener("beforeunload", handleBeforeUnload);
     return () => window.removeEventListener("beforeunload", handleBeforeUnload);
   }, [saveStatus]);
+
+  // In-app navigation protection
+  const [showPrompt, setShowPrompt] = useState(false);
+  const [pendingNavigation, setPendingNavigation] = useState(null);
+  
+  // Custom back button handler
+  const handleBackToGrades = () => {
+    if (saveStatus === "unsaved") {
+      setShowPrompt(true);
+      setPendingNavigation("/grades");
+    } else {
+      navigate("/grades");
+    }
+  };
+
+  // Handle prompt confirmation (leave without saving)
+  const handleConfirmNavigation = () => {
+    setShowPrompt(false);
+    if (pendingNavigation) {
+      navigate(pendingNavigation);
+    }
+  };
+
+  // Handle prompt cancellation
+  const handleCancelNavigation = () => {
+    setShowPrompt(false);
+    setPendingNavigation(null);
+  };
+
+  // Handle saving and then navigating
+  const handleSaveAndNavigate = async () => {
+    try {
+      await handleSaveChanges();
+      if (pendingNavigation) {
+        navigate(pendingNavigation);
+      }
+      setShowPrompt(false);
+    } catch (error) {
+      // If save fails, keep the user on the page
+      console.error("Failed to save before navigation:", error);
+    }
+  };
 
   const handleSaveChanges = async () => {
     setIsSaving(true);
@@ -503,6 +342,180 @@ const SavedCalculation = () => {
     }
   };
 
+  // Transform data helper function
+  const transformCalculationData = (data) => {
+    if (!data || !Array.isArray(data.categories)) {
+      console.error("Invalid data structure:", data);
+      throw new Error("Invalid calculation data structure");
+    }
+
+    // Ensure each category has required properties
+    const transformedCategories = data.categories.map((category) => {
+      if (
+        !category.name ||
+        typeof category.weight !== "number" ||
+        !Array.isArray(category.assignments)
+      ) {
+        console.error("Invalid category structure:", category);
+        throw new Error("Invalid category data structure");
+      }
+
+      return {
+        ...category,
+        weight: Number(category.weight),
+        assignments: (category.assignments || []).map((assignment) => ({
+          ...assignment,
+          name: String(assignment.name || ""),
+          status: assignment.status || "GRADED",
+          score: Number(assignment.score || 0),
+          total_points: Number(assignment.total_points || 0),
+        })),
+      };
+    });
+
+    return {
+      ...data,
+      categories: transformedCategories,
+    };
+  };
+
+  // Calculate grades for categories and overall
+  const calculateCategoryGrade = (assignments, categoryName) => {
+    if (!assignments || !assignments.length) return 0;
+
+    const allAssignments = assignments.map((assignment) => {
+      if (assignment.status === "UPCOMING" || assignment.isHypothetical) {
+        const hypotheticalKey = `${categoryName}-${assignment.name}`;
+        const hypotheticalScore = hypotheticalScores[hypotheticalKey];
+        return hypotheticalScore || assignment;
+      }
+      return assignment;
+    });
+
+    const totalEarned = allAssignments.reduce((sum, a) => {
+      const scoreKey = `${categoryName}-${a.name}`;
+      const score = hypotheticalScores[scoreKey]?.score ?? a.score;
+      return sum + score;
+    }, 0);
+
+    const totalPossible = allAssignments.reduce(
+      (sum, a) => sum + a.total_points,
+      0
+    );
+
+    return totalPossible > 0 ? (totalEarned / totalPossible) * 100 : 0;
+  };
+
+  const calculateWeightedGrade = () => {
+    if (!categories?.length) {
+      console.error("No categories available for grade calculation");
+      return 0;
+    }
+
+    return categories.reduce((total, category) => {
+      const categoryHypotheticals = hypotheticalAssignments.filter(
+        (a) => a.categoryName === category.name
+      );
+
+      const allAssignments = [
+        ...(category.assignments || []),
+        ...categoryHypotheticals,
+      ];
+
+      const categoryGrade = calculateCategoryGrade(
+        allAssignments,
+        category.name
+      );
+      return total + categoryGrade * (category.weight / 100);
+    }, 0);
+  };
+
+  useEffect(() => {
+    const fetchCalculation = async () => {
+      try {
+        const response = await fetch(`http://localhost:8000/api/grades/${id}`, {
+          credentials: "include",
+        });
+
+        if (!response.ok) {
+          if (response.status === 401) {
+            navigate("/login");
+            return;
+          }
+          throw new Error(
+            response.status === 404
+              ? "Calculation not found"
+              : "Failed to fetch calculation"
+          );
+        }
+
+        const data = await response.json();
+        const transformedData = transformCalculationData(data);
+
+        // Extract hidden assignments from the loaded data
+        const loadedHiddenAssignments = [];
+        transformedData.categories.forEach((category) => {
+          category.assignments.forEach((assignment) => {
+            if (assignment.hidden) {
+              loadedHiddenAssignments.push(
+                `${category.name}-${assignment.name}`
+              );
+            }
+          });
+        });
+
+        // Reset hypothetical states but keep hidden assignments
+        setHypotheticalAssignments([]);
+        setHypotheticalScores({});
+        setHiddenAssignments(loadedHiddenAssignments);
+
+        // Update main data
+        setCalculation(transformedData);
+        setCategories(transformedData.categories);
+        setMode("blackboard");
+        setRawGradeData(transformedData.raw_data || "");
+
+        setError(null);
+        setSaveStatus("saved");
+      } catch (err) {
+        console.error("Error in fetchCalculation:", err);
+        setError(err.message);
+        enqueueSnackbar(err.message, { variant: "error" });
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchCalculation();
+  }, [
+    id,
+    navigate,
+    enqueueSnackbar,
+    setCategories,
+    setMode,
+    setHypotheticalAssignments,
+    setHypotheticalScores,
+    setRawGradeData,
+  ]);
+
+  // Tracks changes
+  useEffect(() => {
+    if (
+      whatIfMode &&
+      (Object.keys(hypotheticalScores).length > 0 ||
+        hypotheticalAssignments.length > 0)
+    ) {
+      if (saveStatus !== "saving") {
+        setSaveStatus("unsaved");
+      }
+    }
+  }, [hypotheticalScores, hypotheticalAssignments, saveStatus, whatIfMode]);
+
+  // Enhanced function to check for unsaved changes
+  const hasUnsavedChanges = useCallback(() => {
+    return saveStatus === "unsaved";
+  }, [saveStatus]);
+
   if (loading) {
     return (
       <Container
@@ -572,14 +585,14 @@ const SavedCalculation = () => {
   return (
     <Container maxWidth="140%" sx={{ py: 4 }}>
       <SavedCalculationHeader
-        calculationName={calculation?.name}
+        calculationName={calculation?.name || "Unnamed Calculation"}
         whatIfMode={whatIfMode}
         isSaving={isSaving}
         onSave={handleSaveChanges}
         onDuplicate={() => setDuplicateDialogOpen(true)}
         lastSaved={lastSaved}
         saveStatus={saveStatus}
-        setSaveStatus={setSaveStatus}
+        onNavigateBack={handleBackToGrades}
       />
 
       <Results
@@ -611,6 +624,45 @@ const SavedCalculation = () => {
         title="Duplicate Calculation"
         defaultName={`Copy of ${calculation?.name}`}
       />
+
+      {/* Navigation Confirmation Dialog */}
+      <Dialog
+        open={showPrompt}
+        onClose={handleCancelNavigation}
+        PaperProps={{
+          sx: {
+            borderRadius: "16px",
+            p: 1,
+          },
+        }}
+      >
+        <DialogTitle sx={{ fontWeight: 600 }}>Unsaved Changes</DialogTitle>
+        <DialogContent>
+          <Typography>
+            You have unsaved changes. Are you sure you want to leave? All unsaved changes will be lost.
+          </Typography>
+        </DialogContent>
+        <DialogActions sx={{ p: 2 }}>
+          <Button onClick={handleCancelNavigation} variant="outlined">
+            Stay on Page
+          </Button>
+          <Button 
+            onClick={handleConfirmNavigation} 
+            variant="contained" 
+            color="error"
+          >
+            Leave Without Saving
+          </Button>
+          <Button 
+            onClick={handleSaveAndNavigate} 
+            variant="contained" 
+            color="primary"
+            disabled={isSaving}
+          >
+            Save and Leave
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Container>
   );
 };
