@@ -63,6 +63,7 @@ const Results = ({
     setActiveStep,
     setIsResultsView,
     showCalculateAnotherButton: contextShowCalculateAnotherButton,
+    clearLastViewedCalculation,
   } = useCalculator();
 
   // Use prop if provided, otherwise use context value
@@ -301,6 +302,8 @@ const Results = ({
   const handleReset = () => {
     // If we're in a saved calculation view, we should navigate back to the grades list
     if (isSavedCalculation) {
+      // Clear the last viewed calculation when resetting
+      clearLastViewedCalculation();
       navigate("/grades");
       return;
     }

@@ -64,7 +64,7 @@ const Navbar = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const { user, logout } = useAuth();
-  const { isResultsView } = useCalculator();
+  const { isResultsView, clearLastViewedCalculation } = useCalculator();
   const { mode, toggleTheme } = useTheme();
   const [anchorEl, setAnchorEl] = useState(null);
   const isMobile = useMediaQuery(muiTheme.breakpoints.down("md"));
@@ -118,6 +118,8 @@ const Navbar = () => {
 
   const handleLogout = async () => {
     handleMenuClose();
+    // Clear the last viewed calculation when logging out
+    clearLastViewedCalculation();
     await logout();
     navigate("/");
   };
@@ -150,18 +152,25 @@ const Navbar = () => {
     { text: "About", path: "/about", icon: <Info size={18} /> },
   ];
 
+  // Function to handle navigation with clearing last viewed calculation for non-calculator pages
+  const handleNavigation = (path) => {
+    // Only clear the last viewed calculation when explicitly logging out or resetting
+    // Don't clear when navigating between regular pages
+    navigate(path);
+  };
+
   // Drawer content for mobile
   const drawer = (
     <Box onClick={handleDrawerToggle} sx={{ textAlign: "center", py: 2 }}>
       <Box
-        component={RouterLink}
-        to="/"
+        onClick={() => handleNavigation('/')}
         sx={{
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
           textDecoration: "none",
           mb: 2,
+          cursor: "pointer",
         }}
       >
         <Calculator size={24} color={muiTheme.palette.primary.main} />
@@ -198,14 +207,14 @@ const Navbar = () => {
         {navItems.map((item) => (
           <ListItem
             key={item.text}
-            component={RouterLink}
-            to={item.path}
+            onClick={() => handleNavigation(item.path)}
             sx={{
               py: 1.5,
               px: 3,
               borderRadius: 2,
               mx: 1,
               mb: 1,
+              cursor: "pointer",
               backgroundColor: isActiveRoute(item.path)
                 ? alpha(muiTheme.palette.primary.main, 0.08)
                 : "transparent",
@@ -262,16 +271,14 @@ const Navbar = () => {
           }}
         >
           <Button
-            component={RouterLink}
-            to="/login"
+            onClick={() => handleNavigation('/login')}
             variant="outlined"
             fullWidth
           >
             Login
           </Button>
           <Button
-            component={RouterLink}
-            to="/register"
+            onClick={() => handleNavigation('/register')}
             variant="contained"
             fullWidth
           >
@@ -316,6 +323,10 @@ const Navbar = () => {
                 <Box
                   component={RouterLink}
                   to="/"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    handleNavigation('/');
+                  }}
                   sx={{
                     display: "flex",
                     alignItems: "center",
@@ -396,8 +407,7 @@ const Navbar = () => {
                     {navItems.map((item) => (
                       <Button
                         key={item.text}
-                        component={RouterLink}
-                        to={item.path}
+                        onClick={() => handleNavigation(item.path)}
                         startIcon={item.icon}
                         sx={{
                           px: 2,
@@ -511,16 +521,14 @@ const Navbar = () => {
                     ) : (
                       <Box sx={{ display: "flex", gap: 1, ml: 2 }}>
                         <Button
-                          component={RouterLink}
-                          to="/login"
+                          onClick={() => handleNavigation('/login')}
                           variant="outlined"
                           sx={{ borderRadius: "12px", px: 2 }}
                         >
                           Login
                         </Button>
                         <Button
-                          component={RouterLink}
-                          to="/register"
+                          onClick={() => handleNavigation('/register')}
                           variant="contained"
                           sx={{
                             borderRadius: "12px",

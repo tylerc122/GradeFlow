@@ -46,6 +46,7 @@ const SavedCalculation = () => {
     setManualGrades,
     resetCalculator,
     setIsResultsView,
+    setLastViewedCalculation,
   } = useCalculator();
   
   // Add a ref to store original calculator state
@@ -83,6 +84,9 @@ const SavedCalculation = () => {
     // Set that we're in the results view for a saved calculation
     setIsResultsView(true);
     
+    // Save the current calculation ID to session storage
+    setLastViewedCalculation(id);
+    
     return () => {
       // Restore original calculator state when component unmounts
       if (originalCalculatorState.current) {
@@ -99,7 +103,7 @@ const SavedCalculation = () => {
       // Clear that we're in results view when leaving
       setIsResultsView(false);
     };
-  }, []);
+  }, [id]);
 
   // Add a prompt when users try to leave with unsaved changes
   useEffect(() => {
@@ -138,6 +142,8 @@ const SavedCalculation = () => {
         setHiddenAssignments(originalCalculatorState.current.hiddenAssignments);
         setManualGrades(originalCalculatorState.current.manualGrades);
       }
+      // Don't clear the lastViewedCalculation as we want it to persist
+      // Just navigate to the grades page
       navigate("/grades");
     }
   };

@@ -20,17 +20,21 @@ import { useNavigate } from "react-router-dom";
 import { useSnackbar } from "notistack";
 import AssignmentIcon from "@mui/icons-material/Assignment";
 import DeleteIcon from "@mui/icons-material/Delete";
+import { useCalculator } from "../src/contexts/CalculatorContext";
 
 const MyGradesPage = () => {
   const theme = useTheme();
   const navigate = useNavigate();
   const { enqueueSnackbar } = useSnackbar();
+  const { lastViewedCalculation, clearLastViewedCalculation } = useCalculator();
   const [calculations, setCalculations] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [calculationToDelete, setCalculationToDelete] = useState(null);
   const [refreshTrigger, setRefreshTrigger] = useState(0);
+  const [redirectChecked, setRedirectChecked] = useState(false);
+  const [readyToRender, setReadyToRender] = useState(false);
 
   useEffect(() => {
     const fetchCalculations = async () => {
@@ -49,14 +53,30 @@ const MyGradesPage = () => {
 
         const data = await response.json();
         setCalculations(data);
+        
+        if (lastViewedCalculation && data.length > 0) {
+          const calculationExists = data.some(calc => calc.id.toString() === lastViewedCalculation.toString());
+          
+          if (calculationExists) {
+            navigate(`/grades/${lastViewedCalculation}`);
+            return;
+          } else {
+            clearLastViewedCalculation();
+            setReadyToRender(true);
+          }
+          setRedirectChecked(true);
+        } else {
+          setReadyToRender(true);
+        }
       } catch (err) {
         setError(err.message);
+        setReadyToRender(true);
       } finally {
         setLoading(false);
       }
     };
     fetchCalculations();
-  }, [navigate, refreshTrigger]);
+  }, [navigate, refreshTrigger, lastViewedCalculation, clearLastViewedCalculation]);
 
   useEffect(() => {
     const handleFocus = () => {
@@ -110,6 +130,12 @@ const MyGradesPage = () => {
       }
 
       setCalculations(calculations.filter((calc) => calc.id !== calculationId));
+      
+      // If the user deletes the calculation they were last viewing, clear it from session storage
+      if (lastViewedCalculation && lastViewedCalculation.toString() === calculationId.toString()) {
+        clearLastViewedCalculation();
+      }
+      
       enqueueSnackbar("Calculation deleted successfully", {
         variant: "success",
       });
@@ -126,6 +152,22 @@ const MyGradesPage = () => {
   };
 
   if (loading) {
+    return (
+      <Container
+        sx={{
+          py: 8,
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center",
+          minHeight: "50vh",
+        }}
+      >
+        <CircularProgress />
+      </Container>
+    );
+  }
+
+  if (!readyToRender) {
     return (
       <Container
         sx={{
