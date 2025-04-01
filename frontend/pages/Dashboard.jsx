@@ -46,10 +46,16 @@ import {
   AreaChart,
 } from "recharts";
 import GPADashboardCard from "../components/GPADashboardCard";
+import { useCalculator } from "../src/contexts/CalculatorContext";
+import { useSnackbar } from "notistack";
 
 const Dashboard = () => {
   const theme = useTheme();
   const navigate = useNavigate();
+  const { mode } = useTheme();
+  const isDark = mode === "dark";
+  const { enqueueSnackbar } = useSnackbar();
+  const { setLastViewedCalculation } = useCalculator();
 
   // State for different data sections
   const [stats, setStats] = useState(null);
@@ -285,6 +291,12 @@ const Dashboard = () => {
       </CardContent>
     </Card>
   );
+
+  // Create a navigation helper
+  const navigateToCalculation = (calculationId) => {
+    setLastViewedCalculation(calculationId);
+    navigate(`/grades/${calculationId}`);
+  };
 
   if (error) {
     return (
@@ -611,7 +623,7 @@ const Dashboard = () => {
                               0.2
                             ),
                           }}
-                          onClick={() => navigate(`/grades/${calc.id}`)}
+                          onClick={() => navigateToCalculation(calc.id)}
                         >
                           {/* Progress indicator at top */}
                           <LinearProgress
@@ -721,6 +733,10 @@ const Dashboard = () => {
                               className="view-details"
                               size="small"
                               endIcon={<ChevronRight size={16} />}
+                              onClick={(e) => {
+                                e.stopPropagation(); // Prevent double navigation from parent onClick
+                                navigateToCalculation(calc.id);
+                              }}
                               sx={{
                                 mt: 2,
                                 width: "100%",

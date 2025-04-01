@@ -4,6 +4,10 @@ const CalculatorContext = createContext();
 
 export const CalculatorProvider = ({ children }) => {
   const [isResultsView, setIsResultsView] = useState(false);
+  // Add state for last viewed calculation
+  const [lastViewedCalculation, setLastViewedCalculation] = useState(() => {
+    return sessionStorage.getItem('lastViewedCalculation') || null;
+  });
 
   // Step tracking
   const [activeStep, setActiveStep] = useState(0);
@@ -47,12 +51,34 @@ export const CalculatorProvider = ({ children }) => {
     setHiddenAssignments([]);
   };
 
+  // Function to save last viewed calculation to session storage
+  const setAndSaveLastViewedCalculation = (calculationId) => {
+    // If null, remove from storage
+    if (calculationId === null) {
+      sessionStorage.removeItem('lastViewedCalculation');
+    } else {
+      sessionStorage.setItem('lastViewedCalculation', calculationId);
+    }
+    setLastViewedCalculation(calculationId);
+  };
+
+  // Clear last viewed calculation
+  const clearLastViewedCalculation = () => {
+    sessionStorage.removeItem('lastViewedCalculation');
+    setLastViewedCalculation(null);
+  };
+
   return (
     <CalculatorContext.Provider
       value={{
         // View state
         isResultsView,
         setIsResultsView,
+
+        // Last viewed calculation management
+        lastViewedCalculation,
+        setLastViewedCalculation: setAndSaveLastViewedCalculation,
+        clearLastViewedCalculation,
 
         // Step tracking
         activeStep,
