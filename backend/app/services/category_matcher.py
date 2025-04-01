@@ -156,6 +156,47 @@ class CategoryMatcher:
                     r'(?i)inclass[_-]exercise[_-]?\d*',
                     r'(?i)attendance\s*\d+'
                 ]
+            ),
+
+            "Project": CategoryPattern(
+                prefixes=["project", "p", "proj"],
+                keywords=["project", "p", "proj"],
+                assignment_types=["Project"],
+                compound_patterns=[
+                    r'(?i)project\s*\d+',
+                    r'(?i)proj\s*\d+',
+                    r'(?i)p\s*\d+',
+                    r'(?i)^p\d+',
+                    r'(?i)project[0-9]+',
+                    r'(?i)^project\s+[0-9]+$'
+                ],
+                negative_patterns=[
+                    r'(?i)lab',
+                    r'(?i)quiz',
+                    r'(?i)test',
+                    r'(?i)final',
+                    r'(?i)extra',
+                    r'(?i)bonus'
+                ]
+            ),
+
+            "Papers": CategoryPattern(
+                prefixes=["paper", "p", "paper"],
+                keywords=["paper", "p", "paper"],
+                assignment_types=["Paper"],
+                compound_patterns=[
+                    r'(?i)paper\s*\d+',
+                    r'(?i)p\s*\d+',
+                    r'(?i)^p\d+',
+                    r'(?i)paper[0-9]+',
+                    r'(?i)^paper\s+[0-9]+$'
+                ],
+                negative_patterns=[
+                    r'(?i)lab',
+                    r'(?i)quiz',
+                    r'(?i)test',
+                    r'(?i)final',
+                ]
             )
         }
 
@@ -192,7 +233,7 @@ class CategoryMatcher:
             (r'(?i)_make_?up(\s|$)', "makeup assignment"),
             (r'(?i)redo', "redo assignment"),
             (r'(?i)resubmission', "resubmitted assignment"),
-            (r'(?i)_optional(\s|$)', "optional assignment")
+            (r'(?i)_optional(\s|$)', "optional assignment"),
         ]
         
         for pattern, reason in skip_patterns:

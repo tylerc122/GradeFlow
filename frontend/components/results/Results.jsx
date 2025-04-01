@@ -26,7 +26,10 @@ import { HypotheticalAssignmentDialog } from "../dialogs/HypotheticalAssignmentD
 import ManualGradeTable from "./ManualGradeTable";
 import { letterGradeToPoints, isLetterGrade } from "../../src/utils/letterGradeUtils";
 
-const Results = () => {
+const Results = ({ 
+  isSavedCalculation = false,
+  showCalculateAnotherButton: propShowCalculateAnotherButton
+}) => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { enqueueSnackbar } = useSnackbar();
@@ -59,8 +62,13 @@ const Results = () => {
     activeStep,
     setActiveStep,
     setIsResultsView,
-    showCalculateAnotherButton,
+    showCalculateAnotherButton: contextShowCalculateAnotherButton,
   } = useCalculator();
+
+  // Use prop if provided, otherwise use context value
+  const showCalculateAnotherButton = propShowCalculateAnotherButton !== undefined 
+    ? propShowCalculateAnotherButton 
+    : contextShowCalculateAnotherButton;
 
   // Local state
   const [saveDialogOpen, setSaveDialogOpen] = useState(false);
@@ -200,6 +208,15 @@ const Results = () => {
   };
 
   const handleSave = async (saveData) => {
+    // If we're in a saved calculation view, we should not use this function
+    // as SavedCalculation.jsx has its own saving mechanism
+    if (isSavedCalculation) {
+      enqueueSnackbar("Can't save from here. Use the Save button in the header to save changes.", {
+        variant: "warning",
+      });
+      return;
+    }
+    
     setIsSaving(true);
     setSavingError(null);
 
@@ -282,6 +299,12 @@ const Results = () => {
   };
 
   const handleReset = () => {
+    // If we're in a saved calculation view, we should navigate back to the grades list
+    if (isSavedCalculation) {
+      navigate("/grades");
+      return;
+    }
+
     if (!user || (user && hasBeenSaved)) {
       resetCalculator();
       setActiveStep(0);

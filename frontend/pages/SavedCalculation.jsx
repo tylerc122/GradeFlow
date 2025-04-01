@@ -65,6 +65,42 @@ const SavedCalculation = () => {
   const [saveStatus, setSaveStatus] = useState("saved");
   const [lastSaved, setLastSaved] = useState(null);
 
+  // Save original calculator state on mount
+  useEffect(() => {
+    // Store original calculator state
+    originalCalculatorState.current = {
+      categories: [...categories],
+      mode,
+      rawGradeData,
+      whatIfMode,
+      targetGrade,
+      hypotheticalScores: {...hypotheticalScores},
+      hypotheticalAssignments: [...hypotheticalAssignments],
+      hiddenAssignments: [...hiddenAssignments],
+      manualGrades: [...manualGrades]
+    };
+    
+    // Set that we're in the results view for a saved calculation
+    setIsResultsView(true);
+    
+    return () => {
+      // Restore original calculator state when component unmounts
+      if (originalCalculatorState.current) {
+        setCategories(originalCalculatorState.current.categories);
+        setMode(originalCalculatorState.current.mode);
+        setRawGradeData(originalCalculatorState.current.rawGradeData);
+        setWhatIfMode(originalCalculatorState.current.whatIfMode);
+        setTargetGrade(originalCalculatorState.current.targetGrade);
+        setHypotheticalScores(originalCalculatorState.current.hypotheticalScores);
+        setHypotheticalAssignments(originalCalculatorState.current.hypotheticalAssignments);
+        setHiddenAssignments(originalCalculatorState.current.hiddenAssignments);
+        setManualGrades(originalCalculatorState.current.manualGrades);
+      }
+      // Clear that we're in results view when leaving
+      setIsResultsView(false);
+    };
+  }, []);
+
   // Add a prompt when users try to leave with unsaved changes
   useEffect(() => {
     const handleBeforeUnload = (e) => {
@@ -90,6 +126,18 @@ const SavedCalculation = () => {
       setShowPrompt(true);
       setPendingNavigation("/grades");
     } else {
+      // Restore original calculator state explicitly before navigating
+      if (originalCalculatorState.current) {
+        setCategories(originalCalculatorState.current.categories);
+        setMode(originalCalculatorState.current.mode);
+        setRawGradeData(originalCalculatorState.current.rawGradeData);
+        setWhatIfMode(originalCalculatorState.current.whatIfMode);
+        setTargetGrade(originalCalculatorState.current.targetGrade);
+        setHypotheticalScores(originalCalculatorState.current.hypotheticalScores);
+        setHypotheticalAssignments(originalCalculatorState.current.hypotheticalAssignments);
+        setHiddenAssignments(originalCalculatorState.current.hiddenAssignments);
+        setManualGrades(originalCalculatorState.current.manualGrades);
+      }
       navigate("/grades");
     }
   };
@@ -475,16 +523,22 @@ const SavedCalculation = () => {
           });
         });
 
-        // Reset hypothetical states but keep hidden assignments
+        // Create a temporary context for this saved calculation view only
+        // Don't reset the original calculator context completely
+        setCalculation(transformedData);
+        
+        // Using setCategories here is necessary for the calculation display
+        // but we'll restore the original state when leaving this view
+        setCategories(transformedData.categories);
+        
+        // For these viewing settings, we use local state when available to avoid context pollution
+        setHiddenAssignments(loadedHiddenAssignments);
         setHypotheticalAssignments([]);
         setHypotheticalScores({});
-        setHiddenAssignments(loadedHiddenAssignments);
-
-        // Update main data
-        setCalculation(transformedData);
-        setCategories(transformedData.categories);
-        setMode("blackboard");
+        
+        // We need these for the calculation to work, but they don't affect the calculator flow
         setRawGradeData(transformedData.raw_data || "");
+        setMode("blackboard");
 
         setError(null);
         setSaveStatus("saved");
@@ -628,6 +682,7 @@ const SavedCalculation = () => {
           selectedCategory={selectedCategory}
           setSelectedCategory={setSelectedCategory}
           showCalculateAnotherButton={false}
+          isSavedCalculation={true}
         />
       </Suspense>
 
