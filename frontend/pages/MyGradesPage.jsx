@@ -26,7 +26,13 @@ const MyGradesPage = () => {
   const theme = useTheme();
   const navigate = useNavigate();
   const { enqueueSnackbar } = useSnackbar();
-  const { lastViewedCalculation, clearLastViewedCalculation } = useCalculator();
+  const { 
+    lastViewedCalculation, 
+    clearLastViewedCalculation, 
+    setLastViewedCalculation,
+    showGradesList,
+    setShowGradesList
+  } = useCalculator();
   const [calculations, setCalculations] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -54,7 +60,7 @@ const MyGradesPage = () => {
         const data = await response.json();
         setCalculations(data);
         
-        if (lastViewedCalculation && data.length > 0) {
+        if (lastViewedCalculation && data.length > 0 && !showGradesList) {
           const calculationExists = data.some(calc => calc.id.toString() === lastViewedCalculation.toString());
           
           if (calculationExists) {
@@ -76,7 +82,7 @@ const MyGradesPage = () => {
       }
     };
     fetchCalculations();
-  }, [navigate, refreshTrigger, lastViewedCalculation, clearLastViewedCalculation]);
+  }, [navigate, refreshTrigger, lastViewedCalculation, clearLastViewedCalculation, showGradesList]);
 
   useEffect(() => {
     const handleFocus = () => {
@@ -151,6 +157,14 @@ const MyGradesPage = () => {
     setDeleteDialogOpen(true);
   };
 
+  // Function to navigate to a specific calculation
+  const navigateToCalculation = (calculationId) => {
+    // Set the last viewed calculation before navigating
+    setCalculationToDelete(null);
+    setLastViewedCalculation(calculationId);
+    navigate(`/grades/${calculationId}`);
+  };
+
   if (loading) {
     return (
       <Container
@@ -217,7 +231,7 @@ const MyGradesPage = () => {
             >
               <Box sx={{ display: "flex", alignItems: "flex-start", gap: 2 }}>
                 <Box
-                  onClick={() => navigate(`/grades/${calc.id}`)}
+                  onClick={() => navigateToCalculation(calc.id)}
                   sx={{ flexGrow: 1 }}
                 >
                   <Box
