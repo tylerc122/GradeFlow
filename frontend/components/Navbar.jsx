@@ -69,6 +69,40 @@ const Navbar = () => {
   const [anchorEl, setAnchorEl] = useState(null);
   const isMobile = useMediaQuery(muiTheme.breakpoints.down("md"));
   const [mobileOpen, setMobileOpen] = useState(false);
+  
+  // Check if we're on a saved calculation page
+  const isSavedCalculation = location.pathname.startsWith('/grades/') && location.pathname.split('/').length > 2;
+  
+  // Define isCalculatorRelated before using it
+  // Only return to normal width when navigating to a non-results page that isn't calculator or grades
+  const isCalculatorRelated = location.pathname === '/calculator' || 
+                             location.pathname === '/grades' || 
+                             location.pathname.startsWith('/grades/');
+  
+  // Session-persistent expanded view state 
+  const [hasSeenResults, setHasSeenResults] = useState(() => {
+    return sessionStorage.getItem('hasSeenResults') === 'true';
+  });
+  
+  // If we're on results view or saved calculation, remember that for the session
+  useEffect(() => {
+    if (isResultsView || isSavedCalculation) {
+      sessionStorage.setItem('hasSeenResults', 'true');
+      setHasSeenResults(true);
+    }
+  }, [isResultsView, isSavedCalculation]);
+  
+  // Reset expanded view when leaving calculator-related pages completely
+  useEffect(() => {
+    // If we're not on a calculator-related page, reset the expanded state
+    if (!isCalculatorRelated && location.pathname !== '/calculator' && !location.pathname.startsWith('/grades')) {
+      sessionStorage.removeItem('hasSeenResults');
+      setHasSeenResults(false);
+    }
+  }, [location.pathname, isCalculatorRelated]);
+  
+  // Determine if we should use expanded view
+  const useExpandedView = isResultsView || isSavedCalculation || (hasSeenResults && isCalculatorRelated);
 
   const isActiveRoute = (path) => {
     return location.pathname === path;
@@ -264,8 +298,8 @@ const Navbar = () => {
             <Container
               maxWidth={false}
               sx={{
-                width: isResultsView ? "2300px" : "100%",
-                maxWidth: isResultsView ? "97vw" : "xl",
+                width: useExpandedView ? "2300px" : "100%",
+                maxWidth: useExpandedView ? "97vw" : "xl",
                 transition: "all 0.3s ease-in-out",
               }}
             >
