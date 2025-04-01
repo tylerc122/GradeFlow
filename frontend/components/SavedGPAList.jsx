@@ -23,6 +23,7 @@ import {
   Menu,
   MenuItem,
   ListItemIcon,
+  CircularProgress
 } from "@mui/material";
 import DeleteIcon from "@mui/icons-material/Delete";
 import EditIcon from "@mui/icons-material/Edit";
@@ -37,7 +38,14 @@ import { useGPA } from "../src/contexts/GPAContext";
 const SavedGPAList = () => {
   const muiTheme = useMuiTheme();
   const { mode, isDark } = useTheme();
-  const { savedGPAs, setSavedGPAs, editSavedGPA, duplicateGPA } = useGPA();
+  const { 
+    savedGPAs, 
+    isLoading, 
+    editSavedGPA, 
+    deleteSavedGPA, 
+    duplicateGPA,
+    fetchSavedGPAs 
+  } = useGPA();
   
   // State for delete confirmation dialog
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -63,9 +71,9 @@ const SavedGPAList = () => {
     setDeleteDialogOpen(true);
   };
 
-  const handleConfirmDelete = () => {
+  const handleConfirmDelete = async () => {
     if (gpaToDelete) {
-      setSavedGPAs(savedGPAs.filter((gpa) => gpa.id !== gpaToDelete.id));
+      await deleteSavedGPA(gpaToDelete.id);
     }
     setDeleteDialogOpen(false);
     setGpaToDelete(null);
@@ -84,9 +92,9 @@ const SavedGPAList = () => {
     editSavedGPA(id);
   };
 
-  const handleDuplicateGPA = (id) => {
+  const handleDuplicateGPA = async (id) => {
     handleCloseMenu();
-    duplicateGPA(id);
+    await duplicateGPA(id);
   };
 
   const formatDate = (dateString) => {
@@ -126,7 +134,11 @@ const SavedGPAList = () => {
         </Typography>
       </Box>
 
-      {savedGPAs.length === 0 ? (
+      {isLoading ? (
+        <Box sx={{ display: 'flex', justifyContent: 'center', py: 5 }}>
+          <CircularProgress />
+        </Box>
+      ) : savedGPAs.length === 0 ? (
         <Box
           sx={{
             p: 4,
@@ -164,7 +176,7 @@ const SavedGPAList = () => {
                     </Typography>
                     <Box sx={{ display: "flex", alignItems: "center" }}>
                       <Typography variant="caption" color="text.secondary" sx={{ mr: 2 }}>
-                        {formatDate(savedGPA.date)}
+                        {formatDate(savedGPA.created_at)}
                       </Typography>
                       <IconButton
                         size="small"
@@ -196,10 +208,10 @@ const SavedGPAList = () => {
                   <Box sx={{ display: "flex", justifyContent: "space-between", mb: 2 }}>
                     <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
                       <ComputerIcon color="primary" fontSize="small" />
-                      <Typography variant="body2">Technical GPA:</Typography>
+                      <Typography variant="body2">Major GPA:</Typography>
                     </Box>
                     <Typography variant="body1" sx={{ fontWeight: 600, color: "primary.main" }}>
-                      {savedGPA.technicalGPA}
+                      {savedGPA.majorGPA}
                     </Typography>
                   </Box>
 

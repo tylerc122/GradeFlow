@@ -118,6 +118,239 @@ async def save_calculation(
             detail=f"Failed to save calculation: {str(e)}"
         )
 
+@router.post("/gpa/save")
+async def save_gpa_calculation(
+    request: Request,
+    gpa_data: dict = Body(...),
+    db: Session = Depends(get_db),
+    user_id: int = Depends(session_manager.require_auth)
+):
+    try:
+        # Get user
+        user = db.query(User).filter(User.id == user_id).first()
+        if not user:
+            raise HTTPException(status_code=404, detail="User not found")
+        
+        # Create new saved GPA calculation
+        new_calculation = SavedCalculation(
+            user_id=user_id,
+            name=gpa_data.get("name", "Unnamed GPA"),
+            raw_data="", # GPA doesn't use raw data like regular calculations
+            results={
+                "calculation_type": "gpa",
+                "overall_gpa": gpa_data.get("overallGPA", "0.00"),
+                "major_gpa": gpa_data.get("majorGPA", "0.00"),
+                "courses": gpa_data.get("courses", []),
+                "major_courses": gpa_data.get("majorCourses", [])
+            }
+        )
+        
+        db.add(new_calculation)
+        db.commit()
+        db.refresh(new_calculation)
+        
+        return JSONResponse({
+            "id": new_calculation.id,
+            "message": "GPA calculation saved successfully"
+        })
+        
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to save GPA calculation: {str(e)}"
+        )
+
+@router.get("/gpa/saved")
+async def get_saved_gpa_calculations(
+    request: Request,
+    db: Session = Depends(get_db),
+    user_id: int = Depends(session_manager.require_auth)
+):
+    try:
+        # Get all saved calculations for the user
+        all_calculations = db.query(SavedCalculation).filter(
+            SavedCalculation.user_id == user_id
+        ).all()
+        
+        # Filter for GPA calculations in Python
+        calculations = [calc for calc in all_calculations 
+                      if calc.results and 
+                         calc.results.get('calculation_type') == 'gpa']
+        
+        # Format response
+        response = []
+        for calc in calculations:
+            calc_data = {
+                "id": calc.id,
+                "name": calc.name,
+                "created_at": calc.created_at,
+                "overallGPA": calc.results.get("overall_gpa", "0.00"),
+                "majorGPA": calc.results.get("major_gpa", "0.00"),
+                "courses": calc.results.get("courses", []),
+                "majorCourses": calc.results.get("major_courses", [])
+            }
+            response.append(calc_data)
+        
+        return response
+        
+    except Exception as e:
+        print(f"Error fetching GPA calculations: {str(e)}")
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to retrieve GPA calculations: {str(e)}"
+        )
+        
+@router.get("/gpa/{calculation_id}")
+async def get_gpa_calculation(
+    calculation_id: int,
+    request: Request,
+    db: Session = Depends(get_db),
+    user_id: int = Depends(session_manager.require_auth)
+):
+    try:
+        # Get specific calculation with authentication check
+        calculation = db.query(SavedCalculation).filter(
+            SavedCalculation.id == calculation_id,
+            SavedCalculation.user_id == user_id
+        ).first()
+        
+        if not calculation:
+            raise HTTPException(
+                status_code=404,
+                detail="GPA calculation not found or unauthorized"
+            )
+            
+        # Verify it's a GPA calculation
+        if not calculation.results or calculation.results.get('calculation_type') != 'gpa':
+            raise HTTPException(
+                status_code=404,
+                detail="Not a valid GPA calculation"
+            )
+        
+        # Format response
+        response = {
+            "id": calculation.id,
+            "name": calculation.name,
+            "created_at": calculation.created_at,
+            "overallGPA": calculation.results.get("overall_gpa", "0.00"),
+            "majorGPA": calculation.results.get("major_gpa", "0.00"),
+            "courses": calculation.results.get("courses", []),
+            "majorCourses": calculation.results.get("major_courses", [])
+        }
+        
+        return response
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"Error retrieving GPA calculation: {str(e)}")
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to retrieve GPA calculation: {str(e)}"
+        )
+
+@router.put("/gpa/{calculation_id}")
+async def update_gpa_calculation(
+    calculation_id: int,
+    request: Request,
+    gpa_data: dict = Body(...),
+    db: Session = Depends(get_db),
+    user_id: int = Depends(session_manager.require_auth)
+):
+    try:
+        # Get the existing calculation with authentication check
+        calculation = db.query(SavedCalculation).filter(
+            SavedCalculation.id == calculation_id,
+            SavedCalculation.user_id == user_id
+        ).first()
+        
+        if not calculation:
+            raise HTTPException(
+                status_code=404,
+                detail="GPA calculation not found or unauthorized"
+            )
+            
+        # Verify it's a GPA calculation
+        if not calculation.results or calculation.results.get('calculation_type') != 'gpa':
+            raise HTTPException(
+                status_code=404,
+                detail="Not a valid GPA calculation"
+            )
+        
+        # Update the calculation
+        calculation.name = gpa_data.get("name", calculation.name)
+        calculation.results = {
+            "calculation_type": "gpa",
+            "overall_gpa": gpa_data.get("overallGPA", "0.00"),
+            "major_gpa": gpa_data.get("majorGPA", "0.00"),
+            "courses": gpa_data.get("courses", []),
+            "major_courses": gpa_data.get("majorCourses", [])
+        }
+        
+        db.commit()
+        db.refresh(calculation)
+        
+        return JSONResponse({
+            "id": calculation.id,
+            "message": "GPA calculation updated successfully"
+        })
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        db.rollback()
+        print(f"Error updating GPA calculation: {str(e)}")
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to update GPA calculation: {str(e)}"
+        )
+        
+@router.delete("/gpa/{calculation_id}")
+async def delete_gpa_calculation(
+    calculation_id: int,
+    request: Request,
+    db: Session = Depends(get_db),
+    user_id: int = Depends(session_manager.require_auth)
+):
+    try:
+        # Find the calculation
+        calculation = db.query(SavedCalculation).filter(
+            SavedCalculation.id == calculation_id,
+            SavedCalculation.user_id == user_id
+        ).first()
+        
+        if not calculation:
+            raise HTTPException(
+                status_code=404,
+                detail="GPA calculation not found or unauthorized"
+            )
+            
+        # Verify it's a GPA calculation
+        if not calculation.results or calculation.results.get('calculation_type') != 'gpa':
+            raise HTTPException(
+                status_code=404,
+                detail="Not a valid GPA calculation"
+            )
+        
+        # Delete the calculation
+        db.delete(calculation)
+        db.commit()
+        
+        return JSONResponse({
+            "message": "GPA calculation deleted successfully"
+        })
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        db.rollback()
+        print(f"Error deleting GPA calculation: {str(e)}")
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to delete GPA calculation: {str(e)}"
+        )
+
 @router.get("/saved")
 async def get_saved_calculations(
     request: Request,
@@ -126,9 +359,13 @@ async def get_saved_calculations(
 ):
     try:
         # Get all saved calculations for user with their categories
-        calculations = db.query(SavedCalculation).filter(
+        all_calculations = db.query(SavedCalculation).filter(
             SavedCalculation.user_id == user_id
         ).all()
+        
+        # Filter out GPA calculations
+        calculations = [calc for calc in all_calculations 
+                       if not (calc.results and calc.results.get('calculation_type') == 'gpa')]
         
         # Format response
         response = []
@@ -152,6 +389,7 @@ async def get_saved_calculations(
         return response
         
     except Exception as e:
+        print(f"Error fetching regular calculations: {str(e)}")
         raise HTTPException(
             status_code=500,
             detail=f"Failed to retrieve calculations: {str(e)}"
@@ -324,10 +562,14 @@ async def get_dashboard_stats(
     user_id: int = Depends(session_manager.require_auth)
 ):
     try:
-        # Get all calculations for user
-        calculations = db.query(SavedCalculation).filter(
+        # Get all regular calculations for user (excluding GPAs)
+        all_calculations = db.query(SavedCalculation).filter(
             SavedCalculation.user_id == user_id
         ).order_by(desc(SavedCalculation.created_at)).all()
+        
+        # Filter out GPA calculations
+        calculations = [calc for calc in all_calculations 
+                      if not (calc.results and calc.results.get('calculation_type') == 'gpa')]
         
         if not calculations:
             return {
@@ -392,6 +634,7 @@ async def get_dashboard_stats(
         }
         
     except Exception as e:
+        print(f"Error fetching dashboard statistics: {str(e)}")
         raise HTTPException(
             status_code=500,
             detail=f"Failed to fetch dashboard statistics: {str(e)}"
@@ -405,10 +648,17 @@ async def get_recent_calculations(
     user_id: int = Depends(session_manager.require_auth)
 ):
     try:
-        # Get recent calculations with full details
-        recent_calcs = db.query(SavedCalculation).filter(
+        # Get all calculations for the user
+        all_calcs = db.query(SavedCalculation).filter(
             SavedCalculation.user_id == user_id
-        ).order_by(desc(SavedCalculation.created_at)).limit(limit).all()
+        ).order_by(desc(SavedCalculation.created_at)).all()
+        
+        # Filter out GPA calculations
+        regular_calcs = [calc for calc in all_calcs 
+                      if not (calc.results and calc.results.get('calculation_type') == 'gpa')]
+        
+        # Limit to requested number
+        recent_calcs = regular_calcs[:limit] if len(regular_calcs) > limit else regular_calcs
         
         # Format response
         response = []
@@ -432,6 +682,7 @@ async def get_recent_calculations(
         return response
         
     except Exception as e:
+        print(f"Error fetching recent calculations: {str(e)}")
         raise HTTPException(
             status_code=500,
             detail=f"Failed to fetch recent calculations: {str(e)}"
@@ -449,12 +700,16 @@ async def get_grade_trends(
         end_date = datetime.utcnow()
         start_date = end_date - timedelta(days=days)
         
-        # Get calculations within date range
-        calculations = db.query(SavedCalculation).filter(
+        # Get all calculations within date range
+        all_calculations = db.query(SavedCalculation).filter(
             SavedCalculation.user_id == user_id,
             SavedCalculation.created_at >= start_date,
             SavedCalculation.created_at <= end_date
         ).order_by(SavedCalculation.created_at).all()
+        
+        # Filter out GPA calculations
+        calculations = [calc for calc in all_calculations 
+                      if not (calc.results and calc.results.get('calculation_type') == 'gpa')]
         
         # Track grades over time
         grade_trends = []
@@ -487,6 +742,7 @@ async def get_grade_trends(
         }
         
     except Exception as e:
+        print(f"Error fetching grade trends: {str(e)}")
         raise HTTPException(
             status_code=500,
             detail=f"Failed to fetch grade trends: {str(e)}"
