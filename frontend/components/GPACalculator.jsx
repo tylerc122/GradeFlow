@@ -51,6 +51,7 @@ const GPACalculator = () => {
   const [tabValue, setTabValue] = useState(0);
   const [saveDialogOpen, setSaveDialogOpen] = useState(false);
   const [saveName, setSaveName] = useState(centralGPA.name || "My GPA");
+  const [isSaving, setIsSaving] = useState(false);
 
   // Letter grades for dropdown
   const letterGrades = [
@@ -120,9 +121,11 @@ const GPACalculator = () => {
     setSaveDialogOpen(true);
   };
 
-  const handleSaveGPA = () => {
+  const handleSaveGPA = async () => {
     if (saveName.trim()) {
-      updateCentralGPA(saveName);
+      setIsSaving(true);
+      await updateCentralGPA(saveName);
+      setIsSaving(false);
       setSaveDialogOpen(false);
     }
   };
@@ -499,9 +502,9 @@ const GPACalculator = () => {
           <Button 
             onClick={handleSaveGPA} 
             variant="contained"
-            disabled={!saveName.trim()}
+            disabled={!saveName.trim() || isSaving}
           >
-            Save
+            {isSaving ? 'Saving...' : 'Save'}
           </Button>
         </DialogActions>
       </Dialog>

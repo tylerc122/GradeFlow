@@ -15,36 +15,61 @@ export const GPAProvider = ({ children }) => {
     majorGPA: "0.00"
   });
 
+  // Saved GPAs
+  const [savedGPAs, setSavedGPAs] = useState([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [currentGPAId, setCurrentGPAId] = useState(null);
+
   // Editing state
   const [isEditing, setIsEditing] = useState(false);
 
-  // Load saved data from localStorage on mount
+  // Load saved data from backend on mount
   useEffect(() => {
-    try {
-      const savedCoursesData = localStorage.getItem('gpaCourses');
-      const savedMajorCoursesData = localStorage.getItem('gpaMajorCourses');
-      const savedCentralGPA = localStorage.getItem('centralGPA');
-      
-      if (savedCoursesData) setCourses(JSON.parse(savedCoursesData));
-      if (savedMajorCoursesData) setMajorCourses(JSON.parse(savedMajorCoursesData));
-      if (savedCentralGPA) setCentralGPA(JSON.parse(savedCentralGPA));
-    } catch (error) {
-      console.error('Failed to load saved GPA data:', error);
-    }
+    fetchSavedGPAs();
   }, []);
 
-  // Save data to localStorage when it changes
-  useEffect(() => {
-    localStorage.setItem('gpaCourses', JSON.stringify(courses));
-  }, [courses]);
-
-  useEffect(() => {
-    localStorage.setItem('gpaMajorCourses', JSON.stringify(majorCourses));
-  }, [majorCourses]);
-
-  useEffect(() => {
-    localStorage.setItem('centralGPA', JSON.stringify(centralGPA));
-  }, [centralGPA]);
+  // Fetch all saved GPAs from the backend
+  const fetchSavedGPAs = async () => {
+    setIsLoading(true);
+    try {
+      const response = await fetch('http://localhost:8000/api/grades/gpa/saved', {
+        method: 'GET',
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json',
+        }
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        setSavedGPAs(data);
+        
+        // Load the most recent GPA as the current one if available
+        if (data.length > 0) {
+          const mostRecent = data.sort((a, b) => 
+            new Date(b.created_at) - new Date(a.created_at)
+          )[0];
+          
+          setCentralGPA({
+            id: mostRecent.id,
+            name: mostRecent.name,
+            lastUpdated: mostRecent.created_at,
+            overallGPA: mostRecent.overallGPA,
+            majorGPA: mostRecent.majorGPA,
+            courses: mostRecent.courses || [],
+            majorCourses: mostRecent.majorCourses || []
+          });
+          setCurrentGPAId(mostRecent.id);
+        }
+      } else {
+        console.error('Failed to load saved GPAs');
+      }
+    } catch (error) {
+      console.error('Error fetching saved GPAs:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   // Convert letter grade to GPA points
   const letterToGPA = (letter) => {
@@ -74,17 +99,182 @@ export const GPAProvider = ({ children }) => {
   const calculateOverallGPA = () => calculateGPA(courses);
   const calculateMajorGPA = () => calculateGPA(majorCourses);
 
-  // Update the central GPA with current calculations
-  const updateCentralGPA = (name = "My GPA") => {
-    setCentralGPA({
+  // Update the central GPA with current calculations and save to backend
+  const updateCentralGPA = async (name = "My GPA") => {
+    // Calculate GPAs
+    const overallGPA = calculateOverallGPA();
+    const majorGPA = calculateMajorGPA();
+    
+    // Create new GPA object
+    const updatedGPA = {
       name,
       lastUpdated: new Date().toISOString(),
-      overallGPA: calculateOverallGPA(),
-      majorGPA: calculateMajorGPA(),
+      overallGPA,
+      majorGPA,
       courses: [...courses],
       majorCourses: [...majorCourses]
-    });
+    };
+    
+    // Update state
+    setCentralGPA(updatedGPA);
     setIsEditing(false);
+    
+    try {
+      // Prepare payload
+      const payload = {
+        name,
+        overallGPA,
+        majorGPA,
+        courses: [...courses],
+        majorCourses: [...majorCourses]
+      };
+      
+      // Determine if this is an update or a new GPA
+      const url = currentGPAId ? 
+        `http://localhost:8000/api/grades/gpa/${currentGPAId}` : 
+        'http://localhost:8000/api/grades/gpa/save';
+      
+      const method = currentGPAId ? 'PUT' : 'POST';
+      
+      // Save to backend
+      const response = await fetch(url, {
+        method,
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(payload)
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        if (!currentGPAId) {
+          setCurrentGPAId(data.id);
+          // Update centralGPA with the ID
+          setCentralGPA({
+            ...updatedGPA,
+            id: data.id
+          });
+        }
+        // Refresh saved GPAs
+        fetchSavedGPAs();
+      } else {
+        console.error('Failed to save GPA calculation');
+      }
+    } catch (error) {
+      console.error('Error saving GPA calculation:', error);
+    }
+  };
+
+  // Load a saved GPA for editing
+  const editSavedGPA = async (gpaId) => {
+    try {
+      const response = await fetch(`http://localhost:8000/api/grades/gpa/${gpaId}`, {
+        method: 'GET',
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json',
+        }
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        setCurrentGPAId(data.id);
+        setCentralGPA({
+          id: data.id,
+          name: data.name,
+          lastUpdated: data.created_at,
+          overallGPA: data.overallGPA,
+          majorGPA: data.majorGPA,
+          courses: data.courses || [],
+          majorCourses: data.majorCourses || []
+        });
+        
+        setCourses(data.courses || []);
+        setMajorCourses(data.majorCourses || []);
+        setIsEditing(true);
+      } else {
+        console.error('Failed to load GPA for editing');
+      }
+    } catch (error) {
+      console.error('Error loading GPA for editing:', error);
+    }
+  };
+
+  // Delete a saved GPA
+  const deleteSavedGPA = async (gpaId) => {
+    try {
+      const response = await fetch(`http://localhost:8000/api/grades/gpa/${gpaId}`, {
+        method: 'DELETE',
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json',
+        }
+      });
+      
+      if (response.ok) {
+        // Update local state
+        setSavedGPAs(savedGPAs.filter(gpa => gpa.id !== gpaId));
+        
+        // If we deleted the current GPA, reset current state
+        if (currentGPAId === gpaId) {
+          setCurrentGPAId(null);
+          resetGPACalculator();
+        }
+      } else {
+        console.error('Failed to delete GPA');
+      }
+    } catch (error) {
+      console.error('Error deleting GPA:', error);
+    }
+  };
+
+  // Duplicate a saved GPA
+  const duplicateGPA = async (gpaId) => {
+    try {
+      // First get the GPA to duplicate
+      const response = await fetch(`http://localhost:8000/api/grades/gpa/${gpaId}`, {
+        method: 'GET',
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json',
+        }
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        
+        // Create a duplicate with a new name
+        const duplicatePayload = {
+          name: `${data.name} (Copy)`,
+          overallGPA: data.overallGPA,
+          majorGPA: data.majorGPA,
+          courses: data.courses || [],
+          majorCourses: data.majorCourses || []
+        };
+        
+        // Save as a new GPA
+        const saveResponse = await fetch('http://localhost:8000/api/grades/gpa/save', {
+          method: 'POST',
+          credentials: 'include',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(duplicatePayload)
+        });
+        
+        if (saveResponse.ok) {
+          // Refresh the list
+          fetchSavedGPAs();
+        } else {
+          console.error('Failed to duplicate GPA');
+        }
+      } else {
+        console.error('Failed to load GPA for duplication');
+      }
+    } catch (error) {
+      console.error('Error duplicating GPA:', error);
+    }
   };
 
   // Load central GPA data for editing
@@ -110,6 +300,13 @@ export const GPAProvider = ({ children }) => {
     setCourses([]);
     setMajorCourses([]);
     setIsEditing(false);
+    setCurrentGPAId(null);
+    setCentralGPA({
+      name: "My GPA",
+      lastUpdated: new Date().toISOString(),
+      overallGPA: "0.00",
+      majorGPA: "0.00"
+    });
   };
 
   return (
@@ -121,11 +318,20 @@ export const GPAProvider = ({ children }) => {
         setMajorCourses,
         centralGPA,
         setCentralGPA,
+        savedGPAs,
+        setSavedGPAs,
+        isLoading,
+        currentGPAId,
+        setCurrentGPAId,
         letterToGPA,
         calculateOverallGPA,
         calculateMajorGPA,
         updateCentralGPA,
         resetGPACalculator,
+        fetchSavedGPAs,
+        editSavedGPA,
+        deleteSavedGPA,
+        duplicateGPA,
         isEditing,
         setIsEditing,
         editGPA,
