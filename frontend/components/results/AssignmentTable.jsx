@@ -176,14 +176,14 @@ export const AssignmentTable = ({
     const { categoryName, assignment } = resetAssignment;
     const scoreKey = `${categoryName}-${assignment.name}`;
     
-    // Instead of deleting the score, set it to 0
+    // Reset to the original assignment score
     setHypotheticalScores((prev) => ({
       ...prev,
       [scoreKey]: {
         ...assignment,
-        score: "0",
-        displayScore: "0",
-        numericScore: 0,
+        score: assignment.score || "0",
+        displayScore: assignment.score || "0",
+        numericScore: Number(assignment.score) || 0,
         categoryName,
         isHypothetical: true,
       },

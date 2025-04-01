@@ -23,10 +23,49 @@ export const GPAProvider = ({ children }) => {
   // Editing state
   const [isEditing, setIsEditing] = useState(false);
 
-  // Load saved data from backend on mount
+  // Load saved data from backend and localStorage on mount
   useEffect(() => {
     fetchSavedGPAs();
+    loadLocalStorageData();
   }, []);
+
+  // Save to localStorage whenever courses or majorCourses change
+  useEffect(() => {
+    if (courses.length > 0 || majorCourses.length > 0) {
+      const localData = {
+        courses,
+        majorCourses,
+        centralGPA,
+        lastUpdated: new Date().toISOString()
+      };
+      localStorage.setItem('gpaCalculatorData', JSON.stringify(localData));
+    }
+  }, [courses, majorCourses, centralGPA]);
+
+  // Load data from localStorage
+  const loadLocalStorageData = () => {
+    try {
+      const savedData = localStorage.getItem('gpaCalculatorData');
+      if (savedData) {
+        const { courses: savedCourses, majorCourses: savedMajorCourses, centralGPA: savedCentralGPA } = JSON.parse(savedData);
+        
+        // Only load if there's actual data
+        if (savedCourses?.length > 0 || savedMajorCourses?.length > 0) {
+          setCourses(savedCourses || []);
+          setMajorCourses(savedMajorCourses || []);
+          setCentralGPA(savedCentralGPA || centralGPA);
+          setIsEditing(true); // Set to editing mode when loading unsaved data
+        }
+      }
+    } catch (error) {
+      console.error('Error loading GPA data from localStorage:', error);
+    }
+  };
+
+  // Clear localStorage data when saving to backend
+  const clearLocalStorageData = () => {
+    localStorage.removeItem('gpaCalculatorData');
+  };
 
   // Fetch all saved GPAs from the backend
   const fetchSavedGPAs = async () => {
@@ -156,6 +195,8 @@ export const GPAProvider = ({ children }) => {
             id: data.id
           });
         }
+        // Clear localStorage data after successful save
+        clearLocalStorageData();
         // Refresh saved GPAs
         fetchSavedGPAs();
       } else {
