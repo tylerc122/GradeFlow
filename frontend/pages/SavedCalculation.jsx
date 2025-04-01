@@ -47,6 +47,7 @@ const SavedCalculation = () => {
     resetCalculator,
     setIsResultsView,
     setLastViewedCalculation,
+    clearLastViewedCalculation,
   } = useCalculator();
   
   // Add a ref to store original calculator state
@@ -142,8 +143,9 @@ const SavedCalculation = () => {
         setHiddenAssignments(originalCalculatorState.current.hiddenAssignments);
         setManualGrades(originalCalculatorState.current.manualGrades);
       }
-      // Don't clear the lastViewedCalculation as we want it to persist
-      // Just navigate to the grades page
+      // Clear the last viewed calculation to actually show the grades list
+      clearLastViewedCalculation();
+      // Now navigate to the grades page
       navigate("/grades");
     }
   };

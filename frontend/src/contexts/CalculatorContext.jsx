@@ -9,6 +9,9 @@ export const CalculatorProvider = ({ children }) => {
     return sessionStorage.getItem('lastViewedCalculation') || null;
   });
 
+  // Add a flag to indicate when we want to view the grades list
+  const [showGradesList, setShowGradesList] = useState(false);
+
   // Step tracking
   const [activeStep, setActiveStep] = useState(0);
 
@@ -58,6 +61,8 @@ export const CalculatorProvider = ({ children }) => {
       sessionStorage.removeItem('lastViewedCalculation');
     } else {
       sessionStorage.setItem('lastViewedCalculation', calculationId);
+      // When setting a specific calculation, we're not viewing the list
+      setShowGradesList(false);
     }
     setLastViewedCalculation(calculationId);
   };
@@ -66,6 +71,8 @@ export const CalculatorProvider = ({ children }) => {
   const clearLastViewedCalculation = () => {
     sessionStorage.removeItem('lastViewedCalculation');
     setLastViewedCalculation(null);
+    // When clearing, we want to view the list
+    setShowGradesList(true);
   };
 
   return (
@@ -79,6 +86,8 @@ export const CalculatorProvider = ({ children }) => {
         lastViewedCalculation,
         setLastViewedCalculation: setAndSaveLastViewedCalculation,
         clearLastViewedCalculation,
+        showGradesList,
+        setShowGradesList,
 
         // Step tracking
         activeStep,
