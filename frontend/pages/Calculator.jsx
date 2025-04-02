@@ -286,6 +286,7 @@ const Calculator = () => {
       const calculationData = {
         ...saveData,
         raw_data: rawGradeData,
+        calculation_mode: calculatorMode,
         categories: categories.map((category) => ({
           name: category.name,
           weight: category.weight,
@@ -324,6 +325,11 @@ const Calculator = () => {
           );
         }, 0),
       };
+
+      // For manual mode, also save the manualGrades array
+      if (calculatorMode === "manual") {
+        calculationData.manualGrades = manualGrades;
+      }
 
       const response = await fetch("http://localhost:8000/api/grades/save", {
         method: "POST",

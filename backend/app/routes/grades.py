@@ -86,7 +86,9 @@ async def save_calculation(
             results={
                 "overall_grade": calculation_data.get("overall_grade", 0),
                 "total_points_earned": calculation_data.get("total_points_earned", 0),
-                "total_points_possible": calculation_data.get("total_points_possible", 0)
+                "total_points_possible": calculation_data.get("total_points_possible", 0),
+                "calculation_mode": calculation_data.get("calculation_mode", "blackboard"),
+                "manual_grades": calculation_data.get("manualGrades", [])
             }
         )
         
