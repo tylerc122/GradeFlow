@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useSnackbar } from "notistack";
 import {
@@ -66,6 +66,20 @@ const Results = ({
     showCalculateAnotherButton: contextShowCalculateAnotherButton,
     clearLastViewedCalculation,
   } = useCalculator();
+
+  // Set isResultsView when component mounts and clean up when unmounting
+  useEffect(() => {
+    setIsResultsView(true);
+    
+    // Cleanup function - run when component unmounts
+    return () => {
+      // Only clear isResultsView if this is not a saved calculation view
+      if (!isSavedCalculation) {
+        setIsResultsView(false);
+        sessionStorage.removeItem('isResultsView');
+      }
+    };
+  }, [setIsResultsView, isSavedCalculation]);
 
   // Use prop if provided, otherwise use context value
   const showCalculateAnotherButton = propShowCalculateAnotherButton !== undefined 

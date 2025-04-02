@@ -52,6 +52,9 @@ export const CalculatorProvider = ({ children }) => {
     setDialogOpen(false);
     setSelectedCategory(null);
     setHiddenAssignments([]);
+    setIsResultsView(false);
+    // Clear isResultsView from session storage
+    sessionStorage.removeItem('isResultsView');
   };
 
   // Function to save last viewed calculation to session storage
