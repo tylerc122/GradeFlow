@@ -136,7 +136,34 @@ export const GPAProvider = ({ children }) => {
 
   // Calculate overall and major GPA
   const calculateOverallGPA = () => calculateGPA(courses);
-  const calculateMajorGPA = () => calculateGPA(majorCourses);
+  const calculateMajorGPA = () => {
+    // Only use courses marked as for major
+    const coursesForMajor = courses.filter(course => course.isForMajor);
+    // Check if there are any major courses
+    if (coursesForMajor.length === 0) return "0.00";
+    return calculateGPA(coursesForMajor);
+  };
+
+  // Toggle whether a course is included in major GPA
+  const toggleCourseForMajor = (index) => {
+    const updatedCourses = [...courses];
+    updatedCourses[index] = {
+      ...updatedCourses[index],
+      isForMajor: !updatedCourses[index]?.isForMajor
+    };
+    setCourses(updatedCourses);
+  };
+
+  // Add new course with isForMajor property initialized to false
+  const addCourse = (courseData = {}) => {
+    const newCourse = { 
+      title: courseData.title || "", 
+      credits: courseData.credits || "", 
+      grade: courseData.grade || "A",
+      isForMajor: courseData.isForMajor || false
+    };
+    setCourses([...courses, newCourse]);
+  };
 
   // Update the central GPA with current calculations and save to backend
   const updateCentralGPA = async (name = "My GPA") => {
@@ -146,12 +173,11 @@ export const GPAProvider = ({ children }) => {
     
     // Create new GPA object
     const updatedGPA = {
-      name,
+      name: "My GPA", // Always use default name
       lastUpdated: new Date().toISOString(),
       overallGPA,
       majorGPA,
       courses: [...courses],
-      majorCourses: [...majorCourses]
     };
     
     // Update state
@@ -161,11 +187,10 @@ export const GPAProvider = ({ children }) => {
     try {
       // Prepare payload
       const payload = {
-        name,
+        name: "My GPA", // Always use default name
         overallGPA,
         majorGPA,
         courses: [...courses],
-        majorCourses: [...majorCourses]
       };
       
       // Determine if this is an update or a new GPA
@@ -376,7 +401,9 @@ export const GPAProvider = ({ children }) => {
         isEditing,
         setIsEditing,
         editGPA,
-        cancelEditing
+        cancelEditing,
+        toggleCourseForMajor,
+        addCourse
       }}
     >
       {children}

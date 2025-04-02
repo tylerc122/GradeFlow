@@ -11,16 +11,10 @@ import {
   InputLabel,
   Select,
   MenuItem,
-  Divider,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  Tabs,
-  Tab,
   alpha,
   useTheme as useMuiTheme,
   Chip,
+  Tooltip,
 } from "@mui/material";
 import AddIcon from "@mui/icons-material/Add";
 import DeleteIcon from "@mui/icons-material/Delete";
@@ -28,7 +22,6 @@ import SaveIcon from "@mui/icons-material/Save";
 import EditIcon from "@mui/icons-material/Edit";
 import CancelIcon from "@mui/icons-material/Cancel";
 import SchoolIcon from "@mui/icons-material/School";
-import ComputerIcon from "@mui/icons-material/Computer";
 import { useTheme } from "../src/contexts/ThemeContext";
 import { useGPA } from "../src/contexts/GPAContext";
 
@@ -45,12 +38,11 @@ const GPACalculator = () => {
     calculateMajorGPA,
     updateCentralGPA,
     isEditing,
-    cancelEditing
+    cancelEditing,
+    toggleCourseForMajor,
+    addCourse: addCourseContext
   } = useGPA();
 
-  const [tabValue, setTabValue] = useState(0);
-  const [saveDialogOpen, setSaveDialogOpen] = useState(false);
-  const [saveName, setSaveName] = useState(centralGPA.name || "My GPA");
   const [isSaving, setIsSaving] = useState(false);
 
   // Letter grades for dropdown
@@ -65,22 +57,9 @@ const GPACalculator = () => {
   // Set initial save name when editing
   useEffect(() => {
     if (isEditing) {
-      setSaveName(centralGPA.name);
+      // No need to set save name anymore
     }
-  }, [isEditing, centralGPA.name]);
-
-  const handleTabChange = (event, newValue) => {
-    setTabValue(newValue);
-  };
-
-  const addCourse = (isMajor = false) => {
-    const newCourse = { title: "", credits: "", grade: "A" };
-    if (isMajor) {
-      setMajorCourses([...majorCourses, newCourse]);
-    } else {
-      setCourses([...courses, newCourse]);
-    }
-  };
+  }, [isEditing]);
 
   const handleCourseChange = (index, field, value, isMajor = false) => {
     if (field === "credits") {
@@ -117,22 +96,14 @@ const GPACalculator = () => {
     }
   };
 
-  const handleOpenSaveDialog = () => {
-    setSaveDialogOpen(true);
-  };
-
   const handleSaveGPA = async () => {
-    if (saveName.trim()) {
-      setIsSaving(true);
-      await updateCentralGPA(saveName);
-      setIsSaving(false);
-      setSaveDialogOpen(false);
-    }
+    setIsSaving(true);
+    await updateCentralGPA("My GPA"); // Use default name
+    setIsSaving(false);
   };
 
   const handleCancelEditing = () => {
     cancelEditing();
-    setSaveName(centralGPA.name);
   };
 
   const formatDate = (dateString) => {
@@ -219,6 +190,21 @@ const GPACalculator = () => {
                   ))}
                 </Select>
               </FormControl>
+              {!isMajor && (
+                <Tooltip title="Include in Major GPA">
+                  <Chip
+                    label="Major"
+                    color={course.isForMajor ? "primary" : "default"}
+                    variant={course.isForMajor ? "filled" : "outlined"}
+                    onClick={() => toggleCourseForMajor(index)}
+                    sx={{
+                      cursor: 'pointer',
+                      fontWeight: 500,
+                      transition: 'all 0.2s',
+                    }}
+                  />
+                </Tooltip>
+              )}
               <IconButton
                 onClick={() => deleteCourse(index, isMajor)}
                 sx={{
@@ -302,10 +288,11 @@ const GPACalculator = () => {
                 </Button>
               )}
               <Button
-                startIcon={<SaveIcon />}
+                startIcon={isSaving ? null : <SaveIcon />}
                 variant="contained"
                 color="secondary"
-                onClick={handleOpenSaveDialog}
+                onClick={handleSaveGPA}
+                disabled={isSaving}
                 sx={{
                   borderRadius: 2,
                   px: 3,
@@ -316,198 +303,113 @@ const GPACalculator = () => {
                   },
                 }}
               >
-                Save GPA
+                {isSaving ? 'Saving...' : 'Save GPA'}
               </Button>
             </Box>
           </Box>
 
-          <Box sx={{ width: '100%', mb: 2 }}>
-            <Tabs
-              value={tabValue}
-              onChange={handleTabChange}
-              sx={{ 
-                borderBottom: 1, 
-                borderColor: 'divider',
-                '& .MuiTab-root': {
-                  borderTopLeftRadius: 8,
-                  borderTopRightRadius: 8,
-                }
-              }}
+          <Box>
+            <Box sx={{ mb: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <Typography variant="h6">
+                Courses
+              </Typography>
+              <Button
+                startIcon={<AddIcon />}
+                variant="outlined"
+                onClick={() => addCourseContext()}
+                sx={{
+                  borderRadius: 2,
+                  "&:hover": {
+                    boxShadow: 1,
+                  },
+                }}
+              >
+                Add Course
+              </Button>
+            </Box>
+            
+            {courses.length === 0 ? (
+              <Typography variant="body1" color="text.secondary" sx={{ textAlign: 'center', py: 4 }}>
+                Add courses to calculate your GPA
+              </Typography>
+            ) : (
+              renderCourseInputs(courses)
+            )}
+
+            <Stack 
+              direction={{ xs: 'column', md: 'row' }} 
+              spacing={2} 
+              sx={{ mt: 3 }}
             >
-              <Tab
-                icon={<SchoolIcon />}
-                iconPosition="start"
-                label="Overall GPA" 
-                id="tab-0"
-                aria-controls="tabpanel-0"
-              />
-              <Tab
-                icon={<ComputerIcon />}
-                iconPosition="start"
-                label="Major GPA" 
-                id="tab-1" 
-                aria-controls="tabpanel-1"
-              />
-            </Tabs>
-          </Box>
-
-          <Box role="tabpanel" hidden={tabValue !== 0} id="tabpanel-0" aria-labelledby="tab-0">
-            {tabValue === 0 && (
-              <>
-                <Box sx={{ mb: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <Typography variant="h6">
-                    Regular Courses
-                  </Typography>
-                  <Button
-                    startIcon={<AddIcon />}
-                    variant="outlined"
-                    onClick={() => addCourse()}
-                    sx={{
-                      borderRadius: 2,
-                      "&:hover": {
-                        boxShadow: 1,
-                      },
-                    }}
-                  >
-                    Add Course
-                  </Button>
-                </Box>
-                
-                {courses.length === 0 ? (
-                  <Typography variant="body1" color="text.secondary" sx={{ textAlign: 'center', py: 4 }}>
-                    Add courses to calculate your overall GPA
-                  </Typography>
-                ) : (
-                  renderCourseInputs(courses)
-                )}
-
-                <Box
+              <Box
+                sx={{
+                  p: 3,
+                  borderRadius: 2,
+                  backgroundColor: alpha(
+                    "#4caf50",
+                    isDark ? 0.15 : 0.08
+                  ),
+                  border: "1px solid",
+                  borderColor: alpha(
+                    "#4caf50",
+                    isDark ? 0.3 : 0.2
+                  ),
+                  flex: 1
+                }}
+              >
+                <Typography
+                  variant="h5"
                   sx={{
-                    mt: 3,
-                    p: 3,
-                    borderRadius: 2,
-                    backgroundColor: alpha(
-                      "#4caf50",
-                      isDark ? 0.15 : 0.08
-                    ),
-                    border: "1px solid",
-                    borderColor: alpha(
-                      "#4caf50",
-                      isDark ? 0.3 : 0.2
-                    ),
+                    fontWeight: 600,
+                    color: "success.main",
                   }}
                 >
-                  <Typography
-                    variant="h5"
-                    sx={{
-                      fontWeight: 600,
-                      color: "success.main",
-                    }}
-                  >
-                    Overall GPA: {calculateOverallGPA()}
-                  </Typography>
-                </Box>
-              </>
-            )}
-          </Box>
-
-          <Box role="tabpanel" hidden={tabValue !== 1} id="tabpanel-1" aria-labelledby="tab-1">
-            {tabValue === 1 && (
-              <>
-                <Box sx={{ mb: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <Typography variant="h6">
-                    Major Courses
-                  </Typography>
-                  <Button
-                    startIcon={<AddIcon />}
-                    variant="outlined"
-                    onClick={() => addCourse(true)}
-                    sx={{
-                      borderRadius: 2,
-                      "&:hover": {
-                        boxShadow: 1,
-                      },
-                    }}
-                  >
-                    Add Major Course
-                  </Button>
-                </Box>
-                
-                {majorCourses.length === 0 ? (
-                  <Typography variant="body1" color="text.secondary" sx={{ textAlign: 'center', py: 4 }}>
-                    Add major courses to calculate your major GPA
-                  </Typography>
-                ) : (
-                  renderCourseInputs(majorCourses, true)
-                )}
-
-                <Box
+                  Overall GPA: {calculateOverallGPA()}
+                </Typography>
+              </Box>
+              
+              <Box
+                sx={{
+                  p: 3,
+                  borderRadius: 2,
+                  backgroundColor: alpha(
+                    "#3f51b5",
+                    isDark ? 0.15 : 0.08
+                  ),
+                  border: "1px solid",
+                  borderColor: alpha(
+                    "#3f51b5",
+                    isDark ? 0.3 : 0.2
+                  ),
+                  flex: 1,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between'
+                }}
+              >
+                <Typography
+                  variant="h5"
                   sx={{
-                    mt: 3,
-                    p: 3,
-                    borderRadius: 2,
-                    backgroundColor: alpha(
-                      "#3f51b5",
-                      isDark ? 0.15 : 0.08
-                    ),
-                    border: "1px solid",
-                    borderColor: alpha(
-                      "#3f51b5",
-                      isDark ? 0.3 : 0.2
-                    ),
+                    fontWeight: 600,
+                    color: "primary.main",
                   }}
                 >
-                  <Typography
-                    variant="h5"
-                    sx={{
-                      fontWeight: 600,
-                      color: "primary.main",
-                    }}
-                  >
-                    Major GPA: {calculateMajorGPA()}
-                  </Typography>
-                </Box>
-              </>
-            )}
+                  Major GPA: {calculateMajorGPA()}
+                </Typography>
+                
+                {courses.filter(c => c.isForMajor).length > 0 && (
+                  <Chip 
+                    label={`${courses.filter(c => c.isForMajor).length} courses`}
+                    size="small"
+                    color="primary"
+                    sx={{ fontWeight: 500 }}
+                  />
+                )}
+              </Box>
+            </Stack>
           </Box>
         </Stack>
       </Paper>
-
-      {/* Save Dialog */}
-      <Dialog open={saveDialogOpen} onClose={() => setSaveDialogOpen(false)}>
-        <DialogTitle>Save GPA Calculation</DialogTitle>
-        <DialogContent>
-          <TextField
-            autoFocus
-            margin="dense"
-            label="Name your GPA"
-            type="text"
-            fullWidth
-            variant="outlined"
-            value={saveName}
-            onChange={(e) => setSaveName(e.target.value)}
-            sx={{ mt: 1 }}
-          />
-          <Box sx={{ mt: 2 }}>
-            <Typography variant="body2">
-              Overall GPA: {calculateOverallGPA()}
-            </Typography>
-            <Typography variant="body2">
-              Major GPA: {calculateMajorGPA()}
-            </Typography>
-          </Box>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setSaveDialogOpen(false)}>Cancel</Button>
-          <Button 
-            onClick={handleSaveGPA} 
-            variant="contained"
-            disabled={!saveName.trim() || isSaving}
-          >
-            {isSaving ? 'Saving...' : 'Save'}
-          </Button>
-        </DialogActions>
-      </Dialog>
     </>
   );
 };

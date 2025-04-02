@@ -28,7 +28,8 @@ import { letterGradeToPoints, isLetterGrade } from "../../src/utils/letterGradeU
 
 const Results = ({ 
   isSavedCalculation = false,
-  showCalculateAnotherButton: propShowCalculateAnotherButton
+  showCalculateAnotherButton: propShowCalculateAnotherButton,
+  mode: propMode
 }) => {
   const navigate = useNavigate();
   const { user } = useAuth();
@@ -39,7 +40,7 @@ const Results = ({
   const {
     categories,
     setCategories,
-    mode,
+    mode: contextMode,
     manualGrades,
     setManualGrades,
     parsedGrades,
@@ -70,6 +71,9 @@ const Results = ({
   const showCalculateAnotherButton = propShowCalculateAnotherButton !== undefined 
     ? propShowCalculateAnotherButton 
     : contextShowCalculateAnotherButton;
+    
+  // Use prop mode if provided, otherwise use context mode
+  const mode = propMode !== undefined ? propMode : contextMode;
 
   // Local state
   const [saveDialogOpen, setSaveDialogOpen] = useState(false);

@@ -544,9 +544,17 @@ const SavedCalculation = () => {
         setHypotheticalAssignments([]);
         setHypotheticalScores({});
         
+        // Get the calculation mode from the saved data (default to "blackboard" for backwards compatibility)
+        const calculationMode = transformedData.results?.calculation_mode || "blackboard";
+        
         // We need these for the calculation to work, but they don't affect the calculator flow
         setRawGradeData(transformedData.raw_data || "");
-        setMode("blackboard");
+        setMode(calculationMode);
+        
+        // If it's a manual mode calculation, load the manual grades
+        if (calculationMode === "manual" && transformedData.results?.manual_grades) {
+          setManualGrades(transformedData.results.manual_grades);
+        }
 
         setError(null);
         setSaveStatus("saved");
@@ -569,6 +577,7 @@ const SavedCalculation = () => {
     setHypotheticalAssignments,
     setHypotheticalScores,
     setRawGradeData,
+    setManualGrades,
   ]);
 
   // Tracks changes
@@ -672,7 +681,7 @@ const SavedCalculation = () => {
 
       <Suspense fallback={<CircularProgress />}>
         <Results
-          mode="blackboard"
+          mode={calculation.results?.calculation_mode || "blackboard"}
           rawGradeData={calculation.raw_data || ""}
           parsedGrades={{
             assignments: categories.flatMap((cat) => cat.assignments || []),
