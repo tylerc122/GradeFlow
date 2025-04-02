@@ -471,6 +471,8 @@ const Calculator = () => {
     if (activeStep === 3) {
       // When leaving results view
       setIsResultsView(false);
+      // Clear isResultsView from sessionStorage too
+      sessionStorage.removeItem('isResultsView');
       // If in manual mode, go back to step 1 (grade input) instead of step 2 (categorization)
       if (calculatorMode === "manual") {
         setActiveStep(1);

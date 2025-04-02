@@ -95,14 +95,38 @@ const Navbar = () => {
   // Reset expanded view when leaving calculator-related pages completely
   useEffect(() => {
     // If we're not on a calculator-related page, reset the expanded state
-    if (!isCalculatorRelated && location.pathname !== '/calculator' && !location.pathname.startsWith('/grades')) {
+    if (!isCalculatorRelated) {
       sessionStorage.removeItem('hasSeenResults');
+      sessionStorage.removeItem('isResultsView');
       setHasSeenResults(false);
+    }
+    
+    // Only restore expanded state when returning to calculator if it's known to be in results view
+    if (location.pathname === '/calculator') {
+      const storedIsResultsView = sessionStorage.getItem('isResultsView') === 'true';
+      if (storedIsResultsView) {
+        sessionStorage.setItem('hasSeenResults', 'true');
+        setHasSeenResults(true);
+      } else {
+        // If we're on calculator but not in results view (e.g., earlier steps), ensure it's not expanded
+        sessionStorage.removeItem('hasSeenResults');
+        setHasSeenResults(false);
+      }
     }
   }, [location.pathname, isCalculatorRelated]);
   
-  // Determine if we should use expanded view
-  const useExpandedView = isResultsView || isSavedCalculation || (hasSeenResults && isCalculatorRelated);
+  // Determine if we should use expanded view - ONLY for results view and saved calculations
+  const useExpandedView = isResultsView || isSavedCalculation;
+  
+  // Store isResultsView in session storage when it changes
+  useEffect(() => {
+    if (isResultsView) {
+      sessionStorage.setItem('isResultsView', 'true');
+    } else if (location.pathname !== '/grades/' && !location.pathname.startsWith('/grades/')) {
+      // Clear isResultsView when not on results or saved calculation
+      sessionStorage.removeItem('isResultsView');
+    }
+  }, [isResultsView, location.pathname]);
 
   const isActiveRoute = (path) => {
     return location.pathname === path;
