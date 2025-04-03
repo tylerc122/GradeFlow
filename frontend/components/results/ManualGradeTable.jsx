@@ -60,8 +60,8 @@ const ManualGradeTable = ({
       grade: cleanedValue,
       isLetter: inputType === 'letter',
       value: inputType === 'letter'
-        ? letterGradeToPoints(cleanedValue)
-        : parseFloat(cleanedValue),
+        ? (cleanedValue ? letterGradeToPoints(cleanedValue) : 0)
+        : (cleanedValue ? parseFloat(cleanedValue) : 0),
     });
   };
 

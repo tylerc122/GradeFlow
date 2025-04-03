@@ -74,8 +74,8 @@ const ManualInput = ({ categories, setGrades }) => {
         grade: currentGrade,
         isLetter: inputType === 'letter',
         value: inputType === 'letter'
-          ? letterGradeToPoints(currentGrade)
-          : parseFloat(currentGrade),
+          ? (currentGrade ? letterGradeToPoints(currentGrade) : 0)
+          : (currentGrade ? parseFloat(currentGrade) : 0),
       };
     });
 
