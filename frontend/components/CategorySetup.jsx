@@ -202,6 +202,7 @@ const CategorySetup = ({ categories, setCategories, error, setError }) => {
                   onChange={(e) =>
                     handleCategoryChange(index, "weight", e.target.value)
                   }
+                  onWheel={(e) => e.target.blur()}
                   sx={{
                     width: "150px",
                     "& .MuiOutlinedInput-root": {
