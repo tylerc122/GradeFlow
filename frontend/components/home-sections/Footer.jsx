@@ -185,10 +185,7 @@ const Footer = () => {
                     rel="noopener noreferrer"
                     sx={{
                       color: "text.secondary",
-                      backgroundColor:
-                        theme.palette.mode === "dark"
-                          ? alpha(theme.palette.common.white, 0.05)
-                          : alpha(theme.palette.common.black, 0.04),
+                      backgroundColor: "transparent",
                       transition: "all 0.2s ease-in-out",
                       "&:hover": {
                         transform: "translateY(-2px)",
@@ -301,9 +298,14 @@ const Footer = () => {
               sx={{
                 p: 3,
                 borderRadius: "16px",
-                backgroundColor: alpha(theme.palette.primary.main, 0.04),
-                border: `1px solid ${alpha(theme.palette.primary.main, 0.1)}`,
+                backgroundColor: "transparent",
+                border: `1px solid ${alpha(theme.palette.primary.main, theme.palette.mode === 'dark' ? 0.3 : 0.1)}`,
                 mb: 3,
+                ...(theme.palette.mode === 'dark' && {
+                  backdropFilter: "none",
+                  backgroundImage: "none",
+                  background: "#121212",
+                })
               }}
             >
               <Box
@@ -336,8 +338,17 @@ const Footer = () => {
                   borderRadius: "10px",
                   textTransform: "none",
                   borderWidth: "2px",
+                  ...(theme.palette.mode === 'dark' && {
+                    backgroundColor: 'transparent',
+                    borderColor: alpha(theme.palette.primary.main, 0.5),
+                    color: theme.palette.primary.main
+                  }),
                   "&:hover": {
                     borderWidth: "2px",
+                    ...(theme.palette.mode === 'dark' && {
+                      backgroundColor: alpha(theme.palette.primary.main, 0.1),
+                      borderColor: theme.palette.primary.main
+                    })
                   },
                 }}
               >
