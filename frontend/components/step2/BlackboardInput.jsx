@@ -41,25 +41,38 @@ const BlackboardInput = ({ rawGradeData, setRawGradeData }) => {
         system will automatically parse and categorize your assignments.
       </Alert>
 
-      <TextField
-        multiline
-        fullWidth
-        rows={12}
-        value={rawGradeData}
-        onChange={(e) => setRawGradeData(e.target.value)}
-        placeholder="Paste your grades here..."
-        variant="outlined"
+      <Box
         sx={{
-          "& .MuiOutlinedInput-root": {
-            backgroundColor: mode === "dark" ? "#252525" : "#fff",
-            borderRadius: 2,
-            "& textarea": {
-              backgroundColor: mode === "dark" ? "#252525" : "#fff",
-              color: mode === "dark" ? "rgba(255, 255, 255, 0.9)" : "inherit",
-            },
+          borderRadius: 2,
+          border: `1px solid ${mode === "dark" ? "rgba(255, 255, 255, 0.12)" : "rgba(0, 0, 0, 0.23)"}`,
+          overflow: "hidden",
+          "&:hover": {
+            borderColor: mode === "dark" ? "rgba(255, 255, 255, 0.2)" : "rgba(0, 0, 0, 0.3)",
+          },
+          "&:focus-within": {
+            borderColor: muiTheme.palette.primary.main,
+            boxShadow: `0 0 0 2px ${alpha(muiTheme.palette.primary.main, 0.2)}`,
           },
         }}
-      />
+      >
+        <textarea
+          value={rawGradeData}
+          onChange={(e) => setRawGradeData(e.target.value)}
+          placeholder="Paste your grades here..."
+          rows={12}
+          style={{
+            width: "100%",
+            padding: "16px",
+            backgroundColor: mode === "dark" ? "#121212" : "#fff",
+            color: mode === "dark" ? "rgba(255, 255, 255, 0.9)" : "inherit",
+            resize: "vertical",
+            outline: "none",
+            border: "none",
+            fontFamily: "inherit",
+            fontSize: "1rem",
+          }}
+        />
+      </Box>
 
       {rawGradeData && isValidFormat(rawGradeData) && (
         <Alert

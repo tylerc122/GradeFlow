@@ -381,6 +381,27 @@
     border: 1px solid rgba(255, 255, 255, 0.1) !important;
   }
   
+  /* Fix for Footer "Like this project?" box */
+  .dark-mode .MuiTypography-root:has(+ .MuiTypography-body2:contains("Check out the GitHub repository")) {
+    color: var(--mui-palette-primary-main) !important;
+  }
+  
+  .dark-mode .MuiBox-root:has(.MuiTypography-body2:contains("Check out the GitHub repository")) {
+    background-color: #121212 !important;
+    border: 1px solid rgba(255, 255, 255, 0.15) !important;
+  }
+  
+  .dark-mode .MuiButton-root[href*="github.com"] {
+    background-color: transparent !important;
+    border-color: rgba(117, 129, 214, 0.5) !important;
+    color: var(--mui-palette-primary-main) !important;
+  }
+  
+  .dark-mode .MuiButton-root[href*="github.com"]:hover {
+    background-color: rgba(117, 129, 214, 0.1) !important;
+    border-color: var(--mui-palette-primary-main) !important;
+  }
+  
   /* Fix specifically for the Major GPA card */
   .dark-mode .MuiTypography-root:contains("Major GPA") ~ .MuiTypography-h4,
   .dark-mode .MuiTypography-root:contains("Major GPA") ~ .MuiTypography-h3 {
