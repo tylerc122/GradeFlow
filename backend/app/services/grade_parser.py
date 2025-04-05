@@ -3,7 +3,11 @@ from typing import List, Optional, Tuple
 from ..models.grade_models import Assignment
 from .category_matcher import CategoryMatcher
 from .openai_integration import OpenAICategorizer
+from .shared_services import openai_categorizer
 import re
+
+# Remove this local instance
+# openai_categorizer = OpenAICategorizer()
 
 async def parse_blackboard_grades(raw_text: str, available_categories: Optional[List[str]] = None) -> list[Assignment]:
     assignments = []
@@ -11,7 +15,7 @@ async def parse_blackboard_grades(raw_text: str, available_categories: Optional[
     
     # Initialize categorizers
     category_matcher = CategoryMatcher(available_categories=available_categories)
-    openai_categorizer = OpenAICategorizer()
+    # Using the shared instance from shared_services
     
     # Clean up the text - normalize newlines and remove extra spaces
     clean_text = '\n'.join(line.strip() for line in raw_text.splitlines() if line.strip())
@@ -110,6 +114,7 @@ async def parse_blackboard_grades(raw_text: str, available_categories: Optional[
             batch = pending_assignments[i:i + batch_size]
             batch_inputs = [info for _, info in batch]
             try:
+                # Use the shared instance for caching benefits
                 results = await openai_categorizer.suggest_categories_batch(
                     batch_inputs, 
                     available_categories
