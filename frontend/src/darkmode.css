@@ -175,21 +175,52 @@
   }
   
   /* Calculator specific components */
-  .dark-mode .MuiStepper-root .MuiStepIcon-root {
-    color: rgba(255, 255, 255, 0.5);
+  .dark-mode .MuiStepIcon-root {
+    color: rgba(255, 255, 255, 0.2) !important;
   }
   
-  .dark-mode .MuiStepper-root .MuiStepIcon-active,
-  .dark-mode .MuiStepper-root .MuiStepIcon-completed {
+  .dark-mode .Mui-active .MuiStepIcon-root {
+    color: #7581d6 !important;
+    filter: brightness(1.2);
+  }
+  
+  .dark-mode .Mui-completed .MuiStepIcon-root {
     color: #7581d6 !important;
   }
   
   .dark-mode .MuiStepLabel-label {
-    color: rgba(255, 255, 255, 0.7) !important;
+    color: rgba(255, 255, 255, 0.5) !important;
   }
   
-  .dark-mode .MuiStepLabel-active {
-    color: white !important;
+  .dark-mode .Mui-active .MuiStepLabel-label {
+    color: #7581d6 !important;
+    font-weight: 600 !important;
+  }
+  
+  .dark-mode .Mui-completed .MuiStepLabel-label {
+    color: rgba(255, 255, 255, 0.9) !important;
+  }
+  
+  /* Add color indicators for dark mode stepper */
+  .dark-mode .MuiStepConnector-root {
+    background: transparent !important;
+  }
+  
+  .dark-mode .MuiStepConnector-line {
+    border-color: rgba(255, 255, 255, 0.2) !important;
+    border-top-width: 2px !important;
+  }
+  
+  .dark-mode .Mui-active .MuiStepConnector-line,
+  .dark-mode .MuiStepConnector-root.Mui-active .MuiStepConnector-line {
+    border-color: #7581d6 !important;
+    border-top-width: 2px !important;
+  }
+  
+  .dark-mode .Mui-completed .MuiStepConnector-line,
+  .dark-mode .MuiStepConnector-root.Mui-completed .MuiStepConnector-line {
+    border-color: #7581d6 !important;
+    border-top-width: 2px !important;
   }
   
   /* Results page specific fixes */
