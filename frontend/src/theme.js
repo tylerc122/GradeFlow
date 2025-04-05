@@ -410,7 +410,7 @@ const createAppTheme = (mode) =>
       MuiStepper: {
         styleOverrides: {
           root: {
-            backgroundColor: "transparent",
+            backgroundColor: "background.default",
             padding: mode === "light" ? "24px 0" : "24px 0",
           },
         },

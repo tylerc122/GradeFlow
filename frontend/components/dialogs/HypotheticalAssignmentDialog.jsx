@@ -40,7 +40,16 @@ export const HypotheticalAssignmentDialog = ({
   };
 
   return (
-    <Dialog open={open} onClose={onClose}>
+    <Dialog 
+      open={open} 
+      onClose={onClose}
+      PaperProps={{
+        sx: {
+          backgroundColor: "background.default",
+          borderRadius: "16px",
+        }
+      }}
+    >
       <DialogTitle>Add Hypothetical Assignment</DialogTitle>
       <DialogContent>
         {error && (

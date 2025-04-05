@@ -78,7 +78,7 @@ const ManualGradeTable = ({
     <TableContainer
       component={Paper}
       elevation={2}
-      sx={{ borderRadius: 2, overflow: "hidden" }}
+      sx={{ borderRadius: 2, overflow: "hidden", backgroundColor: "background.default" }}
     >
       <Table>
         <TableHead>

@@ -56,6 +56,7 @@ export const CategoryBreakdown = ({
         p: 4,
         mb: 3,
         borderRadius: "20px",
+        backgroundColor: "background.default",
         position: "relative",
         overflow: "hidden",
       }}

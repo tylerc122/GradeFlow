@@ -233,8 +233,10 @@ export const AssignmentTable = ({
       sx={{
         p: 4,
         borderRadius: "20px",
+        height: "100%",
         position: "relative",
         overflow: "hidden",
+        backgroundColor: "background.default",
       }}
     >
       {/* Background decorative elements */}

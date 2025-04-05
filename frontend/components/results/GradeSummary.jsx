@@ -91,9 +91,7 @@ export const GradeSummary = ({
         p: 4,
         mb: 3,
         borderRadius: "20px",
-        background: isDark
-          ? "linear-gradient(135deg, #1e1e1e 0%, #252525 100%)"
-          : "linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%)",
+        backgroundColor: "background.default",
         position: "relative",
         overflow: "hidden",
       }}
