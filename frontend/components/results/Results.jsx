@@ -195,14 +195,20 @@ const Results = ({
 
   const handleToggleAssignmentVisibility = (categoryName, assignmentName) => {
     const assignmentKey = `${categoryName}-${assignmentName}`;
-    setHiddenAssignments((prev) =>
+    
+    // Update hidden assignments list
+    setHiddenAssignments(prev => 
       prev.includes(assignmentKey)
-        ? prev.filter((key) => key !== assignmentKey)
+        ? prev.filter(key => key !== assignmentKey)
         : [...prev, assignmentKey]
     );
+    
+    // We don't need to modify hypotheticalScores here as hiddenAssignments state
+    // is being properly tracked for changes in SavedCalculation.jsx
   };
 
   const handleDeleteAssignment = (categoryName, assignmentName) => {
+    // Update categories by removing the assignment
     setCategories((prev) =>
       prev.map((category) => {
         if (category.name === categoryName) {
@@ -217,11 +223,37 @@ const Results = ({
       })
     );
 
+    // Remove from hypothetical assignments if present
     setHypotheticalAssignments((prev) =>
       prev.filter(
         (a) => !(a.categoryName === categoryName && a.name === assignmentName)
       )
     );
+
+    // Remove from hidden assignments if present
+    const assignmentKey = `${categoryName}-${assignmentName}`;
+    setHiddenAssignments(prev => 
+      prev.filter(key => key !== assignmentKey)
+    );
+
+    // Remove from hypothetical scores if present
+    // We do this to clean up, but also to ensure the fact that we deleted an assignment
+    // gets tracked as a change in whatIfMode
+    setHypotheticalScores(prev => {
+      const newScores = { ...prev };
+      delete newScores[assignmentKey];
+      
+      // If we're in what-if mode, add a special flag to track deletions
+      if (whatIfMode) {
+        newScores[`deleted-${assignmentKey}`] = {
+          deleted: true,
+          categoryName,
+          name: assignmentName
+        };
+      }
+      
+      return newScores;
+    });
 
     enqueueSnackbar("Assignment deleted successfully", { variant: "success" });
   };
