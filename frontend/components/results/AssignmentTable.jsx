@@ -85,7 +85,7 @@ export const AssignmentTable = ({
     }
     
     // Don't allow negative numbers
-    if (parseFloat(newValue) < 0) {
+    if (newValue !== '' && parseFloat(newValue) < 0) {
       console.log("Negative value rejected:", newValue);
       return;
     }
@@ -105,7 +105,7 @@ export const AssignmentTable = ({
         ...assignment,
         score: newValue,  // Store raw input
         displayScore: newValue, // For display
-        numericScore: parseFloat(newValue) || 0, // For calculations
+        numericScore: newValue === '' ? null : parseFloat(newValue), // Allow empty input
         categoryName,
         isHypothetical: true,
       },
@@ -123,20 +123,19 @@ export const AssignmentTable = ({
     let inputValue = hypotheticalData.score;
     
     // Clean and validate the input
-    if (inputValue === '' || inputValue === null || inputValue === undefined) {
-      // If empty, set to 0 instead of original score
+    if (inputValue === '' || inputValue === null || inputValue === undefined || isNaN(parseFloat(inputValue)) || parseFloat(inputValue) < 0) {
+      // If empty or invalid when blurring, set to 0
       inputValue = "0";
-      console.log(`Empty input, setting to zero: ${inputValue}`);
-    } else if (isNaN(parseFloat(inputValue)) || parseFloat(inputValue) < 0) {
-      // If invalid or negative, set to 0
-      inputValue = "0";
-      console.log(`Invalid input, setting to zero: ${inputValue}`);
+      console.log(`Empty/invalid input on blur, setting to zero: ${inputValue}`);
     } else {
       // Ensure proper formatting for valid numbers
       const numValue = parseFloat(inputValue);
       // If it's a whole number, remove decimal part
       if (Math.floor(numValue) === numValue) {
         inputValue = Math.floor(numValue).toString();
+      } else {
+        // Keep the decimal number as is
+        inputValue = numValue.toString();
       }
     }
     
@@ -147,7 +146,7 @@ export const AssignmentTable = ({
         ...prev[scoreKey],
         score: inputValue,
         displayScore: inputValue,
-        numericScore: parseFloat(inputValue) || 0,
+        numericScore: parseFloat(inputValue),
       },
     }));
     
@@ -583,7 +582,7 @@ export const AssignmentTable = ({
                                         inputMode="decimal"
                                         placeholder="0"
                                         size="small"
-                                        value={currentScore || ""}
+                                        value={currentScore === "0" ? "" : currentScore}
                                         onChange={(e) =>
                                           handleScoreEdit(
                                             category.name,

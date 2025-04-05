@@ -48,37 +48,70 @@ const ManualInput = ({ categories, setGrades }) => {
   };
 
   const handleGradeChange = (categoryName, value) => {
-    // Clean up the input - trim spaces and convert to uppercase for letter grades
-    const cleanedValue = value.trim().toUpperCase();
-
-    // Validate based on input type
-    if (cleanedValue) {
-      if (inputType === 'letter' && !isLetterGrade(cleanedValue)) {
+    // Allow empty strings during editing (only update local state)
+    const newValue = value;
+    
+    // Only validate non-empty values
+    if (newValue !== "" && newValue.trim() !== "") {
+      const trimmedValue = newValue.trim().toUpperCase();
+      // Validation for non-empty strings
+      if (inputType === "letter" && !isLetterGrade(trimmedValue)) {
         return;
-      }
-      if (inputType === 'percentage' && !isPercentage(cleanedValue)) {
+      } else if (inputType === "percentage" && !isPercentage(trimmedValue)) {
         return;
       }
     }
-
+    
+    // Update local state only
     setCategoryGrades((prev) => ({
       ...prev,
-      [categoryName]: cleanedValue,
+      [categoryName]: newValue,
     }));
+  };
 
-    // Update parent component with all grades
-    const newGrades = Object.entries(categoryGrades).map(([name, grade]) => {
-      const currentGrade = name === categoryName ? cleanedValue : grade;
-      return {
-        categoryName: name,
-        grade: currentGrade,
-        isLetter: inputType === 'letter',
-        value: inputType === 'letter'
-          ? (currentGrade ? letterGradeToPoints(currentGrade) : 0)
-          : (currentGrade ? parseFloat(currentGrade) : 0),
-      };
+  const handleGradeBlur = (categoryName, value) => {
+    // Get current value
+    let finalValue = value || "";
+    
+    // If empty, leave it empty in local state but use 0 for calculations
+    const trimmedValue = finalValue.trim();
+    const isEmpty = !trimmedValue;
+    
+    // Update the local state with properly formatted value
+    if (!isEmpty) {
+      const formattedValue = inputType === "letter" 
+        ? trimmedValue.toUpperCase() 
+        : trimmedValue;
+      
+      setCategoryGrades((prev) => ({
+        ...prev,
+        [categoryName]: formattedValue,
+      }));
+      
+      finalValue = formattedValue;
+    }
+    
+    // Now update the parent component with all grades
+    const newGrades = [];
+    
+    // Create array of all grades for parent component
+    Object.entries(categoryGrades).forEach(([catName, grade]) => {
+      // Use the new value for the current field, existing values for others
+      const currentGrade = catName === categoryName ? finalValue : grade;
+      const currentTrimmed = currentGrade ? currentGrade.trim() : "";
+      
+      if (catName === categoryName || currentTrimmed) {
+        newGrades.push({
+          categoryName: catName,
+          grade: currentTrimmed,
+          isLetter: inputType === "letter",
+          value: inputType === "letter"
+            ? (currentTrimmed ? letterGradeToPoints(currentTrimmed) : 0)
+            : (currentTrimmed ? parseFloat(currentTrimmed) : 0),
+        });
+      }
     });
-
+    
     setGrades(newGrades);
   };
 
@@ -151,8 +184,9 @@ const ManualInput = ({ categories, setGrades }) => {
 
             <TextField
               label="Grade"
-              value={categoryGrades[category.name]}
+              value={categoryGrades[category.name] === "0" ? "" : categoryGrades[category.name]}
               onChange={(e) => handleGradeChange(category.name, e.target.value)}
+              onBlur={(e) => handleGradeBlur(category.name, e.target.value)}
               error={!!getGradeError(categoryGrades[category.name])}
               helperText={getGradeError(categoryGrades[category.name])}
               disabled={!inputType}
