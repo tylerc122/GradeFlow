@@ -297,8 +297,11 @@ export const AssignmentTable = ({
               sx={{
                 p: 2.5,
                 backgroundColor: isDark 
-                  ? alpha(theme.palette.primary.main, 0.03)
+                  ? 'transparent'
                   : alpha(theme.palette.primary.main, 0.04),
+                borderBottom: isDark
+                  ? `1px solid ${alpha(theme.palette.primary.main, 0.2)}`
+                  : 'none',
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "space-between",
