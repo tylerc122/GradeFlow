@@ -1,12 +1,35 @@
-from fastapi import APIRouter, Depends, HTTPException, Request, Response
+from fastapi import APIRouter, Depends, HTTPException, Request, Response, BackgroundTasks
 from sqlalchemy.orm import Session
 from pydantic import BaseModel, EmailStr
 from typing import Optional
 from ..database.database import get_db
 from ..database.models import User
 from ..auth.session_manager import session_manager
+import os
+from authlib.integrations.starlette_client import OAuth
+from starlette.config import Config
+from starlette.responses import RedirectResponse
+import json
 
 router = APIRouter()
+
+# OAuth setup
+config = Config(".env")
+oauth = OAuth(config)
+
+# Configure Google OAuth
+GOOGLE_CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID", "")
+GOOGLE_CLIENT_SECRET = os.getenv("GOOGLE_CLIENT_SECRET", "")
+GOOGLE_REDIRECT_URI = os.getenv("GOOGLE_REDIRECT_URI", "http://localhost:8000/api/auth/google/callback")
+
+if GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET:
+    oauth.register(
+        name="google",
+        client_id=GOOGLE_CLIENT_ID,
+        client_secret=GOOGLE_CLIENT_SECRET,
+        server_metadata_url="https://accounts.google.com/.well-known/openid-configuration",
+        client_kwargs={"scope": "openid email profile"},
+    )
 
 class UserCreate(BaseModel):
     email: EmailStr
@@ -95,3 +118,66 @@ async def get_current_user(
         "id": user.id,
         "email": user.email
     }
+
+@router.get("/google/login")
+async def google_login(request: Request):
+    """Initiate Google OAuth login flow"""
+    if not GOOGLE_CLIENT_ID or not GOOGLE_CLIENT_SECRET:
+        raise HTTPException(
+            status_code=500, 
+            detail="Google OAuth is not configured. Contact the administrator."
+        )
+    
+    return await oauth.google.authorize_redirect(request, GOOGLE_REDIRECT_URI)
+
+@router.get("/google/callback")
+async def google_callback(
+    request: Request,
+    response: Response,
+    db: Session = Depends(get_db)
+):
+    """Handle Google OAuth callback and create or login user"""
+    try:
+        token = await oauth.google.authorize_access_token(request)
+        user_info = token.get("userinfo")
+        
+        if not user_info or not user_info.get("email"):
+            raise HTTPException(status_code=400, detail="Invalid Google account")
+        
+        # Check if user already exists with this Google ID
+        google_id = user_info.get("sub")
+        user = db.query(User).filter(User.google_id == google_id).first()
+        
+        if not user:
+            # Check if user exists with this email
+            email = user_info.get("email")
+            user = db.query(User).filter(User.email == email).first()
+            
+            if user:
+                # Update existing user with Google info
+                user.google_id = google_id
+                user.profile_picture = user_info.get("picture")
+            else:
+                # Create new user
+                user = User(
+                    email=email,
+                    name=user_info.get("name"),
+                    google_id=google_id,
+                    profile_picture=user_info.get("picture")
+                )
+                db.add(user)
+            
+            db.commit()
+            db.refresh(user)
+        
+        # Create session
+        session_manager.create_session(user.id, response)
+        
+        # Redirect to frontend
+        frontend_url = os.getenv("FRONTEND_URL", "http://localhost:5173")
+        return RedirectResponse(url=f"{frontend_url}/calculator")
+    
+    except Exception as e:
+        # Redirect to login page with error
+        frontend_url = os.getenv("FRONTEND_URL", "http://localhost:5173")
+        return RedirectResponse(url=f"{frontend_url}/login?error=google_auth_failed")

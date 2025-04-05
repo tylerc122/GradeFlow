@@ -9,7 +9,9 @@ class User(Base):
     id = Column(Integer, primary_key=True, index=True)
     email = Column(String, unique=True, index=True)
     name = Column(String)
-    hashed_password = Column(String)
+    hashed_password = Column(String, nullable=True)  # Make password nullable for OAuth users
+    google_id = Column(String, unique=True, nullable=True, index=True)  # Google ID for OAuth
+    profile_picture = Column(String, nullable=True)  # URL to profile picture
     is_active = Column(Boolean, default=True)
     created_at = Column(DateTime, default=datetime.utcnow)
     

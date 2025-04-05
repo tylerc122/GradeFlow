@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Container,
   Paper,
@@ -9,20 +9,33 @@ import {
   Link,
   Alert,
   alpha,
+  Divider,
 } from "@mui/material";
-import { useNavigate, Link as RouterLink } from "react-router-dom";
+import { useNavigate, Link as RouterLink, useLocation } from "react-router-dom";
 import LockOutlinedIcon from "@mui/icons-material/LockOutlined";
+import GoogleIcon from "@mui/icons-material/Google";
 import { useAuth } from "../src/contexts/AuthContext";
 import { useTheme } from "@mui/material/styles";
 
 const LoginPage = () => {
   const navigate = useNavigate();
-  const { login } = useAuth(); // Get login function from AuthContext
+  const location = useLocation();
+  const { login, googleLogin } = useAuth(); // Get login and googleLogin functions from AuthContext
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const theme = useTheme();
+
+  // Check for error parameter in URL (for Google login errors)
+  useEffect(() => {
+    const queryParams = new URLSearchParams(location.search);
+    const errorParam = queryParams.get("error");
+    
+    if (errorParam === "google_auth_failed") {
+      setError("Google authentication failed. Please try again or use email login.");
+    }
+  }, [location]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -37,6 +50,10 @@ const LoginPage = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleGoogleLogin = () => {
+    googleLogin();
   };
 
   return (
@@ -93,6 +110,33 @@ const LoginPage = () => {
             },
           }}
         >
+          {/* Google Sign In Button */}
+          <Button
+            fullWidth
+            variant="outlined"
+            startIcon={<GoogleIcon />}
+            onClick={handleGoogleLogin}
+            sx={{
+              py: 1.5,
+              mb: 3,
+              fontSize: "1rem",
+              borderColor: "#ddd",
+              color: "text.primary",
+              backgroundColor: "transparent",
+              "&:hover": {
+                backgroundColor: alpha("#2196f3", 0.05),
+              },
+            }}
+          >
+            Sign in with Google
+          </Button>
+
+          <Divider sx={{ my: 2 }}>
+            <Typography variant="body2" color="text.secondary">
+              OR
+            </Typography>
+          </Divider>
+
           <TextField
             margin="normal"
             required
@@ -146,7 +190,7 @@ const LoginPage = () => {
               fontSize: "1.1rem",
             }}
           >
-            {loading ? "Signing in..." : "Sign In"}
+            {loading ? "Signing in..." : "Sign In with Email"}
           </Button>
           <Box sx={{ textAlign: "center" }}>
             <Typography variant="body2" color="text.secondary">

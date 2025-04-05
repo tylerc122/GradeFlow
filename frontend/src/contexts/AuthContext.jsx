@@ -50,6 +50,11 @@ export const AuthProvider = ({ children }) => {
     return userData;
   };
 
+  const googleLogin = () => {
+    // Redirect to the Google OAuth login endpoint
+    window.location.href = "http://localhost:8000/api/auth/google/login";
+  };
+
   const register = async (name, email, password) => {
     const response = await fetch("http://localhost:8000/api/auth/register", {
       method: "POST",
@@ -94,6 +99,7 @@ export const AuthProvider = ({ children }) => {
         user,
         loading,
         login,
+        googleLogin,
         logout,
         register,
         isAuthenticated: !!user,
