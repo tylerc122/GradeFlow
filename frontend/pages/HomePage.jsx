@@ -512,6 +512,20 @@ const HomePage = () => {
           overflow: "hidden",
         }}
       >
+
+      <Box
+        sx={{
+          position: "absolute",
+          bottom: "0%",
+          left: "-5%",
+          width: "250px",
+          height: "250px",
+          borderRadius: "50%",
+          background: alpha(theme.palette.secondary.main, 0.03),
+          filter: "blur(50px)",
+          zIndex: 0,
+        }}
+      />
         <Container maxWidth="md">
           <Paper
             elevation={3}
@@ -528,7 +542,7 @@ const HomePage = () => {
               sx={{
                 position: "absolute",
                 top: "20%",
-                right: "10%",
+                right: "0%",
                 width: "200px",
                 height: "200px",
                 background: "rgba(255, 255, 255, 0.1)",
