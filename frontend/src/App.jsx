@@ -24,6 +24,7 @@ import { AuthProvider, useAuth } from "./contexts/AuthContext";
 import { CalculatorProvider } from "./contexts/CalculatorContext";
 import { GPAProvider } from "./contexts/GPAContext";
 import { ThemeProvider } from "./contexts/ThemeContext";
+import { UserPreferencesProvider } from "./contexts/UserPreferencesContext";
 
 // Protected Route component
 const ProtectedRoute = ({ children }) => {
@@ -157,35 +158,37 @@ const App = () => {
     <Router>
       <ThemeProvider>
         <AuthProvider>
-          <CalculatorProvider>
-            <GPAProvider>
-              <SnackbarProvider maxSnack={3}>
-                <CssBaseline />
-                <Box
-                  sx={{
-                    display: "flex",
-                    flexDirection: "column",
-                    minHeight: "100vh",
-                    width: "100vw",
-                    overflow: "hidden",
-                  }}
-                >
-                  <Navbar />
+          <UserPreferencesProvider>
+            <CalculatorProvider>
+              <GPAProvider>
+                <SnackbarProvider maxSnack={3}>
+                  <CssBaseline />
                   <Box
-                    component="main"
                     sx={{
-                      flexGrow: 1,
-                      minHeight: "100%",
-                      width: "100%",
-                      overflow: "auto",
+                      display: "flex",
+                      flexDirection: "column",
+                      minHeight: "100vh",
+                      width: "100vw",
+                      overflow: "hidden",
                     }}
                   >
-                    <AnimatedRoutes />
+                    <Navbar />
+                    <Box
+                      component="main"
+                      sx={{
+                        flexGrow: 1,
+                        minHeight: "100%",
+                        width: "100%",
+                        overflow: "auto",
+                      }}
+                    >
+                      <AnimatedRoutes />
+                    </Box>
                   </Box>
-                </Box>
-              </SnackbarProvider>
-            </GPAProvider>
-          </CalculatorProvider>
+                </SnackbarProvider>
+              </GPAProvider>
+            </CalculatorProvider>
+          </UserPreferencesProvider>
         </AuthProvider>
       </ThemeProvider>
     </Router>
