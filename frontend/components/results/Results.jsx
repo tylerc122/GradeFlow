@@ -115,14 +115,14 @@ const Results = ({
       // Use numericScore for calculations if available, otherwise fall back to score
       let scoreValue;
       if (hypothetical) {
-        scoreValue = hypothetical.numericScore !== undefined
+        scoreValue = hypothetical.numericScore !== undefined && hypothetical.numericScore !== null
           ? hypothetical.numericScore
           : (typeof hypothetical.score === 'string' 
-             ? Number(hypothetical.score) 
-             : hypothetical.score);
+             ? Number(hypothetical.score) || 0 
+             : hypothetical.score || 0);
         console.log(`Using hypothetical score for ${a.name}: ${scoreValue}`);
       } else {
-        scoreValue = typeof a.score === 'string' ? Number(a.score) : a.score;
+        scoreValue = typeof a.score === 'string' ? Number(a.score) || 0 : a.score || 0;
         console.log(`Using original score for ${a.name}: ${scoreValue}`);
       }
       

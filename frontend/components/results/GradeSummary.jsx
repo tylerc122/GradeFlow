@@ -326,8 +326,13 @@ export const GradeSummary = ({
               <TextField
                 label="Target Grade"
                 type="number"
-                value={targetGrade}
+                value={targetGrade === "0" ? "" : targetGrade}
                 onChange={(e) => setTargetGrade(e.target.value)}
+                onBlur={(e) => {
+                  if (e.target.value === '') {
+                    setTargetGrade("0");
+                  }
+                }}
                 InputProps={{
                   endAdornment: (
                     <Typography color="text.secondary">%</Typography>

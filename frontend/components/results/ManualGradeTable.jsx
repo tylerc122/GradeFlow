@@ -65,6 +65,18 @@ const ManualGradeTable = ({
     });
   };
 
+  const handleGradeBlur = (categoryName, currentGrade) => {
+    // Only set default value on blur if the field is empty
+    if (!currentGrade || currentGrade.trim() === '') {
+      onGradeChange({
+        categoryName,
+        grade: "",
+        isLetter: inputType === 'letter',
+        value: 0,
+      });
+    }
+  };
+
   const getGradeError = (value) => {
     if (!value) return "";
     if (inputType === 'letter' && isLetterGrade(value)) return "";
@@ -109,10 +121,11 @@ const ManualGradeTable = ({
                     <TextField
                       variant="outlined"
                       size="small"
-                      value={gradeData.grade || ""}
+                      value={(gradeData.grade === "0" || gradeData.grade === "") ? "" : gradeData.grade}
                       onChange={(e) =>
                         handleGradeChange(category.name, e.target.value)
                       }
+                      onBlur={() => handleGradeBlur(category.name, gradeData.grade)}
                       error={!!getGradeError(gradeData.grade)}
                       helperText={getGradeError(gradeData.grade)}
                       disabled={!inputType}
