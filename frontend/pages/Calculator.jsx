@@ -91,66 +91,7 @@ const Calculator = () => {
     setActiveStep: setContextActiveStep,
     setIsResultsView,
     showCalculateAnotherButton,
-    // New persistence methods
-    saveCalculationState,
-    loadCalculationState,
-    clearCalculationState,
   } = useCalculator();
-
-  // Load calculation state on component mount
-  useEffect(() => {
-    // Check if we've already shown the notification in this session
-    const notificationShown = sessionStorage.getItem('restoredNotificationShown');
-    
-    const hasState = loadCalculationState();
-    if (hasState && !notificationShown) {
-      enqueueSnackbar("Previous calculation restored", { variant: "info" });
-      // Mark that we've shown the notification
-      sessionStorage.setItem('restoredNotificationShown', 'true');
-    }
-    
-    // Clean up notification flag when component unmounts
-    return () => {
-      if (!hasState) {
-        sessionStorage.removeItem('restoredNotificationShown');
-      }
-    };
-  }, []);
-
-  // Save calculation state whenever key state changes
-  useEffect(() => {
-    // Only save if we've started a calculation (activeStep > 0)
-    if (activeStep > 0) {
-      saveCalculationState();
-    }
-  }, [
-    activeStep,
-    categories,
-    rawGradeData,
-    parsedGrades,
-    manualGrades,
-    hypotheticalScores,
-    hypotheticalAssignments,
-    hiddenAssignments,
-  ]);
-
-  // Add warning when user tries to leave/refresh
-  useEffect(() => {
-    const handleBeforeUnload = (e) => {
-      if (activeStep > 0) {
-        // Standard way to show a confirmation dialog when leaving
-        e.preventDefault();
-        e.returnValue = "You have unsaved changes. Are you sure you want to leave?";
-        return e.returnValue;
-      }
-    };
-    
-    window.addEventListener("beforeunload", handleBeforeUnload);
-    
-    return () => {
-      window.removeEventListener("beforeunload", handleBeforeUnload);
-    };
-  }, [activeStep]);
 
   // Update calculation function to use hidden assignments
   const calculateCategoryGrade = (assignments, categoryName) => {
