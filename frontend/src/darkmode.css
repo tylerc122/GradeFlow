@@ -346,8 +346,27 @@
     }
     
     /* Fix specifically for the Category Name and Weight input fields */
-    .dark-mode .MuiTextField-root .MuiInputBase-root {
+    .dark-mode .MuiInputBase-root.MuiOutlinedInput-root,
+    .dark-mode .css-q6yh0s-MuiInputBase-root-MuiOutlinedInput-root,
+    .dark-mode [class*="MuiInputBase-root"][class*="MuiOutlinedInput-root"] {
       background-color: #1e1e1e !important;
+    }
+    
+    .dark-mode .MuiInputBase-input.MuiOutlinedInput-input,
+    .dark-mode .css-j3jqhj-MuiInputBase-input-MuiOutlinedInput-input,
+    .dark-mode [class*="MuiInputBase-input"][class*="MuiOutlinedInput-input"] {
+      color: rgba(255, 255, 255, 0.9) !important;
+      background-color: #1e1e1e !important;
+    }
+    
+    .dark-mode .MuiFormControl-root.MuiTextField-root input {
+      background-color: #1e1e1e !important;
+    }
+    
+    /* Target the fieldset outline */
+    .dark-mode .MuiOutlinedInput-notchedOutline,
+    .dark-mode [class*="MuiOutlinedInput-notchedOutline"] {
+      border-color: rgba(255, 255, 255, 0.2) !important;
     }
     
     /* Fix for the footer links */
@@ -379,6 +398,60 @@
   .dark-mode .MuiBox-root[style*="background: linear-gradient"] {
     background: transparent !important;
     border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  }
+  
+  /* Fix for results screen stepper background issue */
+  .dark-mode .MuiStepper-root {
+    background-color: transparent !important;
+  }
+  
+  .dark-mode .MuiStepper-root .MuiPaper-root,
+  .dark-mode .MuiStepper-horizontal {
+    background-color: #1e1e1e !important;
+  }
+  
+  /* Target any extended stepper container that appears on results screen */
+  .dark-mode .MuiStepper-root[style*="width"],
+  .dark-mode .MuiStepper-root[style*="height"] {
+    background-color: #1e1e1e !important;
+  }
+  
+  /* Target stepper container and its parent elements */
+  .dark-mode .MuiStepper-root .MuiStepConnector-root {
+    background-color: transparent !important;
+  }
+  
+  .dark-mode .MuiStepper-root .MuiStep-root {
+    background-color: transparent !important;
+  }
+  
+  /* Target any parent container of the stepper on results page */
+  .dark-mode [role="tabpanel"] .MuiStepper-root,
+  .dark-mode .MuiContainer-root .MuiStepper-root {
+    background-color: #1e1e1e !important;
+  }
+  
+  /* More targeted approach for the stepper parent */
+  .dark-mode .MuiStepper-root.MuiStepper-horizontal {
+    background-color: #1e1e1e !important;
+  }
+  
+  /* Target the specific container that wraps the stepper on the results page */
+  .dark-mode .MuiPaper-root:has(.MuiStepper-root) {
+    background-color: #1e1e1e !important;
+  }
+  
+  /* Target the parent of the stepper only in step 4 */
+  .dark-mode [role="tabpanel"]:has(.MuiStepLabel-completed ~ .MuiStepLabel-completed ~ .MuiStepLabel-completed ~ .MuiStepLabel-active) .MuiStepper-root,
+  .dark-mode [role="tabpanel"]:has(.MuiStepLabel-active:contains("Results")) .MuiStepper-root {
+    background-color: #1e1e1e !important;
+  }
+  
+  /* Fix for stepper immediate parent on results page */
+  .dark-mode .MuiPaper-root > .MuiStepper-root,
+  .dark-mode .MuiContainer-root > .MuiStepper-root,
+  .dark-mode .MuiBox-root > .MuiStepper-root {
+    background-color: #1e1e1e !important;
   }
   
   /* Fix for Footer "Like this project?" box */

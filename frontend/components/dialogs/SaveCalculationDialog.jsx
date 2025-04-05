@@ -84,6 +84,7 @@ const SaveCalculationDialog = ({
         sx: {
           borderRadius: "20px",
           overflow: "hidden",
+          backgroundColor: "background.default",
         },
       }}
     >

@@ -582,8 +582,9 @@ const Calculator = () => {
                 p: 3,
                 borderRadius: 2,
                 mb: 2,
-                bgcolor: "background.paper",
+                bgcolor: "background.default",
                 width: "100%",
+                mx: "auto",
               }}
             >
               <Stepper activeStep={activeStep}>
@@ -615,7 +616,7 @@ const Calculator = () => {
             sx={{
               p: 4,
               borderRadius: 3,
-              bgcolor: "background.paper",
+              bgcolor: "background.default",
               height: "100%",
             }}
           >
@@ -688,7 +689,7 @@ const Calculator = () => {
                 p: 3,
                 borderRadius: 2,
                 mb: 2,
-                bgcolor: "background.paper",
+                bgcolor: "background.default",
               }}
             >
               <Stepper activeStep={activeStep}>
