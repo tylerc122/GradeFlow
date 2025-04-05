@@ -16,7 +16,7 @@ import DeleteIcon from "@mui/icons-material/Delete";
 import CategoryIcon from "@mui/icons-material/Category";
 import { useTheme } from "../src/contexts/ThemeContext";
 
-const CategorySetup = ({ categories, setCategories, error, setError }) => {
+const CategorySetup = ({ categories, setCategories, error, setError, onValidationChange }) => {
   const muiTheme = useMuiTheme();
   const { mode, isDark } = useTheme();
 
@@ -40,12 +40,26 @@ const CategorySetup = ({ categories, setCategories, error, setError }) => {
   }, [categories]);
 
   const addEmptyCategory = () => {
+    // Create a new category with an empty name
     setCategories([...categories, { name: "", weight: "" }]);
   };
 
   const validateCategory = (category, index) => {
-    if (!category.name || !category.weight) {
+    // For weight validation, empty values are not valid
+    if (!category.weight) {
       return false;
+    }
+
+    // For name validation, only check duplicates if the name is not empty
+    if (category.name.trim() !== "") {
+      // Check for duplicate category names
+      const isDuplicateName = categories.some(
+        (cat, i) => i !== index && cat.name.trim() !== "" && cat.name.trim().toLowerCase() === category.name.trim().toLowerCase()
+      );
+      
+      if (isDuplicateName) {
+        return false;
+      }
     }
 
     const weight = parseFloat(category.weight);
@@ -92,6 +106,20 @@ const CategorySetup = ({ categories, setCategories, error, setError }) => {
 
     const newCategories = [...categories];
     newCategories[index][field] = value;
+    
+    // Check for duplicate names when changing the name field, but only if not empty
+    if (field === "name" && value.trim() !== "") {
+      const isDuplicate = newCategories.some(
+        (cat, i) => i !== index && cat.name.trim() !== "" && cat.name.trim().toLowerCase() === value.trim().toLowerCase()
+      );
+      
+      if (isDuplicate) {
+        setError("Category names must be unique. Please choose a different name.");
+      } else if (error && error.includes("Category names must be unique")) {
+        setError(null);
+      }
+    }
+    
     setCategories(newCategories);
   };
 
@@ -104,6 +132,37 @@ const CategorySetup = ({ categories, setCategories, error, setError }) => {
     (sum, cat) => sum + (parseFloat(cat.weight) || 0),
     0
   );
+
+  // Function to check if ALL categories are valid for submission
+  const areAllCategoriesValid = () => {
+    if (categories.length === 0) return false;
+    
+    // Check for any categories with empty names or invalid weights
+    const hasEmptyNames = categories.some(cat => !cat.name.trim());
+    if (hasEmptyNames) return false;
+    
+    // Check for duplicate names
+    const names = categories.map(cat => cat.name.trim().toLowerCase());
+    const uniqueNames = new Set(names);
+    if (uniqueNames.size !== names.length) return false;
+    
+    // Check all weights are valid
+    const allWeightsValid = categories.every(cat => {
+      const weight = parseFloat(cat.weight);
+      return !isNaN(weight) && weight > 0 && weight <= 100;
+    });
+    if (!allWeightsValid) return false;
+    
+    // Check total weight is 100%
+    return Math.abs(totalWeight - 100) < 0.01;
+  };
+
+  // Notify parent component about validation status changes
+  useEffect(() => {
+    if (onValidationChange) {
+      onValidationChange(areAllCategoriesValid());
+    }
+  }, [categories, onValidationChange]);
 
   return (
     <Paper
@@ -152,6 +211,21 @@ const CategorySetup = ({ categories, setCategories, error, setError }) => {
         </Box>
 
         <Stack spacing={2}>
+          {error && (
+            <Alert 
+              severity="error" 
+              sx={{ 
+                borderRadius: 2,
+                boxShadow: 1,
+                '& .MuiAlert-icon': {
+                  fontSize: '1.2rem'
+                }
+              }}
+            >
+              {error}
+            </Alert>
+          )}
+        
           {categories.map((category, index) => (
             <Paper
               key={index}
@@ -192,7 +266,8 @@ const CategorySetup = ({ categories, setCategories, error, setError }) => {
                       backgroundColor: isDark ? "#252525" : "white",
                     },
                   }}
-                  error={!category.name}
+                  error={!category.name && categories.length > 0}
+                  helperText={!category.name && categories.length > 0 ? "Category name is required" : ""}
                 />
                 <TextField
                   size="medium"
@@ -211,6 +286,7 @@ const CategorySetup = ({ categories, setCategories, error, setError }) => {
                     },
                   }}
                   error={!validateCategory(category, index)}
+                  helperText={!category.weight ? "Weight required" : ""}
                 />
                 <IconButton
                   onClick={() => handleDeleteCategory(index)}
