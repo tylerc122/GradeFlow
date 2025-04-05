@@ -513,3 +513,9 @@
     padding: 6px !important;
     border-radius: 8px !important;
   }
+  
+  /* Fix for category headers in dark mode */
+  .dark-mode .MuiPaper-root .MuiBox-root[style*="backgroundColor"][style*="display: flex"][style*="alignItems: center"][style*="justifyContent: space-between"] {
+    background-color: transparent !important;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
+  }
