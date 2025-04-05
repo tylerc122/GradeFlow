@@ -20,6 +20,7 @@ const TutorialDialog = ({ open, onClose }) => {
   const theme = useMuiTheme();
   const { isDark } = useTheme();
   const [activeStep, setActiveStep] = useState(0);
+  const [imagesLoaded, setImagesLoaded] = useState({});
   
   // Generate image paths based on theme
   const getImagePath = (baseName) => {
@@ -69,6 +70,11 @@ const TutorialDialog = ({ open, onClose }) => {
     },
   ];
 
+  // Reset image loading state when theme changes
+  useEffect(() => {
+    setImagesLoaded({});
+  }, [isDark]);
+
   const handleNext = () => {
     setActiveStep((prevStep) => prevStep + 1);
   };
@@ -82,14 +88,28 @@ const TutorialDialog = ({ open, onClose }) => {
     onClose();
   };
   
-  // Debug image paths to console
-  useEffect(() => {
-    console.log('Current theme mode:', isDark ? 'dark' : 'light');
-    console.log('Available image paths:');
-    tutorialSteps.forEach(step => {
-      console.log(`${step.label}: ${getImagePath(step.imageBase)}`);
-    });
-  }, [isDark]);
+  // Handle image loading success
+  const handleImageLoaded = (index) => {
+    setImagesLoaded(prev => ({
+      ...prev,
+      [index]: true
+    }));
+    console.log(`Image ${index} loaded successfully:`, getImagePath(tutorialSteps[index].imageBase));
+  };
+  
+  // Handle image loading error
+  const handleImageError = (index) => {
+    console.error(`Failed to load image ${index}:`, getImagePath(tutorialSteps[index].imageBase));
+    // If dark mode image fails, try to fall back to light mode
+    if (isDark && tutorialSteps[index].imageBase !== 'tutorial-input' && tutorialSteps[index].imageBase !== 'tutorial-results') {
+      const imgElement = document.getElementById(`tutorial-img-${index}`);
+      if (imgElement) {
+        console.log(`Trying fallback to light mode image for ${index}`);
+        const fallbackPath = `/${tutorialSteps[index].imageBase}-light.png`;
+        imgElement.src = fallbackPath;
+      }
+    }
+  };
 
   return (
     <Dialog
@@ -137,7 +157,7 @@ const TutorialDialog = ({ open, onClose }) => {
       </DialogTitle>
 
       <DialogContent sx={{ pb: 4, px: 3 }}>
-        <Box sx={{ position: 'relative', height: '600px', width: '100%', mb: 2 }}>
+        <Box sx={{ position: 'relative', height: '650px', width: '100%', mb: 2 }}>
           {tutorialSteps.map((step, index) => (
             <motion.div
               key={index}
@@ -163,25 +183,25 @@ const TutorialDialog = ({ open, onClose }) => {
               >
                 <Box
                   sx={{
-                    width: 80,
-                    height: 80,
+                    width: 70,
+                    height: 70,
                     borderRadius: '20px',
                     background: alpha(theme.palette.primary.main, 0.1),
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
                     color: theme.palette.primary.main,
-                    mb: 3,
+                    mb: 2,
                   }}
                 >
                   {step.icon}
                 </Box>
                 
-                <Typography variant="h5" sx={{ fontWeight: 600, mb: 2 }}>
+                <Typography variant="h5" sx={{ fontWeight: 600, mb: 1.5 }}>
                   {step.label}
                 </Typography>
                 
-                <Typography variant="body1" sx={{ color: theme.palette.text.secondary, mb: 4, maxWidth: '550px' }}>
+                <Typography variant="body1" sx={{ color: theme.palette.text.secondary, mb: 3, maxWidth: '650px' }}>
                   {step.description}
                 </Typography>
                 
@@ -192,15 +212,30 @@ const TutorialDialog = ({ open, onClose }) => {
                       borderRadius: '16px',
                       overflow: 'hidden',
                       width: '100%',
-                      maxWidth: '700px',
-                      height: '350px',
-                      backgroundImage: `url(${getImagePath(step.imageBase)})`,
-                      backgroundSize: 'contain',
-                      backgroundPosition: 'center',
-                      backgroundRepeat: 'no-repeat',
+                      maxWidth: '800px',
+                      height: '430px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
                       border: `1px solid ${alpha(theme.palette.divider, 0.1)}`,
+                      backgroundColor: isDark ? 'rgba(0,0,0,0.2)' : 'rgba(255,255,255,0.8)',
                     }}
-                  />
+                  >
+                    <img
+                      id={`tutorial-img-${index}`}
+                      src={getImagePath(step.imageBase)}
+                      alt={step.label}
+                      onLoad={() => handleImageLoaded(index)}
+                      onError={() => handleImageError(index)}
+                      style={{
+                        maxWidth: '100%',
+                        maxHeight: '100%',
+                        objectFit: 'contain',
+                        display: 'block',
+                        padding: '8px'
+                      }}
+                    />
+                  </Paper>
                 )}
               </Box>
             </motion.div>
