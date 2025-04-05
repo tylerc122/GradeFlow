@@ -154,6 +154,8 @@ const SavedCalculation = () => {
   const handleConfirmNavigation = () => {
     setShowPrompt(false);
     if (pendingNavigation) {
+      // Clear the last viewed calculation before navigating
+      clearLastViewedCalculation();
       navigate(pendingNavigation);
     }
   };
@@ -169,6 +171,8 @@ const SavedCalculation = () => {
     try {
       await handleSaveChanges();
       if (pendingNavigation) {
+        // Clear the last viewed calculation before navigating
+        clearLastViewedCalculation();
         navigate(pendingNavigation);
       }
       setShowPrompt(false);
