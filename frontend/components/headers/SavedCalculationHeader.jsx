@@ -43,22 +43,23 @@ const SavedCalculationHeader = ({
       elevation={2}
       sx={{
         p: { xs: 2, sm: 3 },
-        pl: { xs: 2, sm: 2 },
         mb: 3,
         borderRadius: 2,
         position: "sticky",
         top: 0,
         zIndex: 1000,
+        ml: { xs: 0, sm: 2 },
+        width: { xs: '100%', sm: 'calc(100% - 0.8%)' }
       }}
     >
       {/* Top Navigation Row */}
-      <Box sx={{ mb: 3, ml: -0.5 }}>
+      <Box sx={{ mb: 3 }}>
         <Button
           startIcon={<ArrowBackIcon />}
           onClick={handleBackClick}
           sx={{
             color: "text.secondary",
-            paddingLeft: 2,
+            paddingLeft: 1,
             paddingRight: 2,
             paddingTop: 0.5,
             paddingBottom: 0,
@@ -77,7 +78,6 @@ const SavedCalculationHeader = ({
           display: "flex",
           justifyContent: "space-between",
           alignItems: "center",
-          pl: 1.5,
           mt: 2,
         }}
       >
