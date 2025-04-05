@@ -318,12 +318,19 @@ const SavedCalculation = () => {
       setCategories(transformedData.categories);
       setRawGradeData(transformedData.raw_data || "");
 
-      // Reset hypothetical scores but maintain what-if mode and hidden assignments
+      // Reset hypothetical scores and assignments completely
+      // This needs to clear ALL hypothetical scores, including deletion markers
       setHypotheticalAssignments([]);
       setHypotheticalScores({});
-      // Do NOT reset hidden assignments or what-if mode
-      // setHiddenAssignments([]);
-      // setWhatIfMode(false);
+      
+      // Update original calculator state to match current state after saving
+      // This ensures that future comparisons for detecting changes are accurate
+      if (originalCalculatorState.current) {
+        originalCalculatorState.current.categories = [...transformedData.categories];
+        originalCalculatorState.current.hiddenAssignments = [...hiddenAssignments];
+        originalCalculatorState.current.hypotheticalScores = {};
+        originalCalculatorState.current.hypotheticalAssignments = [];
+      }
 
       setSaveStatus("saved");
       setLastSaved(new Date());
@@ -545,6 +552,13 @@ const SavedCalculation = () => {
         
         // For these viewing settings, we use local state when available to avoid context pollution
         setHiddenAssignments(loadedHiddenAssignments);
+        
+        // Update original calculator state with the initial hidden assignments
+        // This ensures changes to hidden assignments are properly detected
+        if (originalCalculatorState.current) {
+          originalCalculatorState.current.hiddenAssignments = [...loadedHiddenAssignments];
+        }
+        
         setHypotheticalAssignments([]);
         setHypotheticalScores({});
         
@@ -586,16 +600,25 @@ const SavedCalculation = () => {
 
   // Tracks changes
   useEffect(() => {
-    if (
-      whatIfMode &&
-      (Object.keys(hypotheticalScores).length > 0 ||
-        hypotheticalAssignments.length > 0)
-    ) {
-      if (saveStatus !== "saving") {
+    if (whatIfMode) {
+      // Check if there are active changes
+      const hasHypotheticalChanges = Object.keys(hypotheticalScores).length > 0 || 
+                                   hypotheticalAssignments.length > 0;
+      
+      // Get original hidden assignments for comparison
+      const originalHiddenAssignments = originalCalculatorState.current?.hiddenAssignments || [];
+      
+      // Check if hidden assignments have changed
+      const hiddenAssignmentsChanged = 
+        hiddenAssignments.length !== originalHiddenAssignments.length ||
+        hiddenAssignments.some(key => !originalHiddenAssignments.includes(key)) ||
+        originalHiddenAssignments.some(key => !hiddenAssignments.includes(key));
+      
+      if ((hasHypotheticalChanges || hiddenAssignmentsChanged) && saveStatus !== "saving") {
         setSaveStatus("unsaved");
       }
     }
-  }, [hypotheticalScores, hypotheticalAssignments, saveStatus, whatIfMode]);
+  }, [hypotheticalScores, hypotheticalAssignments, hiddenAssignments, saveStatus, whatIfMode]);
 
   // Enhanced function to check for unsaved changes
   const hasUnsavedChanges = useCallback(() => {
