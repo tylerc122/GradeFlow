@@ -42,7 +42,8 @@ const SavedCalculationHeader = ({
     <Paper
       elevation={2}
       sx={{
-        p: 3,
+        p: { xs: 2, sm: 3 },
+        pl: { xs: 2, sm: 2 },
         mb: 3,
         borderRadius: 2,
         position: "sticky",
@@ -51,21 +52,23 @@ const SavedCalculationHeader = ({
       }}
     >
       {/* Top Navigation Row */}
-      <Box sx={{ mb: 2 }}>
-        <Breadcrumbs aria-label="breadcrumb">
-          <Button
-            startIcon={<ArrowBackIcon />}
-            onClick={handleBackClick}
-            sx={{
-              color: "text.secondary",
-              "&:hover": {
-                bgcolor: "rgba(0, 0, 0, 0.04)",
-              },
-            }}
-          >
-            Back to My Grades
-          </Button>
-        </Breadcrumbs>
+      <Box sx={{ mb: 3, ml: -0.5 }}>
+        <Button
+          startIcon={<ArrowBackIcon />}
+          onClick={handleBackClick}
+          sx={{
+            color: "text.secondary",
+            paddingLeft: 2,
+            paddingRight: 2,
+            paddingTop: 0.5,
+            paddingBottom: 0,
+            "&:hover": {
+              bgcolor: "rgba(0, 0, 0, 0.04)",
+            },
+          }}
+        >
+          Back to My Grades
+        </Button>
       </Box>
 
       {/* Main Header Content */}
@@ -74,6 +77,8 @@ const SavedCalculationHeader = ({
           display: "flex",
           justifyContent: "space-between",
           alignItems: "center",
+          pl: 1.5,
+          mt: 2,
         }}
       >
         <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
