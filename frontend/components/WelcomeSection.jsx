@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import {
   Paper,
   Typography,
@@ -7,13 +7,37 @@ import {
   useTheme as useMuiTheme,
   alpha,
   Chip,
+  IconButton,
+  Tooltip,
 } from "@mui/material";
-import { Copy, Calculator, BarChart2, Award, Sparkles } from "lucide-react";
+import { Copy, Calculator, BarChart2, Award, Sparkles, HelpCircle } from "lucide-react";
 import { useTheme } from "../src/contexts/ThemeContext";
+import TutorialDialog from "./dialogs/TutorialDialog";
+import { useUserPreferences } from "../src/contexts/UserPreferencesContext";
 
 const WelcomeSection = () => {
   const theme = useMuiTheme();
   const { mode, isDark } = useTheme();
+  const { hasSeenTutorial, markTutorialAsSeen } = useUserPreferences();
+  const [showTutorial, setShowTutorial] = useState(false);
+
+  // Show tutorial automatically on first visit
+  useEffect(() => {
+    if (!hasSeenTutorial) {
+      setShowTutorial(true);
+    }
+  }, [hasSeenTutorial]);
+
+  // Handle tutorial dialog close
+  const handleTutorialClose = () => {
+    setShowTutorial(false);
+    markTutorialAsSeen();
+  };
+
+  // Handle manual tutorial open
+  const handleOpenTutorial = () => {
+    setShowTutorial(true);
+  };
 
   // The steps in the grade calculation process
   const steps = [
@@ -41,6 +65,9 @@ const WelcomeSection = () => {
 
   return (
     <Stack spacing={4}>
+      {/* Tutorial Dialog */}
+      <TutorialDialog open={showTutorial} onClose={handleTutorialClose} />
+      
       {/* Welcome Message */}
       <Paper
         elevation={2}
@@ -126,33 +153,58 @@ const WelcomeSection = () => {
         {/* Remove decorative corner effect */}
 
         <Box sx={{ position: "relative", zIndex: 1 }}>
-          <Typography
-            variant="h5"
-            sx={{
-              fontWeight: 700,
-              mb: 3,
-              color: theme.palette.text.primary,
-              display: "flex",
-              alignItems: "center",
-              gap: 1.5,
-            }}
-          >
-            <Box
+          <Box sx={{ 
+            display: "flex", 
+            alignItems: "center", 
+            justifyContent: "space-between",
+            mb: 3
+          }}>
+            <Typography
+              variant="h5"
               sx={{
-                width: 30,
-                height: 30,
-                borderRadius: "8px",
-                background: alpha(theme.palette.secondary.main, 0.1),
+                fontWeight: 700,
+                color: theme.palette.text.primary,
                 display: "flex",
                 alignItems: "center",
-                justifyContent: "center",
-                color: theme.palette.secondary.main,
+                gap: 1.5,
               }}
             >
-              <Award size={18} />
-            </Box>
-            How It Works
-          </Typography>
+              <Box
+                sx={{
+                  width: 30,
+                  height: 30,
+                  borderRadius: "8px",
+                  background: alpha(theme.palette.secondary.main, 0.1),
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  color: theme.palette.secondary.main,
+                }}
+              >
+                <Award size={18} />
+              </Box>
+              How It Works
+            </Typography>
+            
+            {/* Question mark icon to open tutorial */}
+            <Tooltip title="Open Tutorial Guide">
+              <IconButton
+                onClick={handleOpenTutorial}
+                sx={{
+                  width: 36,
+                  height: 36,
+                  borderRadius: "10px",
+                  bgcolor: alpha(theme.palette.primary.main, 0.1),
+                  color: theme.palette.primary.main,
+                  '&:hover': {
+                    bgcolor: alpha(theme.palette.primary.main, 0.2),
+                  }
+                }}
+              >
+                <HelpCircle size={20} />
+              </IconButton>
+            </Tooltip>
+          </Box>
 
           <Stack spacing={3}>
             {steps.map((step, index) => (
