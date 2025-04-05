@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState } from "react";
+import React, { createContext, useContext, useState, useEffect } from "react";
 
 const CalculatorContext = createContext();
 
@@ -34,75 +34,28 @@ export const CalculatorProvider = ({ children }) => {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState(null);
   const [hiddenAssignments, setHiddenAssignments] = useState([]);
-
-  // Save complete calculation state to localStorage
-  const saveCalculationState = () => {
-    const state = {
-      isResultsView,
-      activeStep,
-      categories,
-      mode,
-      rawGradeData,
-      parsedGrades,
-      uncategorizedAssignments,
-      manualGrades,
-      whatIfMode,
-      targetGrade,
-      hypotheticalScores,
-      hypotheticalAssignments,
-      hiddenAssignments,
+  
+  // Track if user has entered data
+  const hasData = categories.length > 0 || rawGradeData.trim() !== "" || parsedGrades !== null || manualGrades.length > 0;
+  
+  // Add beforeunload event handler to warn before page refresh
+  useEffect(() => {
+    const handleBeforeUnload = (e) => {
+      if (hasData) {
+        // Standard way to show a confirmation dialog before leaving
+        const message = "You have unsaved data. Are you sure you want to leave? All your data will be lost.";
+        e.returnValue = message; // Standard for most browsers
+        return message; // For some older browsers
+      }
     };
     
-    try {
-      localStorage.setItem('calculationState', JSON.stringify(state));
-      console.log("Calculation state saved to localStorage");
-    } catch (error) {
-      console.error("Error saving calculation state to localStorage", error);
-    }
-  };
-
-  // Load calculation state from localStorage
-  const loadCalculationState = () => {
-    try {
-      const savedState = localStorage.getItem('calculationState');
-      if (savedState) {
-        const state = JSON.parse(savedState);
-        
-        // Only restore state if there's actual content
-        if (state.categories?.length || state.rawGradeData || state.parsedGrades || state.manualGrades?.length) {
-          setIsResultsView(state.isResultsView || false);
-          setActiveStep(state.activeStep || 0);
-          setCategories(state.categories || []);
-          setMode(state.mode || "blackboard");
-          setRawGradeData(state.rawGradeData || "");
-          setParsedGrades(state.parsedGrades || null);
-          setUncategorizedAssignments(state.uncategorizedAssignments || []);
-          setManualGrades(state.manualGrades || []);
-          setWhatIfMode(state.whatIfMode || false);
-          setTargetGrade(state.targetGrade || "");
-          setHypotheticalScores(state.hypotheticalScores || {});
-          setHypotheticalAssignments(state.hypotheticalAssignments || []);
-          setHiddenAssignments(state.hiddenAssignments || []);
-          console.log("Calculation state loaded from localStorage");
-          return true;
-        }
-      }
-      return false;
-    } catch (error) {
-      console.error("Error loading calculation state from localStorage", error);
-      return false;
-    }
-  };
-
-  // Clear calculation state from localStorage
-  const clearCalculationState = () => {
-    try {
-      localStorage.removeItem('calculationState');
-      console.log("Calculation state cleared from localStorage");
-    } catch (error) {
-      console.error("Error clearing calculation state from localStorage", error);
-    }
-  };
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    
+    // Clean up the event listener when component unmounts
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+    };
+  }, [hasData]);
 
   // Reset all calculator state
   const resetCalculator = () => {
@@ -124,10 +77,6 @@ export const CalculatorProvider = ({ children }) => {
     setIsResultsView(false);
     // Clear isResultsView from session storage
     sessionStorage.removeItem('isResultsView');
-    // Clear notification flag from session storage
-    sessionStorage.removeItem('restoredNotificationShown');
-    // Clear calculation state from localStorage
-    clearCalculationState();
   };
 
   // Function to save last viewed calculation to session storage
@@ -202,11 +151,6 @@ export const CalculatorProvider = ({ children }) => {
         setSelectedCategory,
         hiddenAssignments,
         setHiddenAssignments,
-
-        // Persistence
-        saveCalculationState,
-        loadCalculationState,
-        clearCalculationState,
 
         // Actions
         resetCalculator,

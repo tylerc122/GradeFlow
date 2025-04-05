@@ -65,21 +65,11 @@ const Results = ({
     setIsResultsView,
     showCalculateAnotherButton: contextShowCalculateAnotherButton,
     clearLastViewedCalculation,
-    saveCalculationState,
-    loadCalculationState,
-    clearCalculationState,
   } = useCalculator();
 
   // Set isResultsView when component mounts and clean up when unmounting
   useEffect(() => {
     setIsResultsView(true);
-    // Save to sessionStorage that we're in results view
-    sessionStorage.setItem('isResultsView', 'true');
-    
-    // Save calculation state to localStorage (but don't load it again)
-    if (!isSavedCalculation) {
-      saveCalculationState();
-    }
     
     // Cleanup function - run when component unmounts
     return () => {
@@ -89,39 +79,7 @@ const Results = ({
         sessionStorage.removeItem('isResultsView');
       }
     };
-  }, [setIsResultsView, isSavedCalculation, saveCalculationState]);
-
-  // Save state when key items change in results view
-  useEffect(() => {
-    if (!isSavedCalculation) {
-      saveCalculationState();
-    }
-  }, [
-    categories,
-    whatIfMode,
-    hypotheticalScores,
-    hypotheticalAssignments,
-    hiddenAssignments,
-    isSavedCalculation,
-    saveCalculationState
-  ]);
-
-  // Add warning when user tries to leave/refresh in results view
-  useEffect(() => {
-    const handleBeforeUnload = (e) => {
-      if (!isSavedCalculation) {
-        e.preventDefault();
-        e.returnValue = "You'll lose your current grade calculation if you leave. Are you sure?";
-        return e.returnValue;
-      }
-    };
-    
-    window.addEventListener("beforeunload", handleBeforeUnload);
-    
-    return () => {
-      window.removeEventListener("beforeunload", handleBeforeUnload);
-    };
-  }, [isSavedCalculation]);
+  }, [setIsResultsView, isSavedCalculation,]);
 
   // Use prop if provided, otherwise use context value
   const showCalculateAnotherButton = propShowCalculateAnotherButton !== undefined 
