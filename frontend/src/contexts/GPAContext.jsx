@@ -54,7 +54,6 @@ export const GPAProvider = ({ children }) => {
           setCourses(savedCourses || []);
           setMajorCourses(savedMajorCourses || []);
           setCentralGPA(savedCentralGPA || centralGPA);
-          setIsEditing(true); // Set to editing mode when loading unsaved data
         }
       }
     } catch (error) {
@@ -99,6 +98,8 @@ export const GPAProvider = ({ children }) => {
             majorCourses: mostRecent.majorCourses || []
           });
           setCurrentGPAId(mostRecent.id);
+          // Ensure we're in view mode, not edit mode
+          setIsEditing(false);
         }
       } else {
         console.error('Failed to load saved GPAs');

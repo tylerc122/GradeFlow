@@ -6,13 +6,15 @@ from sqlalchemy import desc
 import json
 from datetime import datetime
 from datetime import timedelta
+import time
 
 from ..database.database import get_db
 from ..database.models import SavedCalculation, Category, User
 from ..models.grade_models import Assignment
 from ..services.grade_parser import parse_blackboard_grades
+from ..services.openai_integration import OpenAICategorizer
+from ..services.shared_services import openai_categorizer
 from ..auth.session_manager import session_manager
-
 
 router = APIRouter()
 
@@ -25,6 +27,9 @@ async def calculate_grades_raw(
     x_grade_categories: Optional[str] = Header(None)
 ):
     try:
+        # Log cache statistics before processing
+        cache_stats_before = openai_categorizer.get_cache_stats()
+        
         # Parse categories from header if present
         available_categories = None
         if x_grade_categories:
@@ -36,6 +41,11 @@ async def calculate_grades_raw(
         
         # Process the grades with available categories
         assignments = await parse_blackboard_grades(raw_data, available_categories)
+        
+        # Log cache statistics after processing to see if cache was used
+        cache_stats_after = openai_categorizer.get_cache_stats()
+        print(f"OpenAI Cache Stats - Before: {cache_stats_before}")
+        print(f"OpenAI Cache Stats - After: {cache_stats_after}")
         
         if not assignments:
             raise HTTPException(
@@ -748,4 +758,93 @@ async def get_grade_trends(
         raise HTTPException(
             status_code=500,
             detail=f"Failed to fetch grade trends: {str(e)}"
+        )
+
+@router.get("/api/cache/stats")
+async def get_cache_stats(
+    request: Request,
+    user_id: int = Depends(session_manager.require_auth)  # Use regular auth instead of admin
+):
+    """Get statistics about the OpenAI categorization cache."""
+    try:
+        stats = openai_categorizer.get_cache_stats()
+        return JSONResponse({
+            "cache_stats": stats,
+            "timestamp": datetime.now().isoformat()
+        })
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to retrieve cache statistics: {str(e)}"
+        )
+
+@router.post("/api/cache/clear")
+async def clear_cache(
+    request: Request,
+    user_id: int = Depends(session_manager.require_auth)  # Use regular auth instead of admin
+):
+    """Clear the OpenAI categorization cache."""
+    try:
+        openai_categorizer.clear_cache()
+        return JSONResponse({
+            "message": "Cache cleared successfully",
+            "timestamp": datetime.now().isoformat()
+        })
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to clear cache: {str(e)}"
+        )
+
+@router.post("/api/test/categorization")
+async def test_categorization(
+    request: Request,
+    body: dict = Body(...),
+    user_id: int = Depends(session_manager.require_auth)
+):
+    """Test endpoint to validate memoization by running the same categorization request twice"""
+    try:
+        # Get test data from request
+        test_assignments = body.get("assignments", [])
+        test_categories = body.get("categories", [])
+        
+        if not test_assignments or not test_categories:
+            return JSONResponse({
+                "error": "Please provide both assignments and categories for testing"
+            }, status_code=400)
+            
+        # First call - should be a cache miss
+        start_time = time.time()
+        results1 = await openai_categorizer.suggest_categories_batch(
+            test_assignments, 
+            test_categories
+        )
+        first_call_time = time.time() - start_time
+        
+        # Second call with identical inputs - should be a cache hit
+        start_time = time.time()
+        results2 = await openai_categorizer.suggest_categories_batch(
+            test_assignments, 
+            test_categories
+        )
+        second_call_time = time.time() - start_time
+        
+        # Get cache statistics
+        cache_stats = openai_categorizer.get_cache_stats()
+        
+        return JSONResponse({
+            "first_call_time": first_call_time,
+            "second_call_time": second_call_time,
+            "speedup_factor": first_call_time / second_call_time if second_call_time > 0 else "infinity",
+            "results_identical": results1 == results2,
+            "cache_stats": cache_stats,
+            "results": {
+                "first_call": results1,
+                "second_call": results2
+            }
+        })
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Error testing categorization: {str(e)}"
         )

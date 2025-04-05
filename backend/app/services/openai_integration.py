@@ -1,16 +1,20 @@
 from openai import OpenAI
 from fastapi import HTTPException
 from dotenv import load_dotenv
-from typing import List, Optional, Dict, Tuple
+from typing import List, Optional, Dict, Tuple, Any
 import os
 import asyncio
 import re
+import time
+import json
+import pickle
+from pathlib import Path
 from datetime import datetime, timedelta
 
 load_dotenv()
 
 class OpenAICategorizer:
-    def __init__(self, api_key: Optional[str] = None):
+    def __init__(self, api_key: Optional[str] = None, cache_dir: Optional[str] = None):
         api_key = api_key or os.getenv('OPENAI_API_KEY')
         if not api_key:
             print("Warning: No OpenAI API key found. Will use rule-based categorization only.")
@@ -24,6 +28,26 @@ class OpenAICategorizer:
         self.batch_size = 10  # process assignments in batches
         self.retry_delay = 5  # seconds to wait between retries
         self.max_retries = 3  # maximum number of retry attempts
+        
+        # Add memoization cache
+        self._cache = {}
+        self._cache_ttl = timedelta(hours=24)  # Cache valid for 24 hours
+        self._cache_hits = 0
+        self._cache_misses = 0
+        
+        # Setup persistent cache
+        self.cache_dir = cache_dir or os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), 'cache')
+        self.cache_file = os.path.join(self.cache_dir, 'openai_cache.pkl')
+        
+        # Create cache directory if it doesn't exist
+        os.makedirs(self.cache_dir, exist_ok=True)
+        
+        # Load cache from disk if it exists
+        self._load_cache_from_disk()
+        
+        # Schedule periodic cache saving
+        self._last_save_time = datetime.now()
+        self._save_interval = timedelta(minutes=5)  # Save every 5 minutes
 
     def sanitize_input(self, text: Optional[str]) -> str:
         """
@@ -212,6 +236,7 @@ class OpenAICategorizer:
         if not self.client or not assignments:
             return [(None, 0.0, []) for _ in assignments]
 
+        start_time = time.time()
         await self.wait_for_rate_limit()
         
         # Input validation
@@ -231,6 +256,19 @@ class OpenAICategorizer:
             
         if not valid_assignments:
             return [(None, 0.0, []) for _ in assignments]
+        
+        # Check cache before making API call
+        # Create a cache key based on assignments and categories
+        cache_key = self._create_cache_key(valid_assignments, available_categories)
+        cached_result = self._get_from_cache(cache_key)
+        if cached_result is not None:
+            self._cache_hits += 1
+            elapsed = time.time() - start_time
+            print(f"Cache hit! Using cached categorization for {len(valid_assignments)} assignments (took {elapsed:.3f}s)")
+            return cached_result
+        
+        self._cache_misses += 1
+        print(f"Cache miss. Processing {len(valid_assignments)} assignments with OpenAI API")
         
         # Sanitize inputs
         sanitized_assignments = []
@@ -275,96 +313,163 @@ Remember:
 - Leave a blank line between assignments"""
 
         try:
+            api_call_start = time.time()
             self.call_count += 1
-            response = await asyncio.to_thread(
+            completion = await asyncio.to_thread(
                 self.client.chat.completions.create,
                 model="gpt-3.5-turbo",
+                temperature=0.1,
                 messages=[
                     {"role": "system", "content": system_message},
                     {"role": "user", "content": prompt}
-                ],
-                temperature=0,
-                max_tokens=500
+                ]
             )
+            api_call_time = time.time() - api_call_start
             
-            # Parse the response
-            response_text = response.choices[0].message.content
-            # Split on '---' or double newlines, and filter out empty sections
-            sections = [s.strip() for s in response_text.replace('---', '\n\n').split('\n\n') if s.strip()]
+            response = completion.choices[0].message.content
+            
+            # Parse response
             results = []
-            
-            for section in sections:
-                if not section.strip() or section.strip() == '---':
-                    continue
+            for i, (name, _) in enumerate(sanitized_assignments):
                 try:
-                    # Split into lines and ignore numbering
-                    lines = [line.strip() for line in section.split('\n') if line.strip()]
+                    section = f"Assignment {i+1}: {name}"
+                    # Extract response for this assignment
+                    pattern = rf"{re.escape(section)}\nCategory:\s*([^\n]+)\nConfidence:\s*([0-9.]+)\nReasons:\s*(.+?)(?=\n\nAssignment|\Z)"
+                    match = re.search(pattern, response, re.DOTALL)
                     
-                    if not any('Category:' in line for line in lines):
-                        continue  # Skip sections without category information
+                    if match:
+                        category, confidence_str, reasons_text = match.groups()
+                        category = category.strip()
+                        confidence = float(confidence_str)
+                        reasons = [r.strip() for r in reasons_text.split(',')]
                         
-                    # Find the lines that contain our data using more robust parsing
-                    category_line = next((line for line in lines if 'Category:' in line), None)
-                    confidence_line = next((line for line in lines if 'Confidence:' in line), None)
-                    reasons_line = next((line for line in lines if 'Reasons:' in line), None)
-                    
-                    # Skip if any required field is missing
-                    if not category_line or not confidence_line or not reasons_line:
-                        print(f"Missing required fields in response section")
-                        results.append((None, 0.0, []))
-                        continue
-                    
-                    # Extract the values
-                    category = category_line.split('Category:')[1].strip()
-                    
-                    # Try to convert confidence to float, with fallback
-                    try:
-                        confidence = float(confidence_line.split('Confidence:')[1].strip())
-                        # Clamp confidence to valid range
-                        confidence = max(0.0, min(1.0, confidence))
-                    except (ValueError, IndexError):
-                        confidence = 0.0
-                        
-                    reasons = [r.strip() for r in reasons_line.split('Reasons:')[1].strip().split(',')]
-                    
-                    # Additional sanitization of outputs
-                    category = self.sanitize_input(category)
-                    reasons = [self.sanitize_input(r) for r in reasons]
-                    
-                    # Validate the category is in available categories
-                    if self.is_safe_category(category, sanitized_categories):
-                        results.append((category, confidence, reasons))
+                        # Validate category against available categories
+                        if not category or not self.is_safe_category(category, sanitized_categories):
+                            print(f"Invalid category received from OpenAI: {category}")
+                            results.append((None, 0.0, ["invalid_category"]))
+                        else:
+                            results.append((category, confidence, reasons))
                     else:
-                        print(f"Invalid category received from OpenAI: {category}")
-                        results.append((None, 0.0, []))
-                except (StopIteration, ValueError, IndexError) as e:
+                        results.append((None, 0.0, ["parsing_error"]))
+                except Exception as e:
                     print(f"Error parsing OpenAI response section '{section}': {str(e)}")
-                    results.append((None, 0.0, []))
+                    results.append((None, 0.0, [f"parsing_error: {str(e)}"]))
             
-            # Pad results if necessary
-            while len(results) < len(valid_assignments):
-                results.append((None, 0.0, []))
-                
-            # Pad more if original assignments had invalid items
-            while len(results) < len(assignments):
-                results.append((None, 0.0, []))
-                
+            # Cache the results before returning
+            self._add_to_cache(cache_key, results)
+            
+            # Check if we need to save the cache to disk
+            if datetime.now() - self._last_save_time > self._save_interval:
+                self._save_cache_to_disk()
+                self._last_save_time = datetime.now()
+            
+            total_elapsed = time.time() - start_time
+            print(f"OpenAI API call took {api_call_time:.3f}s, total processing time: {total_elapsed:.3f}s")
+            
             return results
             
         except Exception as e:
-            print(f"OpenAI API error: {str(e)}")
+            elapsed = time.time() - start_time
+            print(f"OpenAI API error after {elapsed:.3f}s: {str(e)}")
+            # Retry logic if network/API error
+            if retry_count < self.max_retries:
+                await asyncio.sleep(self.retry_delay * (retry_count + 1))  # Exponential backoff
+                return await self.suggest_categories_batch(assignments, available_categories, retry_count+1)
+            return [(None, 0.0, [f"api_error: {str(e)}"]) for _ in valid_assignments]
+
+    def _create_cache_key(self, assignments: List[Tuple[str, Optional[str]]], categories: List[str]) -> str:
+        """Create a deterministic cache key from assignments and categories"""
+        # Sort assignments and categories to ensure consistent keys regardless of order
+        sorted_assignments = sorted([(name or "", type_ or "") for name, type_ in assignments])
+        sorted_categories = sorted(categories)
+        
+        # Create a string representation
+        assignments_str = ";".join([f"{name}|{type_}" for name, type_ in sorted_assignments])
+        categories_str = ",".join(sorted_categories)
+        
+        # Use a hash for shorter keys
+        return f"{hash(assignments_str)}:{hash(categories_str)}"
+    
+    def _get_from_cache(self, key: str) -> Optional[List[Tuple[str, float, List[str]]]]:
+        """Retrieve result from cache if it exists and is not expired"""
+        if key not in self._cache:
+            return None
             
-            # If quota error and haven't exceeded max retries, wait and try again
-            if "insufficient_quota" in str(e) and retry_count < self.max_retries:
-                print(f"Quota error, retrying in {self.retry_delay} seconds...")
-                await asyncio.sleep(self.retry_delay * (retry_count + 1))
-                return await self.suggest_categories_batch(
-                    assignments, 
-                    available_categories,
-                    retry_count + 1
-                )
+        timestamp, result = self._cache[key]
+        if datetime.now() - timestamp > self._cache_ttl:
+            # Cache expired
+            del self._cache[key]
+            return None
+            
+        return result
+    
+    def _add_to_cache(self, key: str, result: List[Tuple[str, float, List[str]]]) -> None:
+        """Add result to cache with current timestamp"""
+        self._cache[key] = (datetime.now(), result)
+        
+        # Implement basic cache eviction if it gets too large
+        if len(self._cache) > 1000:  # Arbitrary limit
+            # Remove oldest entries
+            oldest_keys = sorted(self._cache.keys(), key=lambda k: self._cache[k][0])[:200]
+            for old_key in oldest_keys:
+                del self._cache[old_key]
+    
+    def get_cache_stats(self) -> dict:
+        """Return cache statistics"""
+        return {
+            "cache_size": len(self._cache),
+            "cache_hits": self._cache_hits,
+            "cache_misses": self._cache_misses,
+            "hit_ratio": self._cache_hits / (self._cache_hits + self._cache_misses) if (self._cache_hits + self._cache_misses) > 0 else 0,
+            "last_save_time": self._last_save_time.isoformat() if hasattr(self, '_last_save_time') else None,
+            "cache_file": self.cache_file
+        }
+        
+    def clear_cache(self) -> None:
+        """Clear the cache"""
+        self._cache = {}
+        # Also clear the disk cache
+        if os.path.exists(self.cache_file):
+            os.remove(self.cache_file)
+        print(f"Cache cleared (in-memory and disk file: {self.cache_file})")
+        
+    def _load_cache_from_disk(self) -> None:
+        """Load the cache from disk if it exists"""
+        if os.path.exists(self.cache_file):
+            try:
+                with open(self.cache_file, 'rb') as f:
+                    disk_cache = pickle.load(f)
+                    
+                # Check for expired entries
+                now = datetime.now()
+                valid_entries = {
+                    k: v for k, v in disk_cache.items() 
+                    if now - v[0] <= self._cache_ttl
+                }
                 
-            return [(None, 0.0, []) for _ in assignments]
+                self._cache = valid_entries
+                print(f"Loaded {len(valid_entries)} valid entries from disk cache")
+                
+                # If entries were removed due to expiration, save the cleaned cache
+                if len(valid_entries) < len(disk_cache):
+                    print(f"Removed {len(disk_cache) - len(valid_entries)} expired entries from cache")
+                    self._save_cache_to_disk()
+                    
+            except (pickle.PickleError, EOFError, FileNotFoundError) as e:
+                print(f"Error loading cache from disk: {str(e)}")
+                # Start with a fresh cache if there's an error
+                self._cache = {}
+        else:
+            print(f"No disk cache found at {self.cache_file}")
+            
+    def _save_cache_to_disk(self) -> None:
+        """Save the cache to disk"""
+        try:
+            with open(self.cache_file, 'wb') as f:
+                pickle.dump(self._cache, f)
+            print(f"Saved {len(self._cache)} entries to disk cache")
+        except (pickle.PickleError, IOError) as e:
+            print(f"Error saving cache to disk: {str(e)}")
 
     @staticmethod
     def should_use_openai(rule_based_confidence: float) -> bool:
