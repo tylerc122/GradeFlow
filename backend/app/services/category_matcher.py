@@ -48,6 +48,106 @@ class CategoryMatcher:
                 compound_components=["lab", "quiz"]
             ),
             
+            "Labs": CategoryPattern(
+                prefixes=["lab", "laboratory", "practical", "experiment"],
+                keywords=["lab", "laboratory", "experiment", "practical", "procedure"],
+                assignment_types=["Lab", "Laboratory", "Experiment", "Practical"],
+                compound_patterns=[
+                    r'(?i)lab\s*\d+',
+                    r'(?i)laboratory\s*\d+',
+                    r'(?i)experiment\s*\d+',
+                    r'(?i)^lab\s+[0-9]+$',
+                    r'(?i)[\s_-]lab[\s_-]report',
+                    r'(?i)practical\s*\d+'
+                ],
+                negative_patterns=[
+                    r'(?i)lab[\s_-]*quiz',
+                    r'(?i)pre[\s_-]*lab',
+                    r'(?i)post[\s_-]*lab'
+                ]
+            ),
+            
+            "Exams": CategoryPattern(
+                prefixes=["final", "exam"],
+                keywords=["final", "exam", "final exam"],
+                assignment_types=["Final Exam", "Exam", "Final"],
+                compound_patterns=[
+                    r'(?i)final\s*exam',
+                    r'(?i)exam\s*final',
+                    r'(?i)^final$'
+                ],
+                negative_patterns=[
+                    r'(?i)midterm',
+                    r'(?i)practice',
+                    r'(?i)sample'
+                ],
+                minimum_confidence=0.4
+            ),
+            
+            "Presentations": CategoryPattern(
+                prefixes=["presentation", "pres", "talk", "speech"],
+                keywords=["presentation", "oral", "speech", "talk", "demo", "demonstration"],
+                assignment_types=["Presentation", "Speech", "Oral", "Talk"],
+                compound_patterns=[
+                    r'(?i)presentation\s*\d*',
+                    r'(?i)oral\s*presentation',
+                    r'(?i)group\s*presentation',
+                    r'(?i)[\s_-]presentation',
+                    r'(?i)speech\s*\d+'
+                ]
+            ),
+            
+            "Discussion/Recitation": CategoryPattern(
+                prefixes=["discussion", "recitation", "disc", "section"],
+                keywords=["discussion", "recitation", "section", "seminar", "forum"],
+                assignment_types=["Discussion", "Recitation", "Section"],
+                compound_patterns=[
+                    r'(?i)discussion\s*\d+',
+                    r'(?i)disc\s*\d+',
+                    r'(?i)recitation\s*\d+',
+                    r'(?i)section\s*\d+',
+                    r'(?i)[\s_-]discussion',
+                    r'(?i)discussion[\s_-]board',
+                    r'(?i)discussion[\s_-]post'
+                ],
+                is_compound_category=True,
+                compound_components=["discussion", "recitation"]
+            ),
+            
+            "Final Project/Capstone": CategoryPattern(
+                prefixes=["final", "capstone", "culminating"],
+                keywords=["final", "project", "capstone", "culminating", "thesis"],
+                assignment_types=["Final Project", "Capstone", "Project"],
+                compound_patterns=[
+                    r'(?i)final\s*project',
+                    r'(?i)capstone\s*project',
+                    r'(?i)culminating\s*project',
+                    r'(?i)senior\s*project',
+                    r'(?i)thesis\s*project'
+                ],
+                negative_patterns=[
+                    r'(?i)midterm',
+                    r'(?i)practice',
+                    r'(?i)sample'
+                ],
+                is_compound_category=True,
+                compound_components=["final", "project"]
+            ),
+            
+            "Group Work/Collaborative Assignments": CategoryPattern(
+                prefixes=["group", "team", "collaborative", "peer"],
+                keywords=["group", "team", "collaborative", "peer", "cooperation"],
+                assignment_types=["Group", "Team", "Collaborative"],
+                compound_patterns=[
+                    r'(?i)group\s*(?:assignment|project|work)',
+                    r'(?i)team\s*(?:assignment|project|work)',
+                    r'(?i)collaborative\s*(?:assignment|project|work)',
+                    r'(?i)peer\s*(?:assignment|project|work)'
+                ],
+                is_compound_category=True,
+                compound_components=["group", "collaborative"]
+            ),
+            
             "Lecture/Lab Participation": CategoryPattern(
                 prefixes=["lecture", "lab", "class"],
                 keywords=[
