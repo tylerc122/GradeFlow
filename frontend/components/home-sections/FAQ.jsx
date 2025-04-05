@@ -93,20 +93,6 @@ const FAQ = () => {
         }}
       />
 
-      <Box
-        sx={{
-          position: "absolute",
-          bottom: "-10%",
-          left: "-5%",
-          width: "250px",
-          height: "250px",
-          borderRadius: "50%",
-          background: alpha(theme.palette.secondary.main, 0.03),
-          filter: "blur(50px)",
-          zIndex: 0,
-        }}
-      />
-
       <Container maxWidth="md" sx={{ position: "relative", zIndex: 1 }}>
         <Box
           sx={{
