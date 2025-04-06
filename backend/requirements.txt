@@ -3,3 +3,11 @@ uvicorn
 openai
 python-dotenv
 pydantic
+sqlalchemy
+alembic
+itsdangerous
+authlib
+starlette
+python-multipart
+bcrypt
+psycopg2-binary
