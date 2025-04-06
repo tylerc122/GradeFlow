@@ -582,7 +582,7 @@ const HomePage = () => {
                 variant="h6"
                 sx={{ mb: 4, fontWeight: 400, color: "white", opacity: 0.9 }}
               >
-                Join thousands of students who have simplified their grade
+                Join the students who have simplified their grade
                 calculations with GradeFlow.
               </Typography>
               <Button
