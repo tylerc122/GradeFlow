@@ -328,7 +328,7 @@ const Footer = () => {
               <Button
                 variant="outlined"
                 component="a"
-                href="https://github.com/yourusername/gradeflow"
+                href="https://github.com/tylerc122/gradeflow"
                 target="_blank"
                 rel="noopener noreferrer"
                 startIcon={<Github size={18} />}
