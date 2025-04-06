@@ -75,8 +75,13 @@ async def register(
 async def login(
     user_data: UserLogin,
     response: Response,
+    request: Request,
     db: Session = Depends(get_db)
 ):
+    # Apply stricter rate limiting for login attempts
+    # Only 5 login attempts per minute
+    session_manager.rate_limiter.limit_request(request, max_requests=10, period=60)
+    
     # Find user
     user = db.query(User).filter(User.email == user_data.email).first()
     if not user:

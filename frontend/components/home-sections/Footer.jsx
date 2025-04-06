@@ -69,7 +69,6 @@ const Footer = () => {
             icon: <ChevronRight size={14} />,
           },
         ]),
-    { title: "Documentation", path: "/docs", icon: <BookOpen size={14} /> },
   ];
 
   // Social links
@@ -407,8 +406,6 @@ const Footer = () => {
               },
             }}
           >
-            <Link href="#">Privacy Policy</Link>
-            <Link href="#">Terms of Service</Link>
           </Box>
         </Box>
       </Container>
