@@ -8,6 +8,21 @@ from .routes.auth import router as auth_router
 from .auth.session_manager import session_manager
 from fastapi import Request, HTTPException
 from starlette.middleware.base import BaseHTTPMiddleware
+import subprocess
+import sys
+
+# Run database migrations at startup
+def run_migrations():
+    try:
+        print("Running database migrations...")
+        subprocess.run(["alembic", "upgrade", "head"], check=True)
+        print("Migrations completed successfully")
+    except Exception as e:
+        print(f"Error running migrations: {e}", file=sys.stderr)
+        # Don't fail app startup if migrations fail
+
+# Run migrations
+run_migrations()
 
 # Rate limiting middleware
 class RateLimitMiddleware(BaseHTTPMiddleware):
