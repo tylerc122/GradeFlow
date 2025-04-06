@@ -2,13 +2,14 @@
 import os
 import sys
 
-# Add the parent directory to sys.path
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+# Set the PYTHONPATH correctly
+base_dir = os.path.dirname(os.path.abspath(__file__))
+sys.path.insert(0, base_dir)
 
-# Import the FastAPI app directly
-from backend.app.main import app
+# Import the FastAPI app 
+from app.main import app
 
 # This file serves as the entry point for production
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run("wsgi:app", host="0.0.0.0", port=8000) 
+    uvicorn.run(app, host="0.0.0.0", port=8000) 
