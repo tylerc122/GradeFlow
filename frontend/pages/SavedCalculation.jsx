@@ -49,6 +49,8 @@ const SavedCalculation = () => {
     setLastViewedCalculation,
     clearLastViewedCalculation,
   } = useCalculator();
+
+  const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8000";
   
   // Add a ref to store original calculator state
   const originalCalculatorState = useRef(null);
@@ -293,7 +295,7 @@ const SavedCalculation = () => {
         },
       };
 
-      const response = await fetch(`http://localhost:8000/api/grades/${id}`, {
+      const response = await fetch(`${API_URL}/api/grades/${id}`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
@@ -381,7 +383,7 @@ const SavedCalculation = () => {
         overall_grade: calculateWeightedGrade(),
       };
 
-      const response = await fetch("http://localhost:8000/api/grades/save", {
+      const response = await fetch(`${API_URL}/api/grades/save`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -511,7 +513,7 @@ const SavedCalculation = () => {
   useEffect(() => {
     const fetchCalculation = async () => {
       try {
-        const response = await fetch(`http://localhost:8000/api/grades/${id}`, {
+        const response = await fetch(`${API_URL}/api/grades/${id}`, {
           credentials: "include",
         });
 

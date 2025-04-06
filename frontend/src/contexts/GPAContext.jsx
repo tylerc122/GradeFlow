@@ -6,6 +6,7 @@ export const GPAProvider = ({ children }) => {
   // GPA courses data
   const [courses, setCourses] = useState([]);
   const [majorCourses, setMajorCourses] = useState([]);
+  const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8000";
   
   // Central GPA data
   const [centralGPA, setCentralGPA] = useState({
@@ -70,7 +71,7 @@ export const GPAProvider = ({ children }) => {
   const fetchSavedGPAs = async () => {
     setIsLoading(true);
     try {
-      const response = await fetch('http://localhost:8000/api/grades/gpa/saved', {
+      const response = await fetch(`${API_URL}/api/grades/gpa/saved`, {
         method: 'GET',
         credentials: 'include',
         headers: {
@@ -196,8 +197,8 @@ export const GPAProvider = ({ children }) => {
       
       // Determine if this is an update or a new GPA
       const url = currentGPAId ? 
-        `http://localhost:8000/api/grades/gpa/${currentGPAId}` : 
-        'http://localhost:8000/api/grades/gpa/save';
+        `${API_URL}/api/grades/gpa/${currentGPAId}` : 
+        `${API_URL}/api/grades/gpa/save`;
       
       const method = currentGPAId ? 'PUT' : 'POST';
       
@@ -236,7 +237,7 @@ export const GPAProvider = ({ children }) => {
   // Load a saved GPA for editing
   const editSavedGPA = async (gpaId) => {
     try {
-      const response = await fetch(`http://localhost:8000/api/grades/gpa/${gpaId}`, {
+      const response = await fetch(`${API_URL}/api/grades/gpa/${gpaId}`, {
         method: 'GET',
         credentials: 'include',
         headers: {
@@ -271,7 +272,7 @@ export const GPAProvider = ({ children }) => {
   // Delete a saved GPA
   const deleteSavedGPA = async (gpaId) => {
     try {
-      const response = await fetch(`http://localhost:8000/api/grades/gpa/${gpaId}`, {
+      const response = await fetch(`${API_URL}/api/grades/gpa/${gpaId}`, {
         method: 'DELETE',
         credentials: 'include',
         headers: {
@@ -300,7 +301,7 @@ export const GPAProvider = ({ children }) => {
   const duplicateGPA = async (gpaId) => {
     try {
       // First get the GPA to duplicate
-      const response = await fetch(`http://localhost:8000/api/grades/gpa/${gpaId}`, {
+      const response = await fetch(`${API_URL}/api/grades/gpa/${gpaId}`, {
         method: 'GET',
         credentials: 'include',
         headers: {
@@ -321,7 +322,7 @@ export const GPAProvider = ({ children }) => {
         };
         
         // Save as a new GPA
-        const saveResponse = await fetch('http://localhost:8000/api/grades/gpa/save', {
+        const saveResponse = await fetch(`${API_URL}/api/grades/gpa/save`, {
           method: 'POST',
           credentials: 'include',
           headers: {

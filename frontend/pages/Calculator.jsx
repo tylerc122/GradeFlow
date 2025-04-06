@@ -31,6 +31,8 @@ import {
 } from "../src/utils/letterGradeUtils";
 import { RefreshCw } from "lucide-react";
 
+const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8000";
+
 const Calculator = () => {
   const muiTheme = useMuiTheme();
   const { mode, isDark } = useTheme();
@@ -192,7 +194,7 @@ const Calculator = () => {
       }
 
       const response = await fetch(
-        "http://localhost:8000/api/grades/calculate/raw",
+        `${API_URL}/api/grades/calculate/raw`,
         {
           method: "POST",
           headers: headers,
@@ -331,7 +333,7 @@ const Calculator = () => {
         calculationData.manualGrades = manualGrades;
       }
 
-      const response = await fetch("http://localhost:8000/api/grades/save", {
+      const response = await fetch(`${API_URL}/api/grades/save"`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

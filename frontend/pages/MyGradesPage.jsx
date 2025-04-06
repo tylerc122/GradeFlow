@@ -22,6 +22,8 @@ import AssignmentIcon from "@mui/icons-material/Assignment";
 import DeleteIcon from "@mui/icons-material/Delete";
 import { useCalculator } from "../src/contexts/CalculatorContext";
 
+const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8000";
+
 const MyGradesPage = () => {
   const theme = useTheme();
   const navigate = useNavigate();
@@ -45,7 +47,7 @@ const MyGradesPage = () => {
   useEffect(() => {
     const fetchCalculations = async () => {
       try {
-        const response = await fetch("http://localhost:8000/api/grades/saved", {
+        const response = await fetch(`${API_URL}/api/grades/saved`, {
           credentials: "include",
         });
 
@@ -124,7 +126,7 @@ const MyGradesPage = () => {
   const handleDelete = async (calculationId) => {
     try {
       const response = await fetch(
-        `http://localhost:8000/api/grades/${calculationId}`,
+        `${API_URL}/api/grades/${calculationId}`,
         {
           method: "DELETE",
           credentials: "include",

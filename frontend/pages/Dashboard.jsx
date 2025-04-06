@@ -49,6 +49,8 @@ import GPADashboardCard from "../components/GPADashboardCard";
 import { useCalculator } from "../src/contexts/CalculatorContext";
 import { useSnackbar } from "notistack";
 
+const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8000";
+
 const Dashboard = () => {
   const theme = useTheme();
   const navigate = useNavigate();
@@ -84,7 +86,7 @@ const Dashboard = () => {
     try {
       // Fetch stats
       const statsResponse = await fetch(
-        "http://localhost:8000/api/grades/dashboard/stats",
+        `${API_URL}/api/grades/dashboard/stats`,
         {
           credentials: "include",
         }
@@ -96,7 +98,7 @@ const Dashboard = () => {
 
       // Fetch recent calculations
       const recentResponse = await fetch(
-        "http://localhost:8000/api/grades/dashboard/recent",
+        `${API_URL}/api/grades/dashboard/recent`,
         {
           credentials: "include",
         }
@@ -109,7 +111,7 @@ const Dashboard = () => {
 
       // Fetch trends
       const trendsResponse = await fetch(
-        "http://localhost:8000/api/grades/dashboard/trends",
+        `${API_URL}/api/grades/dashboard/trends`,
         {
           credentials: "include",
         }

@@ -26,6 +26,8 @@ import { HypotheticalAssignmentDialog } from "../dialogs/HypotheticalAssignmentD
 import ManualGradeTable from "./ManualGradeTable";
 import { letterGradeToPoints, isLetterGrade } from "../../src/utils/letterGradeUtils";
 
+const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8000";
+
 const Results = ({ 
   isSavedCalculation = false,
   showCalculateAnotherButton: propShowCalculateAnotherButton,
@@ -311,7 +313,7 @@ const Results = ({
         }, 0),
       };
 
-      const response = await fetch("http://localhost:8000/api/grades/save", {
+      const response = await fetch(`${API_URL}/api/grades/save`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
