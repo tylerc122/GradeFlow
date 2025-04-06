@@ -20,7 +20,14 @@ oauth = OAuth(config)
 # Configure Google OAuth
 GOOGLE_CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID", "")
 GOOGLE_CLIENT_SECRET = os.getenv("GOOGLE_CLIENT_SECRET", "")
-GOOGLE_REDIRECT_URI = os.getenv("GOOGLE_REDIRECT_URI", "http://localhost:8000/api/auth/google/callback")
+GOOGLE_REDIRECT_URI = os.getenv("GOOGLE_REDIRECT_URI", "")
+
+FRONTEND_URL = os.getenv("FRONTEND_URL", "")
+FRONTEND_SUCCESS_PATH = os.getenv("FRONTEND_SUCCESS_PATH", "/calculator")
+FRONTEND_ERROR_PATH = os.getenv("FRONTEND_ERROR_PATH", "/login?error=google_auth_failed")
+
+LOGIN_RATE_LIMIT_MAX = int(os.getenv("LOGIN_RATE_LIMIT_MAX", "10"))
+LOGIN_RATE_LIMIT_PERIOD = int(os.getenv("LOGIN_RATE_LIMIT_PERIOD", "60"))
 
 if GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET:
     oauth.register(
@@ -80,7 +87,7 @@ async def login(
 ):
     # Apply stricter rate limiting for login attempts
     # Only 5 login attempts per minute
-    session_manager.rate_limiter.limit_request(request, max_requests=10, period=60)
+    session_manager.rate_limiter.limit_request(request, max_requests=LOGIN_RATE_LIMIT_MAX, period=LOGIN_RATE_LIMIT_PERIOD)
     
     # Find user
     user = db.query(User).filter(User.email == user_data.email).first()
@@ -179,10 +186,8 @@ async def google_callback(
         session_manager.create_session(user.id, response)
         
         # Redirect to frontend
-        frontend_url = os.getenv("FRONTEND_URL", "http://localhost:5173")
-        return RedirectResponse(url=f"{frontend_url}/calculator")
+        return RedirectResponse(url=f"{FRONTEND_URL}{FRONTEND_SUCCESS_PATH}")
     
     except Exception as e:
         # Redirect to login page with error
-        frontend_url = os.getenv("FRONTEND_URL", "http://localhost:5173")
-        return RedirectResponse(url=f"{frontend_url}/login?error=google_auth_failed")
+        return RedirectResponse(url=f"{FRONTEND_URL}{FRONTEND_ERROR_PATH}")
