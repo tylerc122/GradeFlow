@@ -127,7 +127,7 @@ class SessionManager:
             httponly=True,
             secure=True,
             samesite="none",
-            domain="gradeflow.org",
+            domain=".gradeflow.org",
             path="/",
             max_age=int(self.session_duration.total_seconds())
         )
