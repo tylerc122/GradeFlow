@@ -94,7 +94,7 @@ const TutorialDialog = ({ open, onClose }) => {
       ...prev,
       [index]: true
     }));
-    console.log(`Image ${index} loaded successfully:`, getImagePath(tutorialSteps[index].imageBase));
+    // console.log(`Image ${index} loaded successfully:`, getImagePath(tutorialSteps[index].imageBase));
   };
   
   // Handle image loading error
@@ -104,7 +104,7 @@ const TutorialDialog = ({ open, onClose }) => {
     if (isDark && tutorialSteps[index].imageBase !== 'tutorial-input' && tutorialSteps[index].imageBase !== 'tutorial-results') {
       const imgElement = document.getElementById(`tutorial-img-${index}`);
       if (imgElement) {
-        console.log(`Trying fallback to light mode image for ${index}`);
+        // console.log(`Trying fallback to light mode image for ${index}`);
         const fallbackPath = `/${tutorialSteps[index].imageBase}-light.png`;
         imgElement.src = fallbackPath;
       }

@@ -97,8 +97,8 @@ const Calculator = () => {
 
   // Update calculation function to use hidden assignments
   const calculateCategoryGrade = (assignments, categoryName) => {
-    console.log(`\nCalculating grade for ${categoryName}`);
-    console.log("Hidden assignments:", hiddenAssignments);
+    // console.log(`\nCalculating grade for ${categoryName}`);
+    // console.log("Hidden assignments:", hiddenAssignments);
 
     if (!assignments || !assignments.length) return 0;
 
@@ -108,8 +108,8 @@ const Calculator = () => {
         !hiddenAssignments.includes(`${categoryName}-${assignment.name}`)
     );
 
-    console.log(`Total assignments: ${assignments.length}`);
-    console.log(`Visible assignments: ${visibleAssignments.length}`);
+    // console.log(`Total assignments: ${assignments.length}`);
+    // console.log(`Visible assignments: ${visibleAssignments.length}`);
 
     if (!visibleAssignments.length) return 0;
 
@@ -125,7 +125,7 @@ const Calculator = () => {
     );
 
     const grade = totalPossible > 0 ? (totalEarned / totalPossible) * 100 : 0;
-    console.log(`Category grade: ${grade}%\n`);
+    // console.log(`Category grade: ${grade}%\n`);
     return grade;
   };
 
@@ -134,10 +134,10 @@ const Calculator = () => {
 
   // Wrap the calculation to include hidden assignments
   const wrappedCalculateCategoryGrade = (assignments, categoryName) => {
-    console.log(
-      "Current hidden assignments in calculation:",
-      hiddenAssignments
-    );
+    // console.log(
+    //   "Current hidden assignments in calculation:",
+    //   hiddenAssignments
+    // );
 
     // Filter out hidden assignments
     const visibleAssignments = assignments.filter(
@@ -145,25 +145,25 @@ const Calculator = () => {
         !hiddenAssignments.includes(`${categoryName}-${assignment.name}`)
     );
 
-    console.log(`Category ${categoryName}:`);
-    console.log("- Original assignments:", assignments.length);
-    console.log("- Visible assignments:", visibleAssignments.length);
+    // console.log(`Category ${categoryName}:`);
+    // console.log("- Original assignments:", assignments.length);
+    // console.log("- Visible assignments:", visibleAssignments.length);
 
     // Use the original calculation function with filtered assignments
     return originalCalculateCategoryGrade(visibleAssignments, categoryName);
   };
 
   const handleToggleAssignmentVisibility = (categoryName, assignmentName) => {
-    console.log(
-      "Toggling visibility for:",
-      `${categoryName}-${assignmentName}`
-    );
+    // console.log(
+    //   "Toggling visibility for:",
+    //   `${categoryName}-${assignmentName}`
+    // );
     setHiddenAssignments((prev) => {
       const assignmentKey = `${categoryName}-${assignmentName}`;
       const newHidden = prev.includes(assignmentKey)
         ? prev.filter((key) => key !== assignmentKey)
         : [...prev, assignmentKey];
-      console.log("Updated hidden assignments:", newHidden);
+      // console.log("Updated hidden assignments:", newHidden);
       return newHidden;
     });
   };
@@ -228,7 +228,7 @@ const Calculator = () => {
   };
 
   const calculateWeightedGrade = () => {
-    console.log("\nCalculating final weighted grade");
+    // console.log("\nCalculating final weighted grade");
     if (calculatorMode === "manual") {
       let totalWeightedPoints = 0;
       let totalWeight = 0;
@@ -272,9 +272,9 @@ const Calculator = () => {
         category.name
       );
       const weightedGrade = categoryGrade * (category.weight / 100);
-      console.log(
-        `${category.name}: ${categoryGrade}% * ${category.weight}% = ${weightedGrade}%`
-      );
+      // console.log(
+      //   `${category.name}: ${categoryGrade}% * ${category.weight}% = ${weightedGrade}%`
+      // );
 
       return total + weightedGrade;
     }, 0);

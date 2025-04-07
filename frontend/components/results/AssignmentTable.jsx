@@ -80,17 +80,17 @@ export const AssignmentTable = ({
   const handleScoreEdit = (categoryName, assignment, newValue) => {
     // Only allow digits and at most one decimal point
     if (newValue !== '' && !/^\d*\.?\d*$/.test(newValue)) {
-      console.log("Invalid input rejected:", newValue);
+      // console.log("Invalid input rejected:", newValue);
       return; // Reject non-numeric input
     }
     
     // Don't allow negative numbers
     if (newValue !== '' && parseFloat(newValue) < 0) {
-      console.log("Negative value rejected:", newValue);
+      // console.log("Negative value rejected:", newValue);
       return;
     }
     
-    console.log("Valid score input:", newValue);
+    // console.log("Valid score input:", newValue);
     
     // Store validated input in state
     const scoreKey = `${categoryName}-${assignment.name}`;
@@ -126,7 +126,7 @@ export const AssignmentTable = ({
     if (inputValue === '' || inputValue === null || inputValue === undefined || isNaN(parseFloat(inputValue)) || parseFloat(inputValue) < 0) {
       // If empty or invalid when blurring, set to 0
       inputValue = "0";
-      console.log(`Empty/invalid input on blur, setting to zero: ${inputValue}`);
+      // console.log(`Empty/invalid input on blur, setting to zero: ${inputValue}`);
     } else {
       // Ensure proper formatting for valid numbers
       const numValue = parseFloat(inputValue);
@@ -150,7 +150,7 @@ export const AssignmentTable = ({
       },
     }));
     
-    console.log(`Score finalized on blur: ${inputValue}`);
+    // console.log(`Score finalized on blur: ${inputValue}`);
   };
 
   const handleKeyPress = (event) => {

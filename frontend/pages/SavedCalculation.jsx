@@ -216,7 +216,7 @@ const SavedCalculation = () => {
               scoreValue = 0;
             }
                  
-            console.log(`Saving score for ${assignment.name}: ${scoreValue} (original: ${hypotheticalScore.score})`);
+            // console.log(`Saving score for ${assignment.name}: ${scoreValue} (original: ${hypotheticalScore.score})`);
                  
             return {
               ...assignment,
@@ -310,7 +310,7 @@ const SavedCalculation = () => {
       }
 
       const savedData = await response.json();
-      console.log("Saved data:", savedData);
+      // console.log("Saved data:", savedData);
 
       // Transform and update all states
       const transformedData = transformCalculationData(savedData);
