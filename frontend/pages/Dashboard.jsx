@@ -332,14 +332,9 @@ const Dashboard = () => {
           mb: 5,
         }}
       >
-        <Box>
-          <Typography variant="h3" sx={{ fontWeight: 700, mb: 1 }}>
-            Dashboard
-          </Typography>
-          <Typography variant="body1" color="text.secondary">
-            Overview of your grade performance and recent calculations
-          </Typography>
-        </Box>
+        <Typography variant="h3" sx={{ fontWeight: 700, mb: 1, color: 'text.primary' }}>
+          Dashboard
+        </Typography>
         <Button
           startIcon={
             refreshing ? (
