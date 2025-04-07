@@ -55,12 +55,12 @@ app.add_middleware(
     allow_origins=[
         "https://www.gradeflow.org",
         "https://gradeflow.org",
-        "http://localhost:5173"  # Keep for local development
+        "http://localhost:5173"
     ],
     allow_credentials=True,
     allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
-    allow_headers=["Content-Type", "Authorization", "X-Requested-With"],
-    expose_headers=["Content-Length"],
+    allow_headers=["*"],
+    expose_headers=["*"],
     max_age=600,  # Cache preflight requests for 10 minutes
 )
 
