@@ -124,9 +124,11 @@ class SessionManager:
         response.set_cookie(
             key="session_id",
             value=session_id,
-            httponly=True,  # Prevent JavaScript access
-            secure=True,    # Only send over HTTPS
-            samesite="lax", # CSRF protection
+            httponly=True,
+            secure=True,
+            samesite="none",
+            domain="gradeflow.org",
+            path="/",
             max_age=int(self.session_duration.total_seconds())
         )
         
