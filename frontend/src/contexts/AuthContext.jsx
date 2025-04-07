@@ -12,61 +12,8 @@ export const AuthProvider = ({ children }) => {
 
   // Check authentication status when component mounts
   useEffect(() => {
-    // Check if current URL is the Google OAuth callback
-    const url = window.location.href;
-    if (url.includes('/api/auth/google/callback') || url.includes('?code=')) {
-      handleGoogleCallback();
-      return;
-    }
-    
     checkAuth();
   }, []);
-
-  const handleGoogleCallback = async () => {
-    try {
-      setLoading(true);
-      // Get the code from the URL
-      const code = new URLSearchParams(window.location.search).get('code');
-      
-      if (!code) {
-        console.error("No authorization code found in URL");
-        setLoading(false);
-        navigate('/login');
-        return;
-      }
-      
-      // Determine if we're in a development or production environment
-      const isProduction = window.location.hostname !== 'localhost';
-      
-      // Extract the auth code and make a request to the backend
-      let endpoint;
-      if (isProduction) {
-        // For production, send directly to the backend endpoint
-        endpoint = `https://gradeflow.org/api/auth/google/callback?code=${code}`;
-      } else {
-        // For local development
-        endpoint = `${API_URL}/api/auth/google/callback?code=${code}`;
-      }
-      
-      const response = await fetch(endpoint, {
-        method: 'GET',
-        credentials: 'include',
-      });
-      
-      if (!response.ok) {
-        throw new Error('Google authentication failed');
-      }
-      
-      const userData = await response.json();
-      setUser(userData);
-      navigate('/calculator'); // Redirect to calculator after successful login
-    } catch (error) {
-      console.error("Google callback error:", error);
-      navigate('/login'); // Redirect to login on error
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const checkAuth = async () => {
     try {
