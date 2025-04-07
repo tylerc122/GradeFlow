@@ -25,18 +25,23 @@ class RateLimiter:
         Returns:
             bool: True if request should be rate limited, False otherwise
         """
-        current = int(time.time())
-        key = f"ratelimit:{key}:{current // period}"
-        
-        # Increment counter for this time window
-        count = self.redis_client.incr(key)
-        
-        # Set expiration if this is the first request in the window
-        if count == 1:
-            self.redis_client.expire(key, period)
+        try:
+            current = int(time.time())
+            key = f"ratelimit:{key}:{current // period}"
             
-        # Check if limit exceeded
-        return count > max_requests
+            # Increment counter for this time window
+            count = self.redis_client.incr(key)
+            
+            # Set expiration if this is the first request in the window
+            if count == 1:
+                self.redis_client.expire(key, period)
+                
+            # Check if limit exceeded
+            return count > max_requests
+        except Exception as e:
+            # Log the error but don't rate limit the request if Redis fails
+            print(f"Rate limiting failed: {e}")
+            return False  # Allow the request to proceed
         
     def limit_request(self, request: Request, max_requests: int = 100, period: int = 60):
         """
@@ -50,16 +55,23 @@ class RateLimiter:
         Raises:
             HTTPException: If rate limit exceeded
         """
-        # Get client IP from request
-        client_ip = request.client.host
-        
-        if self.is_rate_limited(client_ip, max_requests, period):
-            raise HTTPException(
-                status_code=429,
-                detail="Too many requests"
-            )
-        
-        return True
+        try:
+            # Get client IP from request
+            client_ip = request.client.host
+            
+            if self.is_rate_limited(client_ip, max_requests, period):
+                raise HTTPException(
+                    status_code=429,
+                    detail="Too many requests"
+                )
+            
+            return True
+        except Exception as e:
+            # If there's any error in rate limiting, log it and allow the request
+            if not isinstance(e, HTTPException):  # Don't catch our own HTTPException
+                print(f"Error in rate limiting: {e}")
+                return True
+            raise  # Re-raise HTTPExceptions (like 429)
 
 class SessionManager:
     def __init__(self):
@@ -68,14 +80,31 @@ class SessionManager:
         redis_port = int(os.getenv("REDIS_PORT", "6379"))
         redis_db = int(os.getenv("REDIS_DB", "0"))
         redis_password = os.getenv("REDIS_PASSWORD", None)
-        # Connect to Redis
-        self.redis_client = redis.Redis(
-            host=redis_host, 
-            port=redis_port, 
-            db=redis_db, 
-            password=redis_password,
-            decode_responses=True
-        )
+        # Connect to Redis with improved error handling
+        try:
+            self.redis_client = redis.Redis(
+                host=redis_host, 
+                port=redis_port, 
+                db=redis_db, 
+                password=redis_password,
+                decode_responses=True,
+                socket_timeout=5,            # Add timeout parameters
+                socket_connect_timeout=5,
+                retry_on_timeout=True,       # Enable retries
+                health_check_interval=30,    # Regular health checks
+                max_connections=10           # Limit connection pool
+            )
+            # Test connection
+            self.redis_client.ping()
+            print(f"Successfully connected to Redis at {redis_host}:{redis_port}")
+        except Exception as e:
+            print(f"WARNING: Redis connection failed: {e}")
+            # Create a dummy Redis client for development/testing
+            # that won't crash the app if Redis is unavailable
+            from fakeredis import FakeRedis
+            self.redis_client = FakeRedis(decode_responses=True)
+            print("Using FakeRedis as fallback")
+
         self.pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
         self.session_duration = timedelta(days=7)  # Sessions last 7 days
         self.rate_limiter = RateLimiter(self.redis_client)
