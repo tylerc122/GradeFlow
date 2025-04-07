@@ -25,8 +25,7 @@ export const AuthProvider = ({ children }) => {
   const handleGoogleCallback = async () => {
     try {
       setLoading(true);
-      // Get the current URL with the auth code from Google
-      const currentUrl = window.location.href;
+      // Get the code from the URL
       const code = new URLSearchParams(window.location.search).get('code');
       
       if (!code) {
@@ -36,8 +35,20 @@ export const AuthProvider = ({ children }) => {
         return;
       }
       
-      // Exchange the code for user info
-      const response = await fetch(`${API_URL}/api/auth/google/callback?code=${code}`, {
+      // Determine if we're in a development or production environment
+      const isProduction = window.location.hostname !== 'localhost';
+      
+      // Extract the auth code and make a request to the backend
+      let endpoint;
+      if (isProduction) {
+        // For production, send directly to the backend endpoint
+        endpoint = `https://gradeflow.org/api/auth/google/callback?code=${code}`;
+      } else {
+        // For local development
+        endpoint = `${API_URL}/api/auth/google/callback?code=${code}`;
+      }
+      
+      const response = await fetch(endpoint, {
         method: 'GET',
         credentials: 'include',
       });
@@ -48,7 +59,7 @@ export const AuthProvider = ({ children }) => {
       
       const userData = await response.json();
       setUser(userData);
-      navigate('/dashboard'); // Redirect to dashboard after successful login
+      navigate('/calculator'); // Redirect to calculator after successful login
     } catch (error) {
       console.error("Google callback error:", error);
       navigate('/login'); // Redirect to login on error
