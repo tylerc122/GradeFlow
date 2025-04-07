@@ -53,10 +53,9 @@ app.add_middleware(RateLimitMiddleware)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
-        "http://localhost:5173",
-        "https://gradeflow.org",
         "https://www.gradeflow.org",
-        "https://gradeflow.vercel.app",  # If you use Vercel's default domain
+        "https://gradeflow.org",
+        "http://localhost:5173"  # Keep for local development
     ],
     allow_credentials=True,
     allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
@@ -71,3 +70,7 @@ app.include_router(auth_router, prefix="/api/auth", tags=["auth"])
 @app.get("/")
 async def root():
     return {"message": "Grade Calculator API is running"}
+
+@app.get("/api/test-cors")
+async def test_cors():
+    return {"message": "CORS is configured correctly"}
