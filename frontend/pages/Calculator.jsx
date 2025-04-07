@@ -333,7 +333,7 @@ const Calculator = () => {
         calculationData.manualGrades = manualGrades;
       }
 
-      const response = await fetch(`${API_URL}/api/grades/save"`, {
+      const response = await fetch(`${API_URL}/api/grades/save`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

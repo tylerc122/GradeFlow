@@ -287,29 +287,31 @@ class OpenAICategorizer:
 
 """
         for i, (name, type_) in enumerate(sanitized_assignments, 1):
-            prompt += f"{i}. Name: {name}\n   Type: {type_}\n\n"
+            prompt += f"{i}. Name: {name}\n   Type: {type_ or 'Not specified'}\n\n"
         
         prompt += f"""Available categories: {', '.join(sanitized_categories)}
 
 For each assignment above, categorize it into one of the available categories.
 Respond with one categorization per assignment, with a blank line between each.
-Do not include numbering or separator lines.
+Number each categorization with the assignment number (1., 2., etc.).
 
-Use this exact format:
+Use this EXACT format for each assignment:
 
+Assignment Number: [number]
 Category: [category name]
 Confidence: [number 0-1]
 Reasons: [brief comma-separated list]
 
-Example format:
+Example:
+Assignment Number: 1
 Category: Quizzes
 Confidence: 0.95
 Reasons: quiz in name, numbered assessment
 
 Remember:
 - Only use categories from the provided list
-- One categorization per assignment
-- Include all three lines (Category, Confidence, Reasons)
+- Include all four lines per assignment (Assignment Number, Category, Confidence, Reasons)
+- Confidence should be a decimal number between 0 and 1 (e.g., 0.8, not 80%)
 - Leave a blank line between assignments"""
 
         try:
@@ -327,32 +329,51 @@ Remember:
             api_call_time = time.time() - api_call_start
             
             response = completion.choices[0].message.content
+            print(f"OpenAI response: {response}")  # Debug logging
             
             # Parse response
             results = []
+            # Split the response by blank lines to get individual assignment categorizations
+            categorizations = re.split(r'\n\s*\n', response.strip())
+            
             for i, (name, _) in enumerate(sanitized_assignments):
                 try:
-                    section = f"Assignment {i+1}: {name}"
-                    # Extract response for this assignment
-                    pattern = rf"{re.escape(section)}\nCategory:\s*([^\n]+)\nConfidence:\s*([0-9.]+)\nReasons:\s*(.+?)(?=\n\nAssignment|\Z)"
-                    match = re.search(pattern, response, re.DOTALL)
+                    # Find the matching categorization for this assignment
+                    assignment_index = i + 1
+                    matching_categorization = None
                     
-                    if match:
-                        category, confidence_str, reasons_text = match.groups()
-                        category = category.strip()
-                        confidence = float(confidence_str)
-                        reasons = [r.strip() for r in reasons_text.split(',')]
+                    for cat in categorizations:
+                        # Look for the assignment number
+                        assignment_match = re.search(r'Assignment\s*(?:Number)?:\s*(\d+)', cat, re.IGNORECASE)
+                        if assignment_match and int(assignment_match.group(1)) == assignment_index:
+                            matching_categorization = cat
+                            break
+                    
+                    if matching_categorization:
+                        # Extract category, confidence, and reasons
+                        category_match = re.search(r'Category:\s*([^\n]+)', matching_categorization)
+                        confidence_match = re.search(r'Confidence:\s*([0-9.]+)', matching_categorization)
+                        reasons_match = re.search(r'Reasons:\s*(.+?)$', matching_categorization, re.MULTILINE | re.DOTALL)
                         
-                        # Validate category against available categories
-                        if not category or not self.is_safe_category(category, sanitized_categories):
-                            print(f"Invalid category received from OpenAI: {category}")
-                            results.append((None, 0.0, ["invalid_category"]))
+                        if category_match and confidence_match and reasons_match:
+                            category = category_match.group(1).strip()
+                            confidence = float(confidence_match.group(1))
+                            reasons = [r.strip() for r in reasons_match.group(1).split(',')]
+                            
+                            # Validate category against available categories
+                            if not self.is_safe_category(category, sanitized_categories):
+                                print(f"Invalid category received from OpenAI: {category}")
+                                results.append((None, 0.0, ["invalid_category"]))
+                            else:
+                                results.append((category, confidence, reasons))
                         else:
-                            results.append((category, confidence, reasons))
+                            print(f"Couldn't extract info for assignment {assignment_index}: {name}")
+                            results.append((None, 0.0, ["parsing_error"]))
                     else:
-                        results.append((None, 0.0, ["parsing_error"]))
+                        print(f"No categorization found for assignment {assignment_index}: {name}")
+                        results.append((None, 0.0, ["missing_categorization"]))
                 except Exception as e:
-                    print(f"Error parsing OpenAI response section '{section}': {str(e)}")
+                    print(f"Error parsing OpenAI response for assignment {i+1} ({name}): {str(e)}")
                     results.append((None, 0.0, [f"parsing_error: {str(e)}"]))
             
             # Cache the results before returning

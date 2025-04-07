@@ -123,18 +123,30 @@ async def parse_blackboard_grades(raw_text: str, available_categories: Optional[
                 # Update assignments with OpenAI results
                 for (assignment, _), (category, confidence, reasons) in zip(batch, results):
                     # Only use OpenAI's suggestion if it's confident (>= 0.7)
-                    if confidence >= 0.7:
+                    if category and confidence >= 0.7:
                         assignment.suggested_category = category
                         assignment.category_confidence = confidence
                         assignment.match_reasons = ["openai:" + reason for reason in reasons]
+                        print(f"Processed assignment: {assignment.name} (OpenAI confidence: {confidence})")
                     else:
-                        # If OpenAI isn't confident, don't suggest any category
-                        assignment.suggested_category = None
-                        assignment.category_confidence = 0.0
-                        assignment.match_reasons = ["low_confidence:both_methods_uncertain"]
+                        # If OpenAI isn't confident, revert to rule-based
+                        category_match = category_matcher.match_category(
+                            assignment.name, 
+                            assignment.assignment_type
+                        )
+                        if category_match.confidence > 0:
+                            assignment.suggested_category = category_match.category
+                            assignment.category_confidence = category_match.confidence
+                            assignment.match_reasons = ["openai_fallback:" + reason for reason in category_match.match_reasons]
+                            print(f"OpenAI not confident ({confidence if confidence else 0}), using rule-based: {assignment.name} (confidence: {category_match.confidence})")
+                        else:
+                            # If rule-based also has zero confidence, don't suggest
+                            assignment.suggested_category = None
+                            assignment.category_confidence = 0.0
+                            assignment.match_reasons = ["low_confidence:both_methods_uncertain"]
+                            print(f"Both methods uncertain for: {assignment.name}")
                     
                     assignments.append(assignment)
-                    print(f"Processed assignment: {assignment.name} (OpenAI confidence: {confidence})")
                     
             except Exception as e:
                 print(f"OpenAI categorization failed: {str(e)}")
