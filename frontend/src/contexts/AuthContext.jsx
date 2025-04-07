@@ -12,8 +12,50 @@ export const AuthProvider = ({ children }) => {
 
   // Check authentication status when component mounts
   useEffect(() => {
+    // Check if current URL is the Google OAuth callback
+    const url = window.location.href;
+    if (url.includes('/api/auth/google/callback') || url.includes('?code=')) {
+      handleGoogleCallback();
+      return;
+    }
+    
     checkAuth();
   }, []);
+
+  const handleGoogleCallback = async () => {
+    try {
+      setLoading(true);
+      // Get the current URL with the auth code from Google
+      const currentUrl = window.location.href;
+      const code = new URLSearchParams(window.location.search).get('code');
+      
+      if (!code) {
+        console.error("No authorization code found in URL");
+        setLoading(false);
+        navigate('/login');
+        return;
+      }
+      
+      // Exchange the code for user info
+      const response = await fetch(`${API_URL}/api/auth/google/callback?code=${code}`, {
+        method: 'GET',
+        credentials: 'include',
+      });
+      
+      if (!response.ok) {
+        throw new Error('Google authentication failed');
+      }
+      
+      const userData = await response.json();
+      setUser(userData);
+      navigate('/dashboard'); // Redirect to dashboard after successful login
+    } catch (error) {
+      console.error("Google callback error:", error);
+      navigate('/login'); // Redirect to login on error
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const checkAuth = async () => {
     try {
