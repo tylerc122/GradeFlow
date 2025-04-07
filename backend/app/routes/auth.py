@@ -182,12 +182,30 @@ async def google_callback(
             db.commit()
             db.refresh(user)
         
-        # Create session
-        session_manager.create_session(user.id, response)
+        # Create session - store the session_id for logging
+        session_id = session_manager.create_session(user.id, response)
         
-        # Redirect to frontend
-        return RedirectResponse(url=f"{FRONTEND_URL}{FRONTEND_SUCCESS_PATH}")
+        # Create redirect response
+        redirect = RedirectResponse(url=f"{FRONTEND_URL}{FRONTEND_SUCCESS_PATH}")
+        
+        # Copy all cookies from the original response to the redirect
+        for key, value in response.headers.items():
+            if key.lower() == 'set-cookie':
+                redirect.headers[key] = value
+
+        print(f"Created session {session_id} for user {user.id}")
+        print(f"Redirect URL: {FRONTEND_URL}{FRONTEND_SUCCESS_PATH}")
+        print(f"Cookie headers: {redirect.headers.get('set-cookie')}")
+        
+        # Test Redis connection
+        test_key = f"test:connection:{user.id}"
+        session_manager.redis_client.setex(test_key, 60, "test")
+        redis_result = session_manager.redis_client.get(test_key)
+        print(f"Redis test result: {redis_result}")
+        
+        return redirect
     
     except Exception as e:
-        # Redirect to login page with error
+        # Log dat
+        print(f"Google auth error: {str(e)}")
         return RedirectResponse(url=f"{FRONTEND_URL}{FRONTEND_ERROR_PATH}")
