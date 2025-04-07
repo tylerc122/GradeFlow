@@ -52,10 +52,17 @@ app.add_middleware(RateLimitMiddleware)
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173", "https://gradeflow.org", "https://www.gradeflow.org"],
+    allow_origins=[
+        "http://localhost:5173",
+        "https://gradeflow.org",
+        "https://www.gradeflow.org",
+        "https://gradeflow.vercel.app",  # If you use Vercel's default domain
+    ],
     allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
+    allow_headers=["Content-Type", "Authorization", "X-Requested-With"],
+    expose_headers=["Content-Length"],
+    max_age=600,  # Cache preflight requests for 10 minutes
 )
 
 app.include_router(grades_router, prefix="/api/grades", tags=["grades"])
