@@ -481,6 +481,19 @@ const Calculator = () => {
       } else {
         setActiveStep(2);
       }
+    } else if (activeStep === 2) {
+      // When going from step 2 (categorization) back to step 1 (grade input)
+      // Clear all assignments from categories
+      setCategories(categories.map(category => ({
+        ...category,
+        assignments: []
+      })));
+      // Reset uncategorized assignments to ensure a fresh calculation
+      setUncategorizedAssignments([]);
+      // Also clear localStorage to prevent persistence
+      localStorage.removeItem('gradeCategories');
+      
+      setActiveStep(1);
     } else {
       setActiveStep((prevStep) => prevStep - 1);
     }
