@@ -13,6 +13,7 @@ class User(Base):
     google_id = Column(String, unique=True, nullable=True, index=True)  # Google ID for OAuth
     profile_picture = Column(String, nullable=True)  # URL to profile picture
     is_active = Column(Boolean, default=True)
+    timezone = Column(String, default="UTC")  # Store user's timezone
     created_at = Column(DateTime, default=datetime.utcnow)
     
     # Relationship to SavedCalculations

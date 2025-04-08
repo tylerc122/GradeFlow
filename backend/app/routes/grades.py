@@ -15,8 +15,16 @@ from ..services.grade_parser import parse_blackboard_grades
 from ..services.openai_integration import OpenAICategorizer
 from ..services.shared_services import openai_categorizer
 from ..auth.session_manager import session_manager
+from ..utils.timezone_utils import convert_utc_to_timezone, format_datetime_for_response
 
 router = APIRouter()
+
+# Helper function to get user's timezone
+def get_user_timezone(db: Session, user_id: int) -> str:
+    user = db.query(User).filter(User.id == user_id).first()
+    if not user:
+        return "UTC"
+    return user.timezone or "UTC"
 
 @router.post("/calculate/raw", 
     status_code=200,
@@ -180,6 +188,9 @@ async def get_saved_gpa_calculations(
     user_id: int = Depends(session_manager.require_auth)
 ):
     try:
+        # Get user's timezone
+        timezone_str = get_user_timezone(db, user_id)
+        
         # Get all saved calculations for the user
         all_calculations = db.query(SavedCalculation).filter(
             SavedCalculation.user_id == user_id
@@ -196,7 +207,7 @@ async def get_saved_gpa_calculations(
             calc_data = {
                 "id": calc.id,
                 "name": calc.name,
-                "created_at": calc.created_at,
+                "created_at": format_datetime_for_response(calc.created_at, timezone_str),
                 "overallGPA": calc.results.get("overall_gpa", "0.00"),
                 "majorGPA": calc.results.get("major_gpa", "0.00"),
                 "courses": calc.results.get("courses", []),
@@ -221,6 +232,9 @@ async def get_gpa_calculation(
     user_id: int = Depends(session_manager.require_auth)
 ):
     try:
+        # Get user's timezone
+        timezone_str = get_user_timezone(db, user_id)
+        
         # Get specific calculation with authentication check
         calculation = db.query(SavedCalculation).filter(
             SavedCalculation.id == calculation_id,
@@ -244,7 +258,7 @@ async def get_gpa_calculation(
         response = {
             "id": calculation.id,
             "name": calculation.name,
-            "created_at": calculation.created_at,
+            "created_at": format_datetime_for_response(calculation.created_at, timezone_str),
             "overallGPA": calculation.results.get("overall_gpa", "0.00"),
             "majorGPA": calculation.results.get("major_gpa", "0.00"),
             "courses": calculation.results.get("courses", []),
@@ -370,6 +384,9 @@ async def get_saved_calculations(
     user_id: int = Depends(session_manager.require_auth)
 ):
     try:
+        # Get user's timezone
+        timezone_str = get_user_timezone(db, user_id)
+        
         # Get all saved calculations for user with their categories
         all_calculations = db.query(SavedCalculation).filter(
             SavedCalculation.user_id == user_id
@@ -385,7 +402,7 @@ async def get_saved_calculations(
             calc_data = {
                 "id": calc.id,
                 "name": calc.name,
-                "created_at": calc.created_at,
+                "created_at": format_datetime_for_response(calc.created_at, timezone_str),
                 "results": calc.results,
                 "categories": [
                     {
@@ -415,6 +432,9 @@ async def get_calculation(
     user_id: int = Depends(session_manager.require_auth)
 ):
     try:
+        # Get user's timezone
+        timezone_str = get_user_timezone(db, user_id)
+        
         # Get specific calculation with authentication check
         calculation = db.query(SavedCalculation).filter(
             SavedCalculation.id == calculation_id,
@@ -431,7 +451,7 @@ async def get_calculation(
         response = {
             "id": calculation.id,
             "name": calculation.name,
-            "created_at": calculation.created_at,
+            "created_at": format_datetime_for_response(calculation.created_at, timezone_str),
             "raw_data": calculation.raw_data,
             "results": calculation.results,
             "categories": [
@@ -574,6 +594,9 @@ async def get_dashboard_stats(
     user_id: int = Depends(session_manager.require_auth)
 ):
     try:
+        # Get user's timezone
+        timezone_str = get_user_timezone(db, user_id)
+        
         # Get all regular calculations for user (excluding GPAs)
         all_calculations = db.query(SavedCalculation).filter(
             SavedCalculation.user_id == user_id
@@ -600,9 +623,9 @@ async def get_dashboard_stats(
         category_counts = {}
         
         for calc in calculations:
-            # Add to grade history
+            # Add to grade history with timezone conversion
             grade_history.append({
-                "date": calc.created_at.isoformat(),
+                "date": format_datetime_for_response(calc.created_at, timezone_str),
                 "grade": calc.results.get("overall_grade", 0)
             })
             
@@ -660,6 +683,9 @@ async def get_recent_calculations(
     user_id: int = Depends(session_manager.require_auth)
 ):
     try:
+        # Get user's timezone
+        timezone_str = get_user_timezone(db, user_id)
+        
         # Get all calculations for the user
         all_calcs = db.query(SavedCalculation).filter(
             SavedCalculation.user_id == user_id
@@ -678,7 +704,7 @@ async def get_recent_calculations(
             calc_data = {
                 "id": calc.id,
                 "name": calc.name,
-                "created_at": calc.created_at,
+                "created_at": format_datetime_for_response(calc.created_at, timezone_str),
                 "results": calc.results,
                 "categories": [
                     {
@@ -708,6 +734,9 @@ async def get_grade_trends(
     user_id: int = Depends(session_manager.require_auth)
 ):
     try:
+        # Get user's timezone
+        timezone_str = get_user_timezone(db, user_id)
+        
         # Calculate date range
         end_date = datetime.utcnow()
         start_date = end_date - timedelta(days=days)
@@ -728,9 +757,9 @@ async def get_grade_trends(
         category_trends = {}
         
         for calc in calculations:
-            # Overall grade trend
+            # Overall grade trend with timezone conversion
             grade_trends.append({
-                "date": calc.created_at.isoformat(),
+                "date": format_datetime_for_response(calc.created_at, timezone_str),
                 "grade": calc.results.get("overall_grade", 0)
             })
             
@@ -744,7 +773,7 @@ async def get_grade_trends(
                 category_grade = (earned / possible * 100) if possible > 0 else 0
                 
                 category_trends[category.name].append({
-                    "date": calc.created_at.isoformat(),
+                    "date": format_datetime_for_response(calc.created_at, timezone_str),
                     "grade": category_grade
                 })
         

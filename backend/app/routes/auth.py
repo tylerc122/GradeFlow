@@ -42,10 +42,12 @@ class UserCreate(BaseModel):
     email: EmailStr
     password: str
     name: str
+    timezone: Optional[str] = "UTC"  # Accept timezone during registration
 
 class UserLogin(BaseModel):
     email: EmailStr
     password: str
+    timezone: Optional[str] = None  # Accept timezone during login
 
 @router.post("/register")
 async def register(
@@ -62,7 +64,8 @@ async def register(
     db_user = User(
         email=user_data.email,
         name=user_data.name,
-        hashed_password=hashed_password
+        hashed_password=hashed_password,
+        timezone=user_data.timezone  # Save the timezone
     )
     
     db.add(db_user)
@@ -75,7 +78,8 @@ async def register(
     return {
         "id": db_user.id,
         "email": db_user.email,
-        "name": db_user.name
+        "name": db_user.name,
+        "timezone": db_user.timezone
     }
 
 @router.post("/login")
@@ -98,13 +102,19 @@ async def login(
     if not session_manager.verify_password(user_data.password, user.hashed_password):
         raise HTTPException(status_code=401, detail="Invalid email or password")
     
+    # Update timezone if provided
+    if user_data.timezone:
+        user.timezone = user_data.timezone
+        db.commit()
+    
     # Create session
     session_manager.create_session(user.id, response)
     
     return {
         "id": user.id,
         "email": user.email,
-        "name": user.name
+        "name": user.name,
+        "timezone": user.timezone
     }
 
 @router.post("/logout")
@@ -128,7 +138,10 @@ async def get_current_user(
     
     return {
         "id": user.id,
-        "email": user.email
+        "email": user.email,
+        "name": user.name,
+        "profile_picture": user.profile_picture,
+        "timezone": user.timezone
     }
 
 @router.get("/google/login")
@@ -139,6 +152,13 @@ async def google_login(request: Request):
             status_code=500, 
             detail="Google OAuth is not configured. Contact the administrator."
         )
+    
+    # Get timezone parameter if provided
+    timezone = request.query_params.get("timezone", "UTC")
+    
+    # Add timezone to state or session to pass it to callback
+    # Set it in session for use during callback
+    request.session["timezone"] = timezone
     
     return await oauth.google.authorize_redirect(request, GOOGLE_REDIRECT_URI)
 
@@ -160,6 +180,9 @@ async def google_callback(
         google_id = user_info.get("sub")
         user = db.query(User).filter(User.google_id == google_id).first()
         
+        # Get timezone from session if it was set during the login request
+        timezone = request.session.get("timezone", "UTC")
+        
         if not user:
             # Check if user exists with this email
             email = user_info.get("email")
@@ -169,24 +192,34 @@ async def google_callback(
                 # Update existing user with Google info
                 user.google_id = google_id
                 user.profile_picture = user_info.get("picture")
+                # Update timezone if not already set
+                if not user.timezone or user.timezone == "UTC":
+                    user.timezone = timezone
             else:
                 # Create new user
                 user = User(
                     email=email,
                     name=user_info.get("name"),
                     google_id=google_id,
-                    profile_picture=user_info.get("picture")
+                    profile_picture=user_info.get("picture"),
+                    timezone=timezone
                 )
                 db.add(user)
             
             db.commit()
             db.refresh(user)
+        else:
+            # Always update timezone for existing users
+            if timezone != "UTC":  # Only update if not the default
+                user.timezone = timezone
+                db.commit()
         
         # Create session - store the session_id for logging
         session_id = session_manager.create_session(user.id, response)
         
-        # Create redirect response
-        redirect = RedirectResponse(url=f"{FRONTEND_URL}{FRONTEND_SUCCESS_PATH}")
+        # Create redirect response with timezone param for frontend to detect changes
+        success_path = f"{FRONTEND_SUCCESS_PATH}?timezone_updated={user.timezone}"
+        redirect = RedirectResponse(url=f"{FRONTEND_URL}{success_path}")
         
         # Copy all cookies from the original response to the redirect
         for key, value in response.headers.items():
@@ -194,7 +227,7 @@ async def google_callback(
                 redirect.headers[key] = value
 
         print(f"Created session {session_id} for user {user.id}")
-        print(f"Redirect URL: {FRONTEND_URL}{FRONTEND_SUCCESS_PATH}")
+        print(f"Redirect URL: {FRONTEND_URL}{success_path}")
         print(f"Cookie headers: {redirect.headers.get('set-cookie')}")
         
         # Test Redis connection

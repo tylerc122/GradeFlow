@@ -5,6 +5,7 @@ import os
 import secrets
 from .routes.grades import router as grades_router
 from .routes.auth import router as auth_router
+from .routes.users import router as users_router
 from .auth.session_manager import session_manager
 from fastapi import Request, HTTPException
 from starlette.middleware.base import BaseHTTPMiddleware
@@ -66,6 +67,7 @@ app.add_middleware(
 
 app.include_router(grades_router, prefix="/api/grades", tags=["grades"])
 app.include_router(auth_router, prefix="/api/auth", tags=["auth"])
+app.include_router(users_router, prefix="/api/users", tags=["users"])
 
 @app.get("/")
 async def root():
