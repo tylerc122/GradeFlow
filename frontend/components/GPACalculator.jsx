@@ -333,7 +333,25 @@ const GPACalculator = () => {
                 Add courses to calculate your GPA
               </Typography>
             ) : (
-              renderCourseInputs(courses)
+              <>
+                {renderCourseInputs(courses)}
+                
+                <Box sx={{ display: 'flex', justifyContent: 'flex-start', mt: 2 }}>
+                  <Button
+                    startIcon={<AddIcon />}
+                    variant="outlined"
+                    onClick={() => addCourseContext()}
+                    sx={{
+                      borderRadius: 2,
+                      "&:hover": {
+                        boxShadow: 1,
+                      },
+                    }}
+                  >
+                    Add Course
+                  </Button>
+                </Box>
+              </>
             )}
 
             <Stack 
