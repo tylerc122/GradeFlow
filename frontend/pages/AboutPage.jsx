@@ -64,9 +64,9 @@ const AboutPage = () => {
               Using JSX/React for the frontend and Python FastAPI for the
               backend, I built a system that could not only parse grades but
               also intelligently categorize assignments at the click of a
-              button. The project evolved to include features like what-if
-              analysis and grade projections, making it a comprehensive tool for
-              students facing the same problem as I did.
+              button. The project evolved to include features like a GPA calculator
+              (that tracks both general and major GPA) and displaying grade trends over
+              time, making it a comprehensive tool for students facing the same problem as I did.
             </Typography>
             <Typography variant="body1" paragraph>
               I hope you find GradeFlow as useful as I do. If you have any
@@ -91,28 +91,61 @@ const AboutPage = () => {
               <Grid item xs={12} md={5}>
                 <Box
                   sx={{
-                    borderRadius: "16px",
-                    overflow: "hidden",
+                    position: 'relative',
+                    width: '100%',
+                    height: '100%',
+                    borderRadius: '16px',
+                    overflow: 'hidden',
                     boxShadow: "0px 4px 20px rgba(0, 0, 0, 0.1)",
                     mb: { xs: 2, md: 0 },
                     maxHeight: "600px",
+                    '&:hover img': {
+                      filter: 'blur(5px)',
+                    },
+                    '&:hover .overlay-text': {
+                      opacity: 1,
+                    },
                   }}
                 >
                   <Box
                     component="img"
-                    src="./me.jpg"
+                    src="./me.jpeg"
                     alt="Tyler Collo"
                     sx={{
                       width: "100%",
                       height: "100%",
                       objectFit: "cover",
                       display: "block",
-                      transition: "transform 0.3s ease-in-out",
+                      transition: "transform 0.3s ease-in-out, filter 0.3s ease-in-out",
                       "&:hover": {
                         transform: "scale(1.02)",
                       },
                     }}
                   />
+                  <Typography 
+                    className="overlay-text"
+                    variant="body1" 
+                    color="white" 
+                    align="center" 
+                    sx={{ 
+                      position: 'absolute',
+                      top: 0,
+                      left: 0,
+                      width: '100%',
+                      height: '100%',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      padding: 3,
+                      opacity: 0,
+                      transition: 'opacity 0.3s ease-in-out',
+                      fontWeight: 600, 
+                      fontFamily: "inherit",
+                      textShadow: '0px 0px 4px rgba(0,0,0,2.0)'
+                    }}
+                  >
+                    My sister and I at our wonderful mom's graduation, celebrating her getting her doctorate. The best mom ever!
+                  </Typography>
                 </Box>
               </Grid>
 
