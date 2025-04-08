@@ -293,18 +293,18 @@ const Footer = () => {
               Connect
             </Typography>
 
-            <Box
-              sx={{
-                p: 3,
-                borderRadius: "16px",
-                backgroundColor: "transparent",
-                border: `1px solid ${alpha(theme.palette.primary.main, theme.palette.mode === 'dark' ? 0.3 : 0.1)}`,
-                mb: 3,
-                ...(theme.palette.mode === 'dark' && {
-                  backdropFilter: "none",
-                  backgroundImage: "none",
-                  background: "#121212",
-                })
+            <div
+              style={{
+                padding: '24px',
+                borderRadius: '16px',
+                backgroundColor: 'inherit',
+                border: `1px solid ${theme.palette.mode === 'dark' ? 'rgba(118, 129, 214, 0.3)' : 'rgba(118, 129, 214, 0.1)'}`,
+                marginBottom: '24px',
+                marginLeft: '-4px', 
+                marginRight: '4px',
+                display: 'flex',
+                flexDirection: 'column',
+                width: '100%'
               }}
             >
               <Box
@@ -337,6 +337,7 @@ const Footer = () => {
                   borderRadius: "10px",
                   textTransform: "none",
                   borderWidth: "2px",
+                  width: { xs: '100%', sm: 'auto' },
                   ...(theme.palette.mode === 'dark' && {
                     backgroundColor: 'transparent',
                     borderColor: alpha(theme.palette.primary.main, 0.5),
@@ -353,7 +354,7 @@ const Footer = () => {
               >
                 View on GitHub
               </Button>
-            </Box>
+            </div>
 
             <Typography variant="body2" color="text.secondary">
               Have a question or feedback? Feel free to
