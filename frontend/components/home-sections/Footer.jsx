@@ -74,17 +74,17 @@ const Footer = () => {
   // Social links
   const socialLinks = [
     {
-      icon: <Github size={20} />,
+      icon: <Github size={20} color={theme.palette.text.secondary} />,
       url: "https://github.com/tylerc122",
       label: "GitHub",
     },
     {
-      icon: <Linkedin size={20} />,
+      icon: <Linkedin size={20} color={theme.palette.text.secondary} />,
       url: "https://www.linkedin.com/in/tyler-collo-345679276/",
       label: "LinkedIn",
     },
     {
-      icon: <Mail size={20} />,
+      icon: <Mail size={20} color={theme.palette.text.secondary} />,
       url: "mailto:tylercollo1@gmail.com",
       label: "Email",
     },
@@ -167,41 +167,34 @@ const Footer = () => {
               everywhere.
             </Typography>
 
-            <Box sx={{ display: "flex", gap: 1 }}>
+            <div style={{ display: "flex", gap: "8px" }}>
               {socialLinks.map((social, index) => (
-                <Tooltip
+                <IconButton
                   key={index}
+                  component="a"
+                  href={social.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label={social.label}
                   title={social.label}
-                  component={Box}
                   sx={{
-                    fontSize: theme.typography.caption.fontSize,
+                    color: "text.secondary",
+                    backgroundColor: "transparent",
+                    transition: "all 0.2s ease-in-out",
+                    "&:hover": {
+                      transform: "translateY(-2px)",
+                      backgroundColor:
+                        theme.palette.mode === "dark"
+                          ? alpha(theme.palette.common.white, 0.08)
+                          : alpha(theme.palette.common.black, 0.06),
+                      color: theme.palette.primary.main,
+                    },
                   }}
                 >
-                  <IconButton
-                    component="a"
-                    href={social.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    sx={{
-                      color: "text.secondary",
-                      backgroundColor: "transparent",
-                      transition: "all 0.2s ease-in-out",
-                      "&:hover": {
-                        transform: "translateY(-2px)",
-                        backgroundColor:
-                          theme.palette.mode === "dark"
-                            ? alpha(theme.palette.common.white, 0.08)
-                            : alpha(theme.palette.common.black, 0.06),
-                        color: theme.palette.primary.main,
-                      },
-                    }}
-                    aria-label={social.label}
-                  >
-                    {social.icon}
-                  </IconButton>
-                </Tooltip>
+                  {social.icon}
+                </IconButton>
               ))}
-            </Box>
+            </div>
           </Grid>
 
           {/* Navigation Links */}
