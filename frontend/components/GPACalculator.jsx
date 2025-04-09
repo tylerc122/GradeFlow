@@ -22,6 +22,8 @@ import SaveIcon from "@mui/icons-material/Save";
 import EditIcon from "@mui/icons-material/Edit";
 import CancelIcon from "@mui/icons-material/Cancel";
 import SchoolIcon from "@mui/icons-material/School";
+import VisibilityIcon from "@mui/icons-material/Visibility";
+import VisibilityOffIcon from "@mui/icons-material/VisibilityOff";
 import { useTheme } from "../src/contexts/ThemeContext";
 import { useGPA } from "../src/contexts/GPAContext";
 
@@ -39,7 +41,9 @@ const GPACalculator = () => {
     updateCentralGPA,
     isEditing,
     cancelEditing,
+    editGPA,
     toggleCourseForMajor,
+    toggleCourseVisibility,
     addCourse: addCourseContext
   } = useGPA();
 
@@ -129,7 +133,10 @@ const GPACalculator = () => {
               border: "1px solid",
               borderColor: "divider",
               transition: "all 0.2s ease-in-out",
-              backgroundColor: isDark ? "#252525" : "white",
+              backgroundColor: course.isHidden 
+                ? alpha(isDark ? "#252525" : "white", 0.5) 
+                : isDark ? "#252525" : "white",
+              opacity: course.isHidden ? 0.7 : 1,
               "&:hover": {
                 transform: "translateY(-2px)",
                 boxShadow: 2,
@@ -205,6 +212,33 @@ const GPACalculator = () => {
                   />
                 </Tooltip>
               )}
+              <Tooltip title={course.isHidden ? "Show Course" : "Hide Course"}>
+                <IconButton
+                  onClick={() => toggleCourseVisibility(index)}
+                  size="small"
+                  sx={{
+                    bgcolor: alpha(
+                      course.isHidden 
+                        ? muiTheme.palette.warning.main 
+                        : muiTheme.palette.primary.main,
+                      0.1
+                    ),
+                    color: course.isHidden
+                      ? muiTheme.palette.warning.main
+                      : muiTheme.palette.primary.main,
+                    "&:hover": {
+                      bgcolor: alpha(
+                        course.isHidden
+                          ? muiTheme.palette.warning.main
+                          : muiTheme.palette.primary.main,
+                        0.2
+                      ),
+                    },
+                  }}
+                >
+                  {course.isHidden ? <VisibilityOffIcon fontSize="small" /> : <VisibilityIcon fontSize="small" />}
+                </IconButton>
+              </Tooltip>
               <IconButton
                 onClick={() => deleteCourse(index, isMajor)}
                 sx={{
@@ -248,184 +282,171 @@ const GPACalculator = () => {
           >
             <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
               <SchoolIcon
-                sx={{ fontSize: 32, color: "primary.main", opacity: 0.8 }}
+                fontSize="large"
+                color="primary"
               />
-              <Box>
-                <Typography variant="h5" sx={{ fontWeight: 500 }}>
-                  GPA Calculator
-                </Typography>
-                {isEditing && (
-                  <Box sx={{ display: 'flex', alignItems: 'center', mt: 0.5 }}>
-                    <Chip 
-                      label="Editing Your GPA" 
-                      color="primary" 
-                      size="small" 
-                      icon={<EditIcon />}
-                      sx={{ fontWeight: 500 }}
-                    />
-                  </Box>
-                )}
-              </Box>
+              <Typography variant="h5" sx={{ fontWeight: 600 }}>
+                GPA Calculator
+              </Typography>
             </Box>
             <Box sx={{ display: "flex", gap: 2 }}>
-              {isEditing && (
+              {isEditing ? (
+                <>
+                  <Button
+                    variant="outlined"
+                    color="secondary"
+                    startIcon={<CancelIcon />}
+                    onClick={handleCancelEditing}
+                    sx={{ borderRadius: 2 }}
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    variant="contained"
+                    color="primary"
+                    startIcon={<SaveIcon />}
+                    onClick={handleSaveGPA}
+                    disabled={isSaving}
+                    sx={{ borderRadius: 2 }}
+                  >
+                    {isSaving ? "Saving..." : "Save GPA"}
+                  </Button>
+                </>
+              ) : (
                 <Button
-                  startIcon={<CancelIcon />}
-                  variant="outlined"
-                  color="error"
-                  onClick={handleCancelEditing}
-                  sx={{
-                    borderRadius: 2,
-                    px: 3,
-                    py: 1,
-                    boxShadow: 2,
-                    "&:hover": {
-                      boxShadow: 4,
-                    },
+                  variant="contained"
+                  color="primary"
+                  startIcon={<EditIcon />}
+                  onClick={() => {
+                    // If we have a centralGPA with courses, we'll use those, otherwise nothing to edit
+                    if (!centralGPA.id) {
+                      // No GPA to edit, just switch to editing mode
+                      setIsEditing(true);
+                    } else {
+                      // Use the edit function from context
+                      editGPA();
+                    }
                   }}
+                  sx={{ borderRadius: 2 }}
                 >
-                  Cancel Edit
+                  {centralGPA.id ? "Edit GPA" : "Create GPA"}
                 </Button>
               )}
-              <Button
-                startIcon={isSaving ? null : <SaveIcon />}
-                variant="contained"
-                color="secondary"
-                onClick={handleSaveGPA}
-                disabled={isSaving}
-                sx={{
-                  borderRadius: 2,
-                  px: 3,
-                  py: 1,
-                  boxShadow: 2,
-                  "&:hover": {
-                    boxShadow: 4,
-                  },
-                }}
-              >
-                {isSaving ? 'Saving...' : 'Save GPA'}
-              </Button>
             </Box>
           </Box>
 
-          <Box>
-            <Box sx={{ mb: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <Typography variant="h6">
-                Courses
-              </Typography>
-              <Button
-                startIcon={<AddIcon />}
-                variant="outlined"
-                onClick={() => addCourseContext()}
-                sx={{
-                  borderRadius: 2,
-                  "&:hover": {
-                    boxShadow: 1,
-                  },
-                }}
+          {isEditing ? (
+            <>
+              <Box sx={{ display: "flex", alignItems: "center", mb: 2 }}>
+                <Typography variant="h6">Your Courses</Typography>
+                <Typography 
+                  variant="body2" 
+                  color="text.secondary" 
+                  sx={{ ml: 2 }}
+                >
+                  {courses.filter(c => !c.isHidden).length} visible courses,{" "}
+                  {courses.filter(c => c.isHidden).length} hidden
+                </Typography>
+              </Box>
+
+              {renderCourseInputs(courses)}
+
+              <Box sx={{ display: "flex", justifyContent: "center" }}>
+                <Button
+                  variant="outlined"
+                  startIcon={<AddIcon />}
+                  onClick={() => addCourseContext()}
+                  sx={{
+                    borderRadius: 6,
+                    px: 3,
+                    py: 1,
+                    borderStyle: "dashed",
+                    borderWidth: 2,
+                  }}
+                >
+                  Add Course
+                </Button>
+              </Box>
+
+              <Stack 
+                direction={{ xs: "column", sm: "row" }} 
+                spacing={2} 
+                sx={{ mt: 3 }}
               >
-                Add Course
-              </Button>
-            </Box>
-            
-            {courses.length === 0 ? (
-              <Typography variant="body1" color="text.secondary" sx={{ textAlign: 'center', py: 4 }}>
-                Add courses to calculate your GPA
-              </Typography>
-            ) : (
-              <>
-                {renderCourseInputs(courses)}
-                
-                <Box sx={{ display: 'flex', justifyContent: 'flex-start', mt: 2 }}>
-                  <Button
-                    startIcon={<AddIcon />}
-                    variant="outlined"
-                    onClick={() => addCourseContext()}
+                <Box
+                  sx={{
+                    p: 3,
+                    borderRadius: 2,
+                    backgroundColor: alpha(
+                      "#4caf50",
+                      isDark ? 0.15 : 0.08
+                    ),
+                    border: "1px solid",
+                    borderColor: alpha(
+                      "#4caf50",
+                      isDark ? 0.3 : 0.2
+                    ),
+                    flex: 1
+                  }}
+                >
+                  <Typography
+                    variant="h5"
                     sx={{
-                      borderRadius: 2,
-                      "&:hover": {
-                        boxShadow: 1,
-                      },
+                      fontWeight: 600,
+                      color: "success.main",
                     }}
                   >
-                    Add Course
-                  </Button>
+                    Overall GPA: {calculateOverallGPA()}
+                  </Typography>
                 </Box>
-              </>
-            )}
-
-            <Stack 
-              direction={{ xs: 'column', md: 'row' }} 
-              spacing={2} 
-              sx={{ mt: 3 }}
-            >
-              <Box
-                sx={{
-                  p: 3,
-                  borderRadius: 2,
-                  backgroundColor: alpha(
-                    "#4caf50",
-                    isDark ? 0.15 : 0.08
-                  ),
-                  border: "1px solid",
-                  borderColor: alpha(
-                    "#4caf50",
-                    isDark ? 0.3 : 0.2
-                  ),
-                  flex: 1
-                }}
-              >
-                <Typography
-                  variant="h5"
-                  sx={{
-                    fontWeight: 600,
-                    color: "success.main",
-                  }}
-                >
-                  Overall GPA: {calculateOverallGPA()}
-                </Typography>
-              </Box>
-              
-              <Box
-                sx={{
-                  p: 3,
-                  borderRadius: 2,
-                  backgroundColor: alpha(
-                    "#3f51b5",
-                    isDark ? 0.15 : 0.08
-                  ),
-                  border: "1px solid",
-                  borderColor: alpha(
-                    "#3f51b5",
-                    isDark ? 0.3 : 0.2
-                  ),
-                  flex: 1,
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between'
-                }}
-              >
-                <Typography
-                  variant="h5"
-                  sx={{
-                    fontWeight: 600,
-                    color: "primary.main",
-                  }}
-                >
-                  Major GPA: {calculateMajorGPA()}
-                </Typography>
                 
-                {courses.filter(c => c.isForMajor).length > 0 && (
-                  <Chip 
-                    label={`${courses.filter(c => c.isForMajor).length} courses`}
-                    size="small"
-                    color="primary"
-                    sx={{ fontWeight: 500 }}
-                  />
-                )}
-              </Box>
-            </Stack>
-          </Box>
+                <Box
+                  sx={{
+                    p: 3,
+                    borderRadius: 2,
+                    backgroundColor: alpha(
+                      "#3f51b5",
+                      isDark ? 0.15 : 0.08
+                    ),
+                    border: "1px solid",
+                    borderColor: alpha(
+                      "#3f51b5",
+                      isDark ? 0.3 : 0.2
+                    ),
+                    flex: 1,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between'
+                  }}
+                >
+                  <Typography
+                    variant="h5"
+                    sx={{
+                      fontWeight: 600,
+                      color: "primary.main",
+                    }}
+                  >
+                    Major GPA: {calculateMajorGPA()}
+                  </Typography>
+                  
+                  {courses.filter(c => c.isForMajor && !c.isHidden).length > 0 && (
+                    <Chip 
+                      label={`${courses.filter(c => c.isForMajor && !c.isHidden).length} courses`}
+                      size="small"
+                      color="primary"
+                      sx={{ fontWeight: 500 }}
+                    />
+                  )}
+                </Box>
+              </Stack>
+            </>
+          ) : (
+            <Box sx={{ textAlign: "center", py: 6 }}>
+              <Typography variant="h6" color="text.secondary">
+                Click "Edit GPA" to start calculating your grade point average
+              </Typography>
+            </Box>
+          )}
         </Stack>
       </Paper>
     </>

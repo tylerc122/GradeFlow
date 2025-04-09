@@ -21,6 +21,12 @@ export const GPAProvider = ({ children }) => {
   const [isLoading, setIsLoading] = useState(false);
   const [currentGPAId, setCurrentGPAId] = useState(null);
 
+  // Hidden GPAs
+  const [hiddenGPAs, setHiddenGPAs] = useState({
+    overall: false,
+    major: false
+  });
+
   // Editing state
   const [isEditing, setIsEditing] = useState(false);
 
@@ -37,24 +43,26 @@ export const GPAProvider = ({ children }) => {
         courses,
         majorCourses,
         centralGPA,
+        hiddenGPAs,
         lastUpdated: new Date().toISOString()
       };
       localStorage.setItem('gpaCalculatorData', JSON.stringify(localData));
     }
-  }, [courses, majorCourses, centralGPA]);
+  }, [courses, majorCourses, centralGPA, hiddenGPAs]);
 
   // Load data from localStorage
   const loadLocalStorageData = () => {
     try {
       const savedData = localStorage.getItem('gpaCalculatorData');
       if (savedData) {
-        const { courses: savedCourses, majorCourses: savedMajorCourses, centralGPA: savedCentralGPA } = JSON.parse(savedData);
+        const { courses: savedCourses, majorCourses: savedMajorCourses, centralGPA: savedCentralGPA, hiddenGPAs: savedHiddenGPAs } = JSON.parse(savedData);
         
         // Only load if there's actual data
         if (savedCourses?.length > 0 || savedMajorCourses?.length > 0) {
           setCourses(savedCourses || []);
           setMajorCourses(savedMajorCourses || []);
           setCentralGPA(savedCentralGPA || centralGPA);
+          setHiddenGPAs(savedHiddenGPAs || { overall: false, major: false });
         }
       }
     } catch (error) {
@@ -128,8 +136,13 @@ export const GPAProvider = ({ children }) => {
   const calculateGPA = (courseList) => {
     if (!courseList || courseList.length === 0) return "0.00";
     
-    const totalCredits = courseList.reduce((sum, course) => sum + (parseFloat(course.credits) || 0), 0);
-    const totalPoints = courseList.reduce((sum, course) => {
+    // Filter out hidden courses
+    const visibleCourses = courseList.filter(course => !course.isHidden);
+    
+    if (visibleCourses.length === 0) return "0.00";
+    
+    const totalCredits = visibleCourses.reduce((sum, course) => sum + (parseFloat(course.credits) || 0), 0);
+    const totalPoints = visibleCourses.reduce((sum, course) => {
       return sum + (parseFloat(course.credits) || 0) * letterToGPA(course.grade);
     }, 0);
     
@@ -140,7 +153,7 @@ export const GPAProvider = ({ children }) => {
   const calculateOverallGPA = () => calculateGPA(courses);
   const calculateMajorGPA = () => {
     // Only use courses marked as for major
-    const coursesForMajor = courses.filter(course => course.isForMajor);
+    const coursesForMajor = courses.filter(course => course.isForMajor && !course.isHidden);
     // Check if there are any major courses
     if (coursesForMajor.length === 0) return "0.00";
     return calculateGPA(coursesForMajor);
@@ -156,13 +169,24 @@ export const GPAProvider = ({ children }) => {
     setCourses(updatedCourses);
   };
 
+  // Toggle whether a course is hidden from GPA calculation
+  const toggleCourseVisibility = (index) => {
+    const updatedCourses = [...courses];
+    updatedCourses[index] = {
+      ...updatedCourses[index],
+      isHidden: !updatedCourses[index]?.isHidden
+    };
+    setCourses(updatedCourses);
+  };
+
   // Add new course with isForMajor property initialized to false
   const addCourse = (courseData = {}) => {
     const newCourse = { 
       title: courseData.title || "", 
       credits: courseData.credits || "", 
       grade: courseData.grade || "A",
-      isForMajor: courseData.isForMajor || false
+      isForMajor: courseData.isForMajor || false,
+      isHidden: courseData.isHidden || false
     };
     setCourses([...courses, newCourse]);
   };
@@ -377,6 +401,22 @@ export const GPAProvider = ({ children }) => {
     });
   };
 
+  // Toggle visibility of overall GPA
+  const toggleOverallGPA = () => {
+    setHiddenGPAs(prev => ({
+      ...prev,
+      overall: !prev.overall
+    }));
+  };
+
+  // Toggle visibility of major GPA
+  const toggleMajorGPA = () => {
+    setHiddenGPAs(prev => ({
+      ...prev,
+      major: !prev.major
+    }));
+  };
+
   return (
     <GPAContext.Provider
       value={{
@@ -405,7 +445,11 @@ export const GPAProvider = ({ children }) => {
         editGPA,
         cancelEditing,
         toggleCourseForMajor,
-        addCourse
+        toggleCourseVisibility,
+        addCourse,
+        hiddenGPAs,
+        toggleOverallGPA,
+        toggleMajorGPA,
       }}
     >
       {children}

@@ -7,8 +7,10 @@ import {
   Divider,
   alpha,
   useTheme as useMuiTheme,
+  IconButton,
+  Tooltip,
 } from "@mui/material";
-import { School, Computer, Edit, Clock } from "lucide-react";
+import { School, Computer, Edit, Clock, Eye, EyeOff } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useTheme } from "../src/contexts/ThemeContext";
 import { useGPA } from "../src/contexts/GPAContext";
@@ -17,7 +19,7 @@ const GPAInfoCard = () => {
   const navigate = useNavigate();
   const muiTheme = useMuiTheme();
   const { isDark } = useTheme();
-  const { centralGPA, editGPA } = useGPA();
+  const { centralGPA, editGPA, hiddenGPAs, toggleOverallGPA, toggleMajorGPA } = useGPA();
 
   const formatDate = (dateString) => {
     if (!dateString) return "Never updated";
@@ -106,24 +108,66 @@ const GPAInfoCard = () => {
               ),
             }}
           >
-            <Box sx={{ display: "flex", alignItems: "center", mb: 1 }}>
-              <School size={20} color={muiTheme.palette.success.main} />
-              <Typography
-                variant="subtitle1"
-                sx={{ ml: 1, fontWeight: 600, color: "text.secondary" }}
-              >
-                Overall GPA
-              </Typography>
+            <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", mb: 1 }}>
+              <Box sx={{ display: "flex", alignItems: "center" }}>
+                <School size={20} color={muiTheme.palette.success.main} />
+                <Typography
+                  variant="subtitle1"
+                  sx={{ ml: 1, fontWeight: 600, color: "text.secondary" }}
+                >
+                  Overall GPA
+                </Typography>
+              </Box>
+              <Tooltip title={hiddenGPAs.overall ? "Show GPA" : "Hide GPA"}>
+                <IconButton 
+                  onClick={toggleOverallGPA} 
+                  size="small"
+                  sx={{
+                    backgroundColor: alpha(
+                      hiddenGPAs.overall
+                        ? muiTheme.palette.warning.main
+                        : muiTheme.palette.success.main,
+                      0.15
+                    ),
+                    color: hiddenGPAs.overall
+                      ? muiTheme.palette.warning.main
+                      : muiTheme.palette.success.main,
+                    "&:hover": {
+                      backgroundColor: alpha(
+                        hiddenGPAs.overall
+                          ? muiTheme.palette.warning.main
+                          : muiTheme.palette.success.main,
+                        0.25
+                      ),
+                    },
+                  }}
+                >
+                  {hiddenGPAs.overall ? <EyeOff size={18} /> : <Eye size={18} />}
+                </IconButton>
+              </Tooltip>
             </Box>
-            <Typography
-              variant="h3"
-              sx={{
-                fontWeight: 700,
-                color: "success.main",
-              }}
-            >
-              {centralGPA.overallGPA || "0.00"}
-            </Typography>
+            {!hiddenGPAs.overall ? (
+              <Typography
+                variant="h3"
+                sx={{
+                  fontWeight: 700,
+                  color: "success.main",
+                }}
+              >
+                {centralGPA.overallGPA || "0.00"}
+              </Typography>
+            ) : (
+              <Typography
+                variant="h3"
+                sx={{
+                  fontWeight: 700,
+                  color: "text.secondary",
+                  opacity: 0.5,
+                }}
+              >
+                •••••
+              </Typography>
+            )}
           </Box>
 
           {/* Technical GPA Card */}
@@ -146,24 +190,66 @@ const GPAInfoCard = () => {
             data-major-gpa="true"
             className="MajorGpa-container"
           >
-            <Box sx={{ display: "flex", alignItems: "center", mb: 1 }}>
-              <Computer size={20} color={muiTheme.palette.primary.main} />
-              <Typography
-                variant="subtitle1"
-                sx={{ ml: 1, fontWeight: 600, color: "text.secondary" }}
-              >
-                Major GPA
-              </Typography>
+            <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", mb: 1 }}>
+              <Box sx={{ display: "flex", alignItems: "center" }}>
+                <Computer size={20} color={muiTheme.palette.primary.main} />
+                <Typography
+                  variant="subtitle1"
+                  sx={{ ml: 1, fontWeight: 600, color: "text.secondary" }}
+                >
+                  Major GPA
+                </Typography>
+              </Box>
+              <Tooltip title={hiddenGPAs.major ? "Show GPA" : "Hide GPA"}>
+                <IconButton 
+                  onClick={toggleMajorGPA} 
+                  size="small"
+                  sx={{
+                    backgroundColor: alpha(
+                      hiddenGPAs.major
+                        ? muiTheme.palette.warning.main
+                        : muiTheme.palette.primary.main,
+                      0.15
+                    ),
+                    color: hiddenGPAs.major
+                      ? muiTheme.palette.warning.main
+                      : muiTheme.palette.primary.main,
+                    "&:hover": {
+                      backgroundColor: alpha(
+                        hiddenGPAs.major
+                          ? muiTheme.palette.warning.main
+                          : muiTheme.palette.primary.main,
+                        0.25
+                      ),
+                    },
+                  }}
+                >
+                  {hiddenGPAs.major ? <EyeOff size={18} /> : <Eye size={18} />}
+                </IconButton>
+              </Tooltip>
             </Box>
-            <Typography
-              variant="h3"
-              sx={{
-                fontWeight: 700,
-                color: "primary.main",
-              }}
-            >
-              {centralGPA.majorGPA || "0.00"}
-            </Typography>
+            {!hiddenGPAs.major ? (
+              <Typography
+                variant="h3"
+                sx={{
+                  fontWeight: 700,
+                  color: "primary.main",
+                }}
+              >
+                {centralGPA.majorGPA || "0.00"}
+              </Typography>
+            ) : (
+              <Typography
+                variant="h3"
+                sx={{
+                  fontWeight: 700,
+                  color: "text.secondary",
+                  opacity: 0.5,
+                }}
+              >
+                •••••
+              </Typography>
+            )}
           </Box>
         </Box>
 
