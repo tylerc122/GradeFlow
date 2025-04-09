@@ -577,16 +577,16 @@ const Calculator = () => {
   const renderMainContent = () => {
     if (activeStep === 3) {
       return (
-        <Box
-          sx={{
+        <div
+          style={{
             width: "100%",
             display: "flex",
             flexDirection: "column",
             alignItems: "center",
           }}
         >
-          <Box
-            sx={{
+          <div
+            style={{
               width: "145%",
               maxWidth: "95vw",
             }}
@@ -612,8 +612,8 @@ const Calculator = () => {
             </Paper>
 
             <Results />
-          </Box>
-        </Box>
+          </div>
+        </div>
       );
     }
 
@@ -673,24 +673,24 @@ const Calculator = () => {
   };
 
   return (
-    <Box
-      sx={{
+    <div
+      style={{
         width: "100vw",
         minHeight: "100vh",
         display: "flex",
         flexDirection: "column",
-        bgcolor: "background.default",
-        pt: 4,
-        pb: 4,
+        background: muiTheme.palette.background.default,
+        paddingTop: "32px", 
+        paddingBottom: "32px",
       }}
     >
       {isLoading && <LoadingOverlay />}
 
       <Container maxWidth="xl">
-        <Box
-          sx={{
+        <div
+          style={{
             display: "flex",
-            flexDirection: "column",
+            flexDirection: "column", 
             alignItems: activeStep === 3 ? "center" : "stretch",
             width: "100%",
             transition: "all 0.3s ease-in-out",
@@ -735,13 +735,13 @@ const Calculator = () => {
           {renderMainContent()}
 
           {/* Navigation Buttons - align based on step */}
-          <Box
-            sx={{
+          <div
+            style={{
               display: "flex",
               justifyContent: "flex-end",
-              gap: 2,
-              mt: 4,
-              mb: 4,
+              gap: "16px", 
+              marginTop: "32px",
+              marginBottom: "32px",
               width: activeStep === 3 ? "150%" : "100%",
               maxWidth: activeStep === 3 ? "95vw" : "100%",
               transition: "all 0.3s ease-in-out",
@@ -806,8 +806,8 @@ const Calculator = () => {
                 Next
               </Button>
             )}
-          </Box>
-        </Box>
+          </div>
+        </div>
 
         <SaveCalculationDialog
           open={saveDialogOpen}
@@ -825,7 +825,7 @@ const Calculator = () => {
           }}
         />
       </Container>
-    </Box>
+    </div>
   );
 };
 
