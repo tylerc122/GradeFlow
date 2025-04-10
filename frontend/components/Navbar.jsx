@@ -227,6 +227,7 @@ const Navbar = () => {
             "&:hover": {
               bgcolor: alpha(muiTheme.palette.primary.main, 0.2),
             },
+            '&:focus, &:focus-visible': { outline: 'none' },
           }}
         >
           {mode === "dark" ? <Sun size={20} /> : <Moon size={20} />}
@@ -254,6 +255,7 @@ const Navbar = () => {
               "&:hover": {
                 backgroundColor: alpha(muiTheme.palette.primary.main, 0.08),
               },
+              '&:focus, &:focus-visible': { outline: 'none' },
             }}
           >
             <ListItemIcon sx={{ minWidth: 36, color: "inherit" }}>
@@ -285,7 +287,7 @@ const Navbar = () => {
             color="error"
             startIcon={<LogOut size={16} />}
             onClick={handleLogout}
-            sx={{ mt: 2 }}
+            sx={{ mt: 2, '&:focus, &:focus-visible': { outline: 'none' } }}
           >
             Log Out
           </Button>
@@ -304,6 +306,7 @@ const Navbar = () => {
             onClick={() => handleNavigation('/login')}
             variant="outlined"
             fullWidth
+            sx={{ '&:focus, &:focus-visible': { outline: 'none' } }}
           >
             Login
           </Button>
@@ -311,6 +314,7 @@ const Navbar = () => {
             onClick={() => handleNavigation('/register')}
             variant="contained"
             fullWidth
+            sx={{ '&:focus, &:focus-visible': { outline: 'none' } }}
           >
             Sign Up
           </Button>
@@ -411,6 +415,7 @@ const Navbar = () => {
                         "&:hover": {
                           bgcolor: alpha(muiTheme.palette.primary.main, 0.12),
                         },
+                        '&:focus, &:focus-visible': { outline: 'none' },
                       }}
                     >
                       {mode === "dark" ? <Sun size={20} /> : <Moon size={20} />}
@@ -426,6 +431,7 @@ const Navbar = () => {
                         "&:hover": {
                           bgcolor: alpha(muiTheme.palette.primary.main, 0.12),
                         },
+                        '&:focus, &:focus-visible': { outline: 'none' },
                       }}
                     >
                       <MenuIcon />
@@ -468,6 +474,7 @@ const Navbar = () => {
                           "&:hover::after": {
                             transform: "scaleX(1)",
                           },
+                          '&:focus, &:focus-visible': { outline: 'none' },
                         }}
                       >
                         {item.text}
@@ -492,6 +499,7 @@ const Navbar = () => {
                           "&:hover": {
                             bgcolor: alpha(muiTheme.palette.primary.main, 0.12),
                           },
+                          '&:focus, &:focus-visible': { outline: 'none' },
                         }}
                       >
                         {mode === "dark" ? (
@@ -513,6 +521,7 @@ const Navbar = () => {
                             height: 42,
                             position: "relative",
                             overflow: "hidden",
+                            '&:focus, &:focus-visible': { outline: 'none' },
                           }}
                         >
                           <Box
@@ -553,7 +562,7 @@ const Navbar = () => {
                         <Button
                           onClick={() => handleNavigation('/login')}
                           variant="outlined"
-                          sx={{ borderRadius: "12px", px: 2 }}
+                          sx={{ borderRadius: "12px", px: 2, '&:focus, &:focus-visible': { outline: 'none' } }}
                         >
                           Login
                         </Button>
@@ -564,6 +573,7 @@ const Navbar = () => {
                             borderRadius: "12px",
                             px: 2,
                             background: "var(--gradient-primary)",
+                            '&:focus, &:focus-visible': { outline: 'none' },
                           }}
                         >
                           Sign Up
