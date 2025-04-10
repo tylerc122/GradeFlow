@@ -79,51 +79,57 @@ const Navbar = () => {
                              location.pathname === '/grades' || 
                              location.pathname.startsWith('/grades/');
   
-  // Session-persistent expanded view state 
-  const [hasSeenResults, setHasSeenResults] = useState(() => {
-    return sessionStorage.getItem('hasSeenResults') === 'true';
+  // Track expanded state persistently
+  const [keepNavExpanded, setKeepNavExpanded] = useState(() => {
+    return localStorage.getItem('keepNavExpanded') === 'true';
   });
   
-  // If we're on results view or saved calculation, remember that for the session
+  // Prevent immediate collapsing by tracking the last expanded state
+  const [prevLocationPathname, setPrevLocationPathname] = useState(location.pathname);
+  
+  // If navigating from calculator to grades or vice versa, maintain expansion
+  // Make sure we exclude GPA calculator from this rule
+  const isTransitioningBetweenRelatedPages = 
+    (prevLocationPathname === '/calculator' && location.pathname.startsWith('/grades/')) || 
+    (prevLocationPathname.startsWith('/grades/') && location.pathname === '/calculator');
+  
+  // Update previous location
+  useEffect(() => {
+    setPrevLocationPathname(location.pathname);
+  }, [location.pathname]);
+  
+  // Set expanded state when on results or saved calculation
   useEffect(() => {
     if (isResultsView || isSavedCalculation) {
-      sessionStorage.setItem('hasSeenResults', 'true');
-      setHasSeenResults(true);
+      localStorage.setItem('keepNavExpanded', 'true');
+      setKeepNavExpanded(true);
     }
   }, [isResultsView, isSavedCalculation]);
   
-  // Reset expanded view when leaving calculator-related pages completely
+  // Reset expanded view for non-results pages and explicitly for GPA calculator
   useEffect(() => {
-    // If we're not on a calculator-related page, reset the expanded state
-    if (!isCalculatorRelated) {
-      sessionStorage.removeItem('hasSeenResults');
-      sessionStorage.removeItem('isResultsView');
-      setHasSeenResults(false);
+    if (!isCalculatorRelated && !location.pathname.includes('calculator') && !location.pathname.includes('grades')) {
+      localStorage.removeItem('keepNavExpanded');
+      setKeepNavExpanded(false);
     }
     
-    // Only restore expanded state when returning to calculator if it's known to be in results view
-    if (location.pathname === '/calculator') {
-      const storedIsResultsView = sessionStorage.getItem('isResultsView') === 'true';
-      if (storedIsResultsView) {
-        sessionStorage.setItem('hasSeenResults', 'true');
-        setHasSeenResults(true);
-      } else {
-        // If we're on calculator but not in results view (e.g., earlier steps), ensure it's not expanded
-        sessionStorage.removeItem('hasSeenResults');
-        setHasSeenResults(false);
-      }
+    // Explicitly reset for GPA calculator page
+    if (location.pathname === '/gpa-calculator') {
+      localStorage.removeItem('keepNavExpanded');
+      setKeepNavExpanded(false);
     }
   }, [location.pathname, isCalculatorRelated]);
-  
-  // Determine if we should use expanded view - ONLY for results view and saved calculations
-  const useExpandedView = isResultsView || isSavedCalculation;
+
+  // Determine if we should use expanded view - exclude GPA calculator
+  const useExpandedView = 
+    (keepNavExpanded || isResultsView || isSavedCalculation || isTransitioningBetweenRelatedPages) && 
+    location.pathname !== '/gpa-calculator';
   
   // Store isResultsView in session storage when it changes
   useEffect(() => {
     if (isResultsView) {
       sessionStorage.setItem('isResultsView', 'true');
-    } else if (location.pathname !== '/grades/' && !location.pathname.startsWith('/grades/')) {
-      // Clear isResultsView when not on results or saved calculation
+    } else if (!location.pathname.includes('calculator') && !location.pathname.includes('grades')) {
       sessionStorage.removeItem('isResultsView');
     }
   }, [isResultsView, location.pathname]);
