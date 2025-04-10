@@ -15,7 +15,7 @@ import {
   alpha,
   Grid,
 } from "@mui/material";
-import { RefreshCw } from "lucide-react";
+import { RefreshCw, BarChart2 } from "lucide-react";
 import { useAuth } from "../../src/contexts/AuthContext";
 import { useCalculator } from "../../src/contexts/CalculatorContext";
 import SaveCalculationDialog from "../dialogs/SaveCalculationDialog";
@@ -38,6 +38,7 @@ const Results = ({
   const { user } = useAuth();
   const { enqueueSnackbar } = useSnackbar();
   const theme = useTheme();
+  const isDark = theme.palette.mode === "dark";
 
   // Get state from context
   const {
@@ -511,24 +512,72 @@ const Results = ({
         {/* Right Panel - Assignment Details */}
         <Grid item xs={12} md={7} lg={8} xl={9}>
           {mode === "manual" ? (
-            <ManualGradeTable
-              categories={categories}
-              manualGrades={manualGrades}
-              whatIfMode={whatIfMode}
-              onGradeChange={(newGrade) => {
-                const updatedGrades = manualGrades.map((g) =>
-                  g.categoryName === newGrade.categoryName ? newGrade : g
-                );
-                if (
-                  !updatedGrades.find(
-                    (g) => g.categoryName === newGrade.categoryName
-                  )
-                ) {
-                  updatedGrades.push(newGrade);
-                }
-                setManualGrades(updatedGrades);
-              }}
-            />
+            <div>
+              <div style={{ 
+                display: "flex", 
+                justifyContent: "space-between", 
+                alignItems: "center", 
+                marginBottom: "16px" 
+              }}>
+                <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
+                  <div
+                    style={{
+                      width: 40,
+                      height: 40,
+                      borderRadius: "10px",
+                      backgroundColor: isDark 
+                        ? "transparent"
+                        : alpha(theme.palette.primary.main, 0.1),
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      color: theme.palette.primary.main,
+                      border: isDark
+                        ? `1px solid ${alpha(theme.palette.primary.main, 0.5)}`
+                        : "none",
+                    }}
+                  >
+                    <BarChart2 size={24} />
+                  </div>
+                  <Typography variant="h5" sx={{ fontWeight: 600 }}>
+                    Manual Grade Breakdown
+                  </Typography>
+                </div>
+                
+                {/* Add Calculate Another button for manual mode */}
+                {showCalculateAnotherButton && (
+                  <Button
+                    variant="outlined"
+                    onClick={handleReset}
+                    startIcon={<RefreshCw size={18} />}
+                    size="medium"
+                    sx={{
+                      borderRadius: "12px",
+                    }}
+                  >
+                    Calculate Another
+                  </Button>
+                )}
+              </div>
+              <ManualGradeTable
+                categories={categories}
+                manualGrades={manualGrades}
+                whatIfMode={whatIfMode}
+                onGradeChange={(newGrade) => {
+                  const updatedGrades = manualGrades.map((g) =>
+                    g.categoryName === newGrade.categoryName ? newGrade : g
+                  );
+                  if (
+                    !updatedGrades.find(
+                      (g) => g.categoryName === newGrade.categoryName
+                    )
+                  ) {
+                    updatedGrades.push(newGrade);
+                  }
+                  setManualGrades(updatedGrades);
+                }}
+              />
+            </div>
           ) : (
             <Box sx={{ height: "100%" }}>
               <AssignmentTable
