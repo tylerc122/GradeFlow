@@ -21,6 +21,7 @@ import { useSnackbar } from "notistack";
 import AssignmentIcon from "@mui/icons-material/Assignment";
 import DeleteIcon from "@mui/icons-material/Delete";
 import { useCalculator } from "../src/contexts/CalculatorContext";
+import { useAuth } from "../src/contexts/AuthContext";
 
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8000";
 
@@ -43,9 +44,20 @@ const MyGradesPage = () => {
   const [refreshTrigger, setRefreshTrigger] = useState(0);
   const [redirectChecked, setRedirectChecked] = useState(false);
   const [readyToRender, setReadyToRender] = useState(false);
+  const { user } = useAuth();
+
+  useEffect(() => {
+    if (!user) {
+      enqueueSnackbar("Please log in to view your saved calculations", { variant: "error" });
+      navigate("/login");
+      return;
+    }
+  }, [user, navigate]);
 
   useEffect(() => {
     const fetchCalculations = async () => {
+      if (!user) return;
+      
       try {
         const response = await fetch(`${API_URL}/api/grades/saved`, {
           credentials: "include",
@@ -159,6 +171,11 @@ const MyGradesPage = () => {
       );
 
       if (!response.ok) {
+        if (response.status === 401 || response.status === 403) {
+          enqueueSnackbar("Please log in to delete calculations", { variant: "error" });
+          navigate("/login");
+          return;
+        }
         throw new Error("Failed to delete calculation");
       }
 

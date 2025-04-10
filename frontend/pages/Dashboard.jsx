@@ -48,6 +48,7 @@ import {
 import GPADashboardCard from "../components/GPADashboardCard";
 import { useCalculator } from "../src/contexts/CalculatorContext";
 import { useSnackbar } from "notistack";
+import { useAuth } from "../src/contexts/AuthContext";
 
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8000";
 
@@ -58,6 +59,7 @@ const Dashboard = () => {
   const isDark = mode === "dark";
   const { enqueueSnackbar } = useSnackbar();
   const { setLastViewedCalculation } = useCalculator();
+  const { user } = useAuth();
 
   // State for different data sections
   const [stats, setStats] = useState(null);
@@ -73,8 +75,24 @@ const Dashboard = () => {
   const [error, setError] = useState(null);
   const [refreshing, setRefreshing] = useState(false);
 
+  // Handle unauthorized or forbidden responses
+  const handleAuthError = (response) => {
+    if (response.status === 401 || response.status === 403) {
+      enqueueSnackbar("Please login to view your dashboard", { variant: "error" });
+      navigate("/login");
+      return true;
+    }
+    return false;
+  };
+
   // Fetch all dashboard data
   const fetchDashboardData = async () => {
+    // Don't attempt to fetch if not logged in
+    if (!user) {
+      navigate("/login");
+      return;
+    }
+
     setRefreshing(true);
     setLoading({
       stats: !stats,
@@ -91,6 +109,9 @@ const Dashboard = () => {
           credentials: "include",
         }
       );
+      
+      if (handleAuthError(statsResponse)) return;
+      
       if (!statsResponse.ok) throw new Error("Failed to fetch statistics");
       const statsData = await statsResponse.json();
       setStats(statsData);
@@ -103,6 +124,9 @@ const Dashboard = () => {
           credentials: "include",
         }
       );
+      
+      if (handleAuthError(recentResponse)) return;
+      
       if (!recentResponse.ok)
         throw new Error("Failed to fetch recent calculations");
       const recentData = await recentResponse.json();
@@ -116,6 +140,9 @@ const Dashboard = () => {
           credentials: "include",
         }
       );
+      
+      if (handleAuthError(trendsResponse)) return;
+      
       if (!trendsResponse.ok) throw new Error("Failed to fetch trends");
       const trendsData = await trendsResponse.json();
       setTrends(trendsData);
@@ -132,7 +159,7 @@ const Dashboard = () => {
 
   useEffect(() => {
     fetchDashboardData();
-  }, []);
+  }, [user]);
 
   const getGradeColor = (grade) => {
     if (!grade && grade !== 0) return theme.palette.text.secondary;

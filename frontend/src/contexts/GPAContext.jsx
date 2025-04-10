@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from "react";
+import { useAuth } from "./AuthContext";
 
 const GPAContext = createContext();
 
@@ -7,6 +8,7 @@ export const GPAProvider = ({ children }) => {
   const [courses, setCourses] = useState([]);
   const [majorCourses, setMajorCourses] = useState([]);
   const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8000";
+  const { user } = useAuth();
   
   // Central GPA data
   const [centralGPA, setCentralGPA] = useState({
@@ -32,9 +34,29 @@ export const GPAProvider = ({ children }) => {
 
   // Load saved data from backend and localStorage on mount
   useEffect(() => {
-    fetchSavedGPAs();
+    if (user) {
+      fetchSavedGPAs();
+    }
     loadLocalStorageData();
-  }, []);
+  }, [user]);
+
+  // React to authentication state changes
+  useEffect(() => {
+    if (!user) {
+      // Reset all state if user logs out
+      setCourses([]);
+      setMajorCourses([]);
+      setIsEditing(false);
+      setCurrentGPAId(null);
+      setCentralGPA({
+        name: "My GPA",
+        lastUpdated: new Date().toISOString(),
+        overallGPA: "0.00",
+        majorGPA: "0.00"
+      });
+      clearLocalStorageData();
+    }
+  }, [user]);
 
   // Save to localStorage whenever courses or majorCourses change
   useEffect(() => {
@@ -53,6 +75,9 @@ export const GPAProvider = ({ children }) => {
   // Load data from localStorage
   const loadLocalStorageData = () => {
     try {
+      // Only load data from localStorage if user is authenticated
+      if (!user) return;
+      
       const savedData = localStorage.getItem('gpaCalculatorData');
       if (savedData) {
         const { courses: savedCourses, majorCourses: savedMajorCourses, centralGPA: savedCentralGPA, hiddenGPAs: savedHiddenGPAs } = JSON.parse(savedData);

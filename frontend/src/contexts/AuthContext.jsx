@@ -148,8 +148,23 @@ export const AuthProvider = ({ children }) => {
         throw new Error("Logout failed");
       }
 
+      // Clear all user-related data from localStorage
+      localStorage.removeItem('gpaCalculatorData');
+      localStorage.removeItem('calculatorState');
+      localStorage.removeItem('categories');
+      localStorage.removeItem('grades');
+      localStorage.removeItem('gradeCategories');
+      
+      // Clear all user-related data from sessionStorage
+      sessionStorage.removeItem('isResultsView');
+      sessionStorage.removeItem('lastViewedCalculation');
+      sessionStorage.removeItem('calculatorState');
+      sessionStorage.removeItem('calculatorData');
+      sessionStorage.removeItem('categories');
+      sessionStorage.removeItem('hasSeenResults');
+      
       setUser(null);
-      navigate("/login");
+      navigate("/");
     } catch (error) {
       console.error("Logout failed:", error);
     }

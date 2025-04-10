@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef, useCallback, Suspense } from "react
 import { useParams, useNavigate } from "react-router-dom";
 import { useSnackbar } from "notistack";
 import { useCalculator } from "../src/contexts/CalculatorContext";
+import { useAuth } from "../src/contexts/AuthContext";
 // Lazy load components
 const Results = React.lazy(() => import("../components/results/Results"));
 const SaveCalculationDialog = React.lazy(() => import("../components/dialogs/SaveCalculationDialog"));
@@ -25,6 +26,7 @@ const SavedCalculation = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const { enqueueSnackbar } = useSnackbar();
+  const { user } = useAuth();
   const {
     setCategories,
     categories,
@@ -68,6 +70,14 @@ const SavedCalculation = () => {
   const [retryCount, setRetryCount] = useState(0);
   const [saveStatus, setSaveStatus] = useState("saved");
   const [lastSaved, setLastSaved] = useState(null);
+
+  // Redirect to login if not authenticated
+  useEffect(() => {
+    if (!user) {
+      enqueueSnackbar("Please login to view your saved calculations", { variant: "error" });
+      navigate("/login");
+    }
+  }, [user, navigate]);
 
   // Store original calculator state when first mounting the component
   useEffect(() => {
@@ -569,78 +579,50 @@ const SavedCalculation = () => {
     }, 0);
   };
 
+  // Handle unauthorized response
+  const handleAuthError = (response) => {
+    if (response.status === 401 || response.status === 403) {
+      enqueueSnackbar("Please login to view this calculation", { variant: "error" });
+      navigate("/login");
+      return true;
+    }
+    return false;
+  };
+
   useEffect(() => {
+    // Skip fetching if no user is authenticated
+    if (!user) return;
+
     const fetchCalculation = async () => {
       try {
+        setLoading(true);
+        
         const response = await fetch(`${API_URL}/api/grades/${id}`, {
+          method: "GET",
           credentials: "include",
         });
 
+        // Handle unauthorized responses
+        if (handleAuthError(response)) return;
+
         if (!response.ok) {
-          if (response.status === 401) {
-            navigate("/login");
-            return;
+          // Handle other error statuses
+          if (response.status === 404) {
+            throw new Error("Calculation not found. It may have been deleted.");
+          } else {
+            throw new Error(`Error: ${response.status} ${response.statusText}`);
           }
-          throw new Error(
-            response.status === 404
-              ? "Calculation not found"
-              : "Failed to fetch calculation"
-          );
         }
 
         const data = await response.json();
         
-        // Handle the overall_grade before transformation only for extreme values
-        if (data.overall_grade && typeof data.overall_grade === 'number') {
-          if (data.overall_grade >= 10000) {
-            console.warn(`Extremely high grade value detected: ${data.overall_grade}. Will recalculate.`);
-            data.overall_grade = null; // Will be recalculated
-          }
-        }
-        
+        // Transform the data for display
         const transformedData = transformCalculationData(data);
-
-        // If overall_grade is null or clearly wrong, recalculate it
-        if (transformedData.overall_grade === null || 
-            transformedData.overall_grade === undefined || 
-            transformedData.overall_grade > 100) {
-          
-          console.log("Recalculating overall grade from category data");
-          
-          // Recalculate from the category data
-          transformedData.overall_grade = transformedData.categories.reduce((total, category) => {
-            // Skip categories with no assignments
-            if (!category.assignments || category.assignments.length === 0) {
-              return total;
-            }
-            
-            // Calculate visible assignments grade
-            const visibleAssignments = category.assignments.filter(a => !a.hidden);
-            if (visibleAssignments.length === 0) return total;
-            
-            const totalPoints = visibleAssignments.reduce(
-              (sum, a) => sum + Number(a.total_points || 1), 0
-            );
-            const earnedPoints = visibleAssignments.reduce(
-              (sum, a) => sum + Number(a.score || 0), 0
-            );
-            
-            const categoryGrade = totalPoints > 0 ? (earnedPoints / totalPoints) * 100 : 0;
-            return total + (categoryGrade * (category.weight / 100));
-          }, 0);
-          
-          // Make sure the grade is valid
-          if (transformedData.overall_grade < 0 || !isFinite(transformedData.overall_grade) || isNaN(transformedData.overall_grade)) {
-            transformedData.overall_grade = 0;
-          }
-        }
-
-        // Extract hidden assignments from the loaded data
+        
+        // Process hidden assignments
         const loadedHiddenAssignments = [];
-        
-        // Extract hypothetical scores from saved assignments
         const loadedHypotheticalScores = {};
-        
+
         transformedData.categories.forEach((category) => {
           category.assignments.forEach((assignment) => {
             if (assignment.hidden) {
