@@ -453,6 +453,14 @@ const SavedCalculation = () => {
       };
     });
 
+    // Fix extreme grade values that are likely calculation errors
+    if (data.overall_grade && typeof data.overall_grade === 'number') {
+      if (data.overall_grade >= 10000) {
+        console.warn(`Extremely high grade value detected: ${data.overall_grade}. Will recalculate.`);
+        data.overall_grade = null; // Will be recalculated
+      }
+    }
+
     return {
       ...data,
       categories: transformedCategories,
@@ -530,10 +538,58 @@ const SavedCalculation = () => {
         }
 
         const data = await response.json();
+        
+        // Handle the overall_grade before transformation only for extreme values
+        if (data.overall_grade && typeof data.overall_grade === 'number') {
+          if (data.overall_grade >= 10000) {
+            console.warn(`Extremely high grade value detected: ${data.overall_grade}. Will recalculate.`);
+            data.overall_grade = null; // Will be recalculated
+          }
+        }
+        
         const transformedData = transformCalculationData(data);
+
+        // If overall_grade is null or clearly wrong, recalculate it
+        if (transformedData.overall_grade === null || 
+            transformedData.overall_grade === undefined || 
+            transformedData.overall_grade > 100) {
+          
+          console.log("Recalculating overall grade from category data");
+          
+          // Recalculate from the category data
+          transformedData.overall_grade = transformedData.categories.reduce((total, category) => {
+            // Skip categories with no assignments
+            if (!category.assignments || category.assignments.length === 0) {
+              return total;
+            }
+            
+            // Calculate visible assignments grade
+            const visibleAssignments = category.assignments.filter(a => !a.hidden);
+            if (visibleAssignments.length === 0) return total;
+            
+            const totalPoints = visibleAssignments.reduce(
+              (sum, a) => sum + Number(a.total_points || 1), 0
+            );
+            const earnedPoints = visibleAssignments.reduce(
+              (sum, a) => sum + Number(a.score || 0), 0
+            );
+            
+            const categoryGrade = totalPoints > 0 ? (earnedPoints / totalPoints) * 100 : 0;
+            return total + (categoryGrade * (category.weight / 100));
+          }, 0);
+          
+          // Make sure the grade is valid
+          if (transformedData.overall_grade < 0 || !isFinite(transformedData.overall_grade) || isNaN(transformedData.overall_grade)) {
+            transformedData.overall_grade = 0;
+          }
+        }
 
         // Extract hidden assignments from the loaded data
         const loadedHiddenAssignments = [];
+        
+        // Extract hypothetical scores from saved assignments
+        const loadedHypotheticalScores = {};
+        
         transformedData.categories.forEach((category) => {
           category.assignments.forEach((assignment) => {
             if (assignment.hidden) {
@@ -541,8 +597,31 @@ const SavedCalculation = () => {
                 `${category.name}-${assignment.name}`
               );
             }
+            
+            // Check if this assignment had a hypothetical score that was saved
+            if (assignment.hasHypotheticalScore && assignment.originalScore !== undefined) {
+              const scoreKey = `${category.name}-${assignment.name}`;
+              loadedHypotheticalScores[scoreKey] = {
+                score: assignment.score,
+                total_points: assignment.total_points,
+                categoryName: category.name,
+                name: assignment.name
+              };
+              
+              // Restore original score for proper display
+              assignment.savedHypotheticalScore = assignment.score;
+            }
           });
         });
+
+        // Load hypothetical scores from the saved data if available
+        if (transformedData.hypothetical_scores) {
+          Object.entries(transformedData.hypothetical_scores).forEach(([key, value]) => {
+            if (!loadedHypotheticalScores[key]) {
+              loadedHypotheticalScores[key] = value;
+            }
+          });
+        }
 
         // Create a temporary context for this saved calculation view only
         // Don't reset the original calculator context completely
@@ -555,14 +634,17 @@ const SavedCalculation = () => {
         // For these viewing settings, we use local state when available to avoid context pollution
         setHiddenAssignments(loadedHiddenAssignments);
         
+        // Load the hypothetical scores that were saved
+        setHypotheticalScores(loadedHypotheticalScores);
+        
         // Update original calculator state with the initial hidden assignments
         // This ensures changes to hidden assignments are properly detected
         if (originalCalculatorState.current) {
           originalCalculatorState.current.hiddenAssignments = [...loadedHiddenAssignments];
+          originalCalculatorState.current.hypotheticalScores = {...loadedHypotheticalScores};
         }
         
         setHypotheticalAssignments([]);
-        setHypotheticalScores({});
         
         // Get the calculation mode from the saved data (default to "blackboard" for backwards compatibility)
         const calculationMode = transformedData.results?.calculation_mode || "blackboard";
@@ -578,6 +660,11 @@ const SavedCalculation = () => {
 
         setError(null);
         setSaveStatus("saved");
+        
+        // Enable what-if mode to show the saved hypothetical scores
+        if (Object.keys(loadedHypotheticalScores).length > 0) {
+          setWhatIfMode(true);
+        }
       } catch (err) {
         console.error("Error in fetchCalculation:", err);
         setError(err.message);

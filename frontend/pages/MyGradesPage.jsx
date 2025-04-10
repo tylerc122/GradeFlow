@@ -60,10 +60,35 @@ const MyGradesPage = () => {
         }
 
         const data = await response.json();
-        setCalculations(data);
         
-        if (lastViewedCalculation && data.length > 0 && !showGradesList) {
-          const calculationExists = data.some(calc => calc.id.toString() === lastViewedCalculation.toString());
+        // Fix only extremely problematic grade values
+        const normalizedData = data.map(calculation => {
+          if (calculation.results && typeof calculation.results.overall_grade === 'number') {
+            let grade = calculation.results.overall_grade;
+            
+            // Only handle extremely high values that are likely errors
+            if (grade >= 10000) {
+              grade = 0;
+            }
+            
+            // Ensure grade is valid
+            if (grade < 0 || !isFinite(grade) || isNaN(grade)) grade = 0;
+            
+            return {
+              ...calculation,
+              results: {
+                ...calculation.results,
+                overall_grade: grade
+              }
+            };
+          }
+          return calculation;
+        });
+        
+        setCalculations(normalizedData);
+        
+        if (lastViewedCalculation && normalizedData.length > 0 && !showGradesList) {
+          const calculationExists = normalizedData.some(calc => calc.id.toString() === lastViewedCalculation.toString());
           
           if (calculationExists) {
             navigate(`/grades/${lastViewedCalculation}`);
@@ -262,7 +287,9 @@ const MyGradesPage = () => {
                           color: getGradeColor(calc.results.overall_grade),
                         }}
                       >
-                        {calc.results.overall_grade.toFixed(1)}%
+                        {isFinite(calc.results.overall_grade) && !isNaN(calc.results.overall_grade) 
+                          ? parseFloat(calc.results.overall_grade).toFixed(1) 
+                          : "0.0"}%
                       </Typography>
                     </Box>
                   </Box>

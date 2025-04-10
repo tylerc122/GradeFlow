@@ -285,6 +285,58 @@ const Calculator = () => {
     setSavingError(null);
 
     try {
+      // Calculate the overall grade properly before adding to calculation data
+      let overallGrade;
+      if (calculatorMode === "manual") {
+        overallGrade = calculateManualGradePercentage();
+      } else {
+        // For blackboard mode, explicitly calculate with proper checks
+        overallGrade = categories.reduce((total, category) => {
+          const categoryHypotheticals = hypotheticalAssignments.filter(
+            (a) => a.categoryName === category.name
+          );
+
+          const allAssignments = [
+            ...(category.assignments || []),
+            ...categoryHypotheticals,
+          ];
+          
+          // Filter out hidden assignments
+          const visibleAssignments = allAssignments.filter(
+            (assignment) => !hiddenAssignments.includes(`${category.name}-${assignment.name}`)
+          );
+          
+          if (!visibleAssignments.length) return total;
+          
+          // Calculate category grade
+          let totalEarned = 0;
+          let totalPossible = 0;
+          
+          visibleAssignments.forEach(assignment => {
+            const scoreKey = `${category.name}-${assignment.name}`;
+            const score = hypotheticalScores[scoreKey]?.score ?? assignment.score;
+            
+            // Ensure values are valid numbers
+            const numericScore = Number(score) || 0;
+            const numericTotal = Number(assignment.total_points) || 1;
+            
+            totalEarned += numericScore;
+            totalPossible += numericTotal;
+          });
+          
+          const categoryGrade = totalPossible > 0 ? (totalEarned / totalPossible) * 100 : 0;
+          const weightedGrade = categoryGrade * (category.weight / 100);
+          
+          return total + weightedGrade;
+        }, 0);
+      }
+
+      // Validate that the overall grade is not negative or invalid
+      if (overallGrade < 0 || !isFinite(overallGrade) || isNaN(overallGrade)) {
+        console.warn(`Invalid calculated grade: ${overallGrade}. Defaulting to 0.`);
+        overallGrade = 0;
+      }
+
       const calculationData = {
         ...saveData,
         raw_data: rawGradeData,
@@ -293,23 +345,44 @@ const Calculator = () => {
           name: category.name,
           weight: category.weight,
           assignments: [
-            ...(category.assignments || []),
+            ...(category.assignments || []).map(assignment => {
+              // For each assignment, check if there's a hypothetical score
+              const scoreKey = `${category.name}-${assignment.name}`;
+              const hypotheticalScore = hypotheticalScores[scoreKey];
+              
+              if (hypotheticalScore) {
+                // If there's a hypothetical score, use it
+                return {
+                  ...assignment,
+                  score: hypotheticalScore.score,
+                  originalScore: assignment.score, // Store the original score
+                  hasHypotheticalScore: true
+                };
+              }
+              
+              return assignment;
+            }),
             ...hypotheticalAssignments.filter(
               (a) => a.categoryName === category.name
             ),
           ],
         })),
-        // Use a proper calculation for overall_grade that handles both number and letter grades
-        overall_grade:
-          calculatorMode === "manual"
-            ? calculateManualGradePercentage()
-            : calculateWeightedGrade(),
+        // Save hypothetical scores separately for reference
+        hypothetical_scores: hypotheticalScores,
+        // Use the validated overall grade
+        overall_grade: overallGrade,
         total_points_earned: categories.reduce((total, category) => {
           return (
             total +
             (category.assignments || []).reduce((sum, assignment) => {
+              // Use hypothetical score if available
+              const scoreKey = `${category.name}-${assignment.name}`;
+              const score = (hypotheticalScores[scoreKey]?.score !== undefined) 
+                ? hypotheticalScores[scoreKey].score 
+                : assignment.score;
+                
               if (assignment.status === "GRADED") {
-                return sum + assignment.score;
+                return sum + score;
               }
               return sum;
             }, 0)
