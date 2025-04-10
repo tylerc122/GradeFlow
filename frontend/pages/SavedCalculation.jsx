@@ -69,7 +69,7 @@ const SavedCalculation = () => {
   const [saveStatus, setSaveStatus] = useState("saved");
   const [lastSaved, setLastSaved] = useState(null);
 
-  // Save original calculator state on mount
+  // Store original calculator state when first mounting the component
   useEffect(() => {
     // Store original calculator state
     originalCalculatorState.current = {
@@ -181,6 +181,57 @@ const SavedCalculation = () => {
     } catch (error) {
       // If save fails, keep the user on the page
       console.error("Failed to save before navigation:", error);
+    }
+  };
+
+  // Add a handler for toggling What-If Mode
+  const handleToggleWhatIfMode = () => {
+    // If turning on what-if mode, apply all saved hypothetical scores
+    if (!whatIfMode) {
+      // Deep clone categories to avoid direct state mutation
+      const updatedCategories = JSON.parse(JSON.stringify(categories));
+      
+      // Apply hypothetical scores to the categories
+      updatedCategories.forEach(category => {
+        if (category.assignments) {
+          category.assignments.forEach(assignment => {
+            const scoreKey = `${category.name}-${assignment.name}`;
+            // If this assignment has a saved hypothetical score, apply it
+            if (assignment.hasHypotheticalScore && assignment.originalScore !== undefined) {
+              assignment.score = assignment.savedHypotheticalScore;
+            }
+          });
+        }
+      });
+      
+      // Update categories state with applied hypothetical scores
+      setCategories(updatedCategories);
+      setWhatIfMode(true);
+    } else {
+      // If turning off what-if mode, revert to original scores
+      const updatedCategories = JSON.parse(JSON.stringify(categories));
+      
+      // Revert to original scores
+      updatedCategories.forEach(category => {
+        if (category.assignments) {
+          category.assignments.forEach(assignment => {
+            const scoreKey = `${category.name}-${assignment.name}`;
+            // If this assignment has a saved hypothetical score, revert to original
+            if (assignment.hasHypotheticalScore && assignment.originalScore !== undefined) {
+              assignment.score = assignment.originalScore;
+            }
+          });
+        }
+      });
+      
+      // Update categories state with original scores
+      setCategories(updatedCategories);
+      setWhatIfMode(false);
+      
+      // If we have unsaved changes but turn off what-if mode, consider it saved
+      if (saveStatus === "unsaved") {
+        setSaveStatus("saved");
+      }
     }
   };
 
@@ -610,6 +661,9 @@ const SavedCalculation = () => {
               
               // Restore original score for proper display
               assignment.savedHypotheticalScore = assignment.score;
+              
+              // For initial display, use the original score since we start in non-what-if mode
+              assignment.score = assignment.originalScore;
             }
           });
         });
@@ -637,8 +691,8 @@ const SavedCalculation = () => {
         // Load the hypothetical scores that were saved
         setHypotheticalScores(loadedHypotheticalScores);
         
-        // Update original calculator state with the initial hidden assignments
-        // This ensures changes to hidden assignments are properly detected
+        // Update original calculator state with the initial loaded state
+        // This ensures changes are only tracked after this initial load
         if (originalCalculatorState.current) {
           originalCalculatorState.current.hiddenAssignments = [...loadedHiddenAssignments];
           originalCalculatorState.current.hypotheticalScores = {...loadedHypotheticalScores};
@@ -661,10 +715,8 @@ const SavedCalculation = () => {
         setError(null);
         setSaveStatus("saved");
         
-        // Enable what-if mode to show the saved hypothetical scores
-        if (Object.keys(loadedHypotheticalScores).length > 0) {
-          setWhatIfMode(true);
-        }
+        // Always start in non-what-if mode regardless of whether hypothetical scores exist
+        setWhatIfMode(false);
       } catch (err) {
         console.error("Error in fetchCalculation:", err);
         setError(err.message);
@@ -685,25 +737,32 @@ const SavedCalculation = () => {
     setHypotheticalScores,
     setRawGradeData,
     setManualGrades,
+    setWhatIfMode,
   ]);
 
-  // Tracks changes
+  // Only track changes after the user has made modifications
+  // This prevents a saved calculation from being marked as unsaved immediately when opened
   useEffect(() => {
+    // Only track changes if what-if mode has been enabled by the user
     if (whatIfMode) {
-      // Check if there are active changes
-      const hasHypotheticalChanges = Object.keys(hypotheticalScores).length > 0 || 
-                                   hypotheticalAssignments.length > 0;
-      
-      // Get original hidden assignments for comparison
+      // Get snapshot of state from when component was mounted
+      const originalHypotheticalScores = originalCalculatorState.current?.hypotheticalScores || {};
       const originalHiddenAssignments = originalCalculatorState.current?.hiddenAssignments || [];
       
-      // Check if hidden assignments have changed
+      // Check if there are actual changes compared to the original loaded state
+      const scoresChanged = Object.keys(hypotheticalScores).length !== Object.keys(originalHypotheticalScores).length ||
+        Object.entries(hypotheticalScores).some(([key, value]) => {
+          const originalValue = originalHypotheticalScores[key];
+          return !originalValue || originalValue.score !== value.score;
+        });
+      
       const hiddenAssignmentsChanged = 
         hiddenAssignments.length !== originalHiddenAssignments.length ||
         hiddenAssignments.some(key => !originalHiddenAssignments.includes(key)) ||
         originalHiddenAssignments.some(key => !hiddenAssignments.includes(key));
       
-      if ((hasHypotheticalChanges || hiddenAssignmentsChanged) && saveStatus !== "saving") {
+      // Only mark as unsaved if there are real user changes
+      if ((scoresChanged || hiddenAssignmentsChanged) && saveStatus !== "saving") {
         setSaveStatus("unsaved");
       }
     }
@@ -792,6 +851,7 @@ const SavedCalculation = () => {
           lastSaved={lastSaved}
           saveStatus={saveStatus}
           onNavigateBack={handleBackToGrades}
+          onToggleWhatIfMode={handleToggleWhatIfMode}
         />
       </Suspense>
 
