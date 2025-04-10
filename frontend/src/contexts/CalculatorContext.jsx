@@ -41,6 +41,11 @@ export const CalculatorProvider = ({ children }) => {
   // Add beforeunload event handler to warn before page refresh
   useEffect(() => {
     const handleBeforeUnload = (e) => {
+      // Skip warning if we're intentionally resetting
+      if (window.sessionStorage.getItem('silentReset') === 'true') {
+        return;
+      }
+      
       if (hasData) {
         // Standard way to show a confirmation dialog before leaving
         const message = "You have unsaved data. Are you sure you want to leave? All your data will be lost.";
@@ -56,9 +61,25 @@ export const CalculatorProvider = ({ children }) => {
       window.removeEventListener('beforeunload', handleBeforeUnload);
     };
   }, [hasData]);
+  
+  // Add effect to check for force reset on component mount
+  useEffect(() => {
+    const forceReset = sessionStorage.getItem('forceReset');
+    if (forceReset === 'true') {
+      // Clear the flag
+      sessionStorage.removeItem('forceReset');
+      // Hard reset categories and other state
+      setCategories([]);
+      setActiveStep(0);
+    }
+  }, []);
 
   // Reset all calculator state
   const resetCalculator = () => {
+    // First set a flag to silence the beforeunload warning
+    window.sessionStorage.setItem('silentReset', 'true');
+    
+    // Completely reset all state
     setActiveStep(0);
     setCategories([]);
     setError(null);
@@ -75,8 +96,22 @@ export const CalculatorProvider = ({ children }) => {
     setSelectedCategory(null);
     setHiddenAssignments([]);
     setIsResultsView(false);
-    // Clear isResultsView from session storage
+    
+    // Clear ALL session and local storage related to calculator state
     sessionStorage.removeItem('isResultsView');
+    sessionStorage.removeItem('lastViewedCalculation');
+    sessionStorage.removeItem('calculatorState');
+    localStorage.removeItem('calculatorState');
+    localStorage.removeItem('categories');
+    localStorage.removeItem('grades');
+    
+    // Set a flag for the Calculator component to check on mount
+    window.sessionStorage.setItem('forceReset', 'true');
+    
+    // Clear the silent reset flag after a moment
+    setTimeout(() => {
+      window.sessionStorage.removeItem('silentReset');
+    }, 1000);
   };
 
   // Function to save last viewed calculation to session storage

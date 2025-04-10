@@ -22,6 +22,19 @@ const CategorySetup = ({ categories, setCategories, error, setError, onValidatio
 
   // Load categories from localStorage on mount
   useEffect(() => {
+    // Check if there's a clearCategories flag set - if so, don't load from localStorage
+    const clearCategoriesFlag = sessionStorage.getItem('clearCategories');
+    
+    if (clearCategoriesFlag === 'true') {
+      // Remove the flag once checked
+      sessionStorage.removeItem('clearCategories');
+      // Make sure categories are empty
+      setCategories([]);
+      // Clear local storage
+      localStorage.removeItem('gradeCategories');
+      return;
+    }
+    
     const savedCategories = localStorage.getItem('gradeCategories');
     if (savedCategories && (!categories || categories.length === 0)) {
       try {

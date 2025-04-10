@@ -25,6 +25,7 @@ import { AssignmentTable } from "./AssignmentTable";
 import { HypotheticalAssignmentDialog } from "../dialogs/HypotheticalAssignmentDialog";
 import ManualGradeTable from "./ManualGradeTable";
 import { letterGradeToPoints, isLetterGrade } from "../../src/utils/letterGradeUtils";
+import { cleanResetCalculator } from "../../reset-workaround";
 
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8000";
 
@@ -83,10 +84,12 @@ const Results = ({
     };
   }, [setIsResultsView, isSavedCalculation,]);
 
-  // Use prop if provided, otherwise use context value
+  // Use prop if provided, otherwise use context value or default to true if not in SavedCalculation view
   const showCalculateAnotherButton = propShowCalculateAnotherButton !== undefined 
     ? propShowCalculateAnotherButton 
-    : contextShowCalculateAnotherButton;
+    : (contextShowCalculateAnotherButton !== undefined
+        ? contextShowCalculateAnotherButton
+        : !isSavedCalculation); // Default to true, except in saved calculation view
     
   // Use prop mode if provided, otherwise use context mode
   const mode = propMode !== undefined ? propMode : contextMode;
@@ -360,13 +363,17 @@ const Results = ({
       return;
     }
 
-    if (!user || (user && hasBeenSaved)) {
-      resetCalculator();
-      setActiveStep(0);
-      setIsResultsView(false);
-    } else {
-      setResetConfirmOpen(true);
-    }
+    // Always show a confirmation dialog
+    setResetConfirmOpen(true);
+  };
+
+  // Add a function to reset calculator without triggering browser popup
+  const performSilentReset = () => {
+    // Close the dialog first
+    setResetConfirmOpen(false);
+    
+    // Use the clean reset utility to handle the reset completely outside of React
+    cleanResetCalculator();
   };
 
   if (!categories || categories.length === 0) {
@@ -404,23 +411,18 @@ const Results = ({
           },
         }}
       >
-        <DialogTitle sx={{ fontWeight: 600 }}>Start New Calculation?</DialogTitle>
+        <DialogTitle sx={{ fontWeight: 600 }}>Reset Calculator</DialogTitle>
         <DialogContent>
-          {user && !hasBeenSaved ? (
-            <Typography>
-              Your current calculation hasn't been saved. All progress will be lost if you continue.
+          <Typography>
+            Are you sure you want to reset the calculator? This will take you back to the category setup screen with no categories.
+          </Typography>
+          <Typography sx={{ mt: 1, color: 'warning.main' }}>
+            Any unsaved changes will be lost.
+          </Typography>
+          {!user && (
+            <Typography variant="body2" color="primary" sx={{ mt: 1 }}>
+              Want to save your calculations? Create an account or log in to access this feature.
             </Typography>
-          ) : (
-            <>
-              <Typography paragraph>
-                All progress will be lost if you continue.
-              </Typography>
-              {!user && (
-                <Typography variant="body2" color="primary" sx={{ mt: 1 }}>
-                  Want to save your calculations? Create an account or log in to access this feature.
-                </Typography>
-              )}
-            </>
           )}
         </DialogContent>
         <DialogActions sx={{ p: 2 }}>
@@ -438,15 +440,12 @@ const Results = ({
           )}
           <Button
             onClick={() => {
-              resetCalculator();
-              setActiveStep(0);
-              setIsResultsView(false);
-              setResetConfirmOpen(false);
+              performSilentReset();
             }}
             color="primary"
             variant="contained"
           >
-            Continue
+            Reset Calculator
           </Button>
         </DialogActions>
       </Dialog>
@@ -542,6 +541,8 @@ const Results = ({
                 hiddenAssignments={hiddenAssignments}
                 onToggleAssignmentVisibility={handleToggleAssignmentVisibility}
                 onDeleteAssignment={handleDeleteAssignment}
+                showCalculateAnotherButton={showCalculateAnotherButton}
+                onCalculateAnother={handleReset}
               />
             </Box>
           )}
@@ -565,67 +566,6 @@ const Results = ({
         }}
         categoryName={selectedCategory}
       />
-
-      {/* Navigation Buttons */}
-      {showCalculateAnotherButton && (
-        <Box
-          sx={{
-            display: "flex",
-            justifyContent: "flex-start",
-            gap: 2,
-            mt: 4,
-            mb: 4,
-          }}
-        >
-          <Button
-            variant="outlined"
-            onClick={handleReset}
-            startIcon={<RefreshCw size={18} />}
-            size="large"
-            sx={{
-              px: 4,
-              minWidth: 120,
-              borderRadius: "12px",
-            }}
-          >
-            Calculate Another
-          </Button>
-
-          <Button
-            variant="contained"
-            onClick={() => {
-              if (user) {
-                setSaveDialogOpen(true);
-              } else {
-                enqueueSnackbar("Please log in to save your calculation", { 
-                  variant: "info",
-                  action: (key) => (
-                    <Button
-                      color="inherit"
-                      size="small"
-                      onClick={() => {
-                        navigate("/login");
-                      }}
-                    >
-                      Login
-                    </Button>
-                  ),
-                });
-                navigate("/login");
-              }
-            }}
-            size="large"
-            sx={{
-              px: 4,
-              minWidth: 120,
-              borderRadius: "12px",
-              background: "var(--gradient-primary)",
-            }}
-          >
-            {user ? "Save Calculation" : "Login to Save"}
-          </Button>
-        </Box>
-      )}
     </Box>
   );
 };

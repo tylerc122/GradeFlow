@@ -38,6 +38,7 @@ import {
   Clock,
   Award,
   CheckCircle,
+  RefreshCw,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -51,6 +52,8 @@ export const AssignmentTable = ({
   hiddenAssignments,
   onToggleAssignmentVisibility,
   onDeleteAssignment,
+  onCalculateAnother,
+  showCalculateAnotherButton,
 }) => {
   const inputRef = useRef(null);
   const theme = useTheme();
@@ -254,29 +257,46 @@ export const AssignmentTable = ({
       />
 
       <Stack spacing={4} sx={{ position: "relative", zIndex: 1 }}>
-        <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
-          <Box
-            sx={{
-              width: 40,
-              height: 40,
-              borderRadius: "12px",
-              backgroundColor: isDark 
-                ? "transparent" 
-                : alpha(theme.palette.primary.main, 0.1),
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              color: theme.palette.primary.main,
-              border: isDark
-                ? `1px solid ${alpha(theme.palette.primary.main, 0.5)}`
-                : "none",
-            }}
-          >
-            <BarChart2 size={24} />
+        <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+          <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+            <Box
+              sx={{
+                width: 40,
+                height: 40,
+                borderRadius: "12px",
+                backgroundColor: isDark 
+                  ? "transparent" 
+                  : alpha(theme.palette.primary.main, 0.1),
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                color: theme.palette.primary.main,
+                border: isDark
+                  ? `1px solid ${alpha(theme.palette.primary.main, 0.5)}`
+                  : "none",
+              }}
+            >
+              <BarChart2 size={24} />
+            </Box>
+            <Typography variant="h5" sx={{ fontWeight: 600 }}>
+              Detailed Assignment Breakdown
+            </Typography>
           </Box>
-          <Typography variant="h5" sx={{ fontWeight: 600 }}>
-            Detailed Assignment Breakdown
-          </Typography>
+          
+          {/* Add Calculate Another button */}
+          {showCalculateAnotherButton && (
+            <Button
+              variant="outlined"
+              onClick={onCalculateAnother}
+              startIcon={<RefreshCw size={18} />}
+              size="medium"
+              sx={{
+                borderRadius: "12px",
+              }}
+            >
+              Calculate Another
+            </Button>
+          )}
         </Box>
 
         {categories.map((category, categoryIndex) => (
