@@ -103,7 +103,7 @@ class OpenAICategorizer:
             r'___+',
             
             # Context jailbreaks
-            r'DAN',
+            r'\bDAN\b',
             r'Do Anything Now',
             r'delimiters',
             r'context window',
@@ -289,30 +289,41 @@ class OpenAICategorizer:
         for i, (name, type_) in enumerate(sanitized_assignments, 1):
             prompt += f"{i}. Name: {name}\n   Type: {type_ or 'Not specified'}\n\n"
         
-        prompt += f"""Available categories: {', '.join(sanitized_categories)}
+        # Present categories as a numbered list
+        prompt += "Available categories (REFERENCE BY NUMBER ONLY):\n"
+        for i, category in enumerate(sanitized_categories, 1):
+            prompt += f"{i}. {category}\n"
+        
+        prompt += f"""
+==============================================================
+⚠️ CRITICAL INSTRUCTION - READ CAREFULLY ⚠️
+==============================================================
+YOU MUST RESPOND WITH THE CATEGORY NUMBER, NOT THE NAME.
 
 For each assignment above, categorize it into one of the available categories.
 Respond with one categorization per assignment, with a blank line between each.
-Number each categorization with the assignment number (1., 2., etc.).
+Number each categorization with the assignment number.
 
 Use this EXACT format for each assignment:
 
 Assignment Number: [number]
-Category: [category name]
+Category Number: [category number from the list above]
 Confidence: [number 0-1]
 Reasons: [brief comma-separated list]
 
 Example:
-Assignment Number: 1
-Category: Quizzes
+Assignment Number: a
+Category Number: 2
 Confidence: 0.95
 Reasons: quiz in name, numbered assessment
 
 Remember:
-- Only use categories from the provided list
-- Include all four lines per assignment (Assignment Number, Category, Confidence, Reasons)
-- Confidence should be a decimal number between 0 and 1 (e.g., 0.8, not 80%)
-- Leave a blank line between assignments"""
+- ALWAYS use the CATEGORY NUMBER from the numbered list above
+- DO NOT write out the category names in your response
+- Include all four lines per assignment
+- Confidence should be a decimal between 0 and 1
+- Leave a blank line between assignments
+"""
 
         try:
             api_call_start = time.time()
@@ -350,22 +361,23 @@ Remember:
                             break
                     
                     if matching_categorization:
-                        # Extract category, confidence, and reasons
-                        category_match = re.search(r'Category:\s*([^\n]+)', matching_categorization)
+                        # Extract category number, confidence, and reasons
+                        category_match = re.search(r'Category\s*(?:Number)?:\s*(\d+)', matching_categorization)
                         confidence_match = re.search(r'Confidence:\s*([0-9.]+)', matching_categorization)
                         reasons_match = re.search(r'Reasons:\s*(.+?)$', matching_categorization, re.MULTILINE | re.DOTALL)
                         
                         if category_match and confidence_match and reasons_match:
-                            category = category_match.group(1).strip()
+                            category_num = int(category_match.group(1))
                             confidence = float(confidence_match.group(1))
                             reasons = [r.strip() for r in reasons_match.group(1).split(',')]
                             
-                            # Validate category against available categories
-                            if not self.is_safe_category(category, sanitized_categories):
-                                print(f"Invalid category received from OpenAI: {category}")
-                                results.append((None, 0.0, ["invalid_category"]))
-                            else:
+                            # Convert category number to actual category name
+                            if 1 <= category_num <= len(sanitized_categories):
+                                category = sanitized_categories[category_num - 1]
                                 results.append((category, confidence, reasons))
+                            else:
+                                print(f"Invalid category number received from OpenAI: {category_num}")
+                                results.append((None, 0.0, ["invalid_category_number"]))
                         else:
                             print(f"Couldn't extract info for assignment {assignment_index}: {name}")
                             results.append((None, 0.0, ["parsing_error"]))
