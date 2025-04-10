@@ -353,6 +353,9 @@ const SavedCalculation = () => {
                 .reduce((sum, a) => sum + Number(a.total_points), 0),
             0
           ),
+          // Include calculation_mode and manual_grades if applicable
+          calculation_mode: mode,
+          ...(mode === "manual" && { manual_grades: manualGrades }),
         },
       };
 
@@ -393,6 +396,10 @@ const SavedCalculation = () => {
         originalCalculatorState.current.hiddenAssignments = [...hiddenAssignments];
         originalCalculatorState.current.hypotheticalScores = {};
         originalCalculatorState.current.hypotheticalAssignments = [];
+        // Update manualGrades in the original state if we're in manual mode
+        if (mode === "manual") {
+          originalCalculatorState.current.manualGrades = [...manualGrades];
+        }
       }
 
       setSaveStatus("saved");
@@ -691,7 +698,13 @@ const SavedCalculation = () => {
         
         // If it's a manual mode calculation, load the manual grades
         if (calculationMode === "manual" && transformedData.results?.manual_grades) {
-          setManualGrades(transformedData.results.manual_grades);
+          const loadedManualGrades = transformedData.results.manual_grades;
+          setManualGrades(loadedManualGrades);
+          
+          // Store the original manual grades in the reference for change detection
+          if (originalCalculatorState.current) {
+            originalCalculatorState.current.manualGrades = [...loadedManualGrades];
+          }
         }
 
         setError(null);
@@ -725,11 +738,12 @@ const SavedCalculation = () => {
   // Only track changes after the user has made modifications
   // This prevents a saved calculation from being marked as unsaved immediately when opened
   useEffect(() => {
-    // Only track changes if what-if mode has been enabled by the user
-    if (whatIfMode) {
+    // Only track changes if what-if mode has been enabled by the user OR this is a manual calculation
+    if (whatIfMode || mode === "manual") {
       // Get snapshot of state from when component was mounted
       const originalHypotheticalScores = originalCalculatorState.current?.hypotheticalScores || {};
       const originalHiddenAssignments = originalCalculatorState.current?.hiddenAssignments || [];
+      const originalManualGrades = originalCalculatorState.current?.manualGrades || [];
       
       // Check if there are actual changes compared to the original loaded state
       const scoresChanged = Object.keys(hypotheticalScores).length !== Object.keys(originalHypotheticalScores).length ||
@@ -743,12 +757,17 @@ const SavedCalculation = () => {
         hiddenAssignments.some(key => !originalHiddenAssignments.includes(key)) ||
         originalHiddenAssignments.some(key => !hiddenAssignments.includes(key));
       
+      // Check for changes in manual grades
+      const manualGradesChanged = 
+        manualGrades.length !== originalManualGrades.length ||
+        JSON.stringify(manualGrades) !== JSON.stringify(originalManualGrades);
+      
       // Only mark as unsaved if there are real user changes
-      if ((scoresChanged || hiddenAssignmentsChanged) && saveStatus !== "saving") {
+      if ((scoresChanged || hiddenAssignmentsChanged || manualGradesChanged) && saveStatus !== "saving") {
         setSaveStatus("unsaved");
       }
     }
-  }, [hypotheticalScores, hypotheticalAssignments, hiddenAssignments, saveStatus, whatIfMode]);
+  }, [hypotheticalScores, hypotheticalAssignments, hiddenAssignments, manualGrades, saveStatus, whatIfMode, mode]);
 
   // Enhanced function to check for unsaved changes
   const hasUnsavedChanges = useCallback(() => {
