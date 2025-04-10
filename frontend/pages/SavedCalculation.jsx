@@ -311,26 +311,45 @@ const SavedCalculation = () => {
         };
       });
 
-      // Calculate final grade (only using visible assignments)
-      const finalGrade = updatedCategories.reduce((total, category) => {
-        const visibleAssignments = category.assignments.filter(
-          (a) => !a.hidden
-        );
-        if (!visibleAssignments.length) return total;
+      // Calculate final grade based on the mode
+      let finalGrade;
+      if (mode === 'manual') {
+        // For manual mode, calculate the weighted grade directly from the manualGrades state
+        // We need to look up the weight from the categories array
+        finalGrade = manualGrades.reduce((total, mg) => {
+          const grade = Number(mg.grade) || 0;
+          // Find the corresponding category to get the weight
+          const category = updatedCategories.find(cat => cat.name === mg.categoryName);
+          const weight = category ? (Number(category.weight) || 0) : 0; // Default weight to 0 if category not found
+          
+          // Ensure weight is treated as a percentage (e.g., 50 for 50%)
+          return total + (grade * (weight / 100));
+        }, 0);
+      } else {
+        // For non-manual modes, calculate based on assignments
+        finalGrade = updatedCategories.reduce((total, category) => {
+          const visibleAssignments = category.assignments.filter(
+            (a) => !a.hidden
+          );
+          if (!visibleAssignments.length) return total;
 
-        const totalPoints = visibleAssignments.reduce(
-          (sum, a) => sum + Number(a.total_points),
-          0
-        );
-        const earnedPoints = visibleAssignments.reduce(
-          (sum, a) => sum + Number(a.score),
-          0
-        );
-        const categoryGrade =
-          totalPoints > 0 ? (earnedPoints / totalPoints) * 100 : 0;
-
-        return total + categoryGrade * (category.weight / 100);
-      }, 0);
+          const totalPoints = visibleAssignments.reduce(
+            (sum, a) => sum + Number(a.total_points),
+            0
+          );
+          const earnedPoints = visibleAssignments.reduce(
+            (sum, a) => sum + Number(a.score),
+            0
+          );
+          // Handle cases where total points might be 0 to avoid NaN
+          const categoryGrade =
+            totalPoints > 0 ? (earnedPoints / totalPoints) * 100 : 0;
+          
+          // Ensure weight is treated as a percentage (e.g., 50 for 50%)
+          const weight = Number(category.weight) || 0;
+          return total + categoryGrade * (weight / 100);
+        }, 0);
+      }
 
       const updatedCalculation = {
         ...calculation,
