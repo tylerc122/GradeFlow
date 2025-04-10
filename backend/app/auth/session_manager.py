@@ -120,17 +120,28 @@ class SessionManager:
             str(user_id)
         )
         
+        # Get environment
+        env = os.getenv("ENV", "development")
+        
+        # Cookie settings
+        cookie_settings = {
+            "key": "session_id",
+            "value": session_id,
+            "httponly": True,
+            "path": "/",
+            "max_age": int(self.session_duration.total_seconds())
+        }
+        
+        # Add production-specific settings
+        if env != "development":
+            cookie_settings.update({
+                "secure": True,
+                "samesite": "none",
+                "domain": ".gradeflow.org"
+            })
+        
         # Set cookie in response
-        response.set_cookie(
-            key="session_id",
-            value=session_id,
-            httponly=True,
-            secure=True,
-            samesite="none",
-            domain=".gradeflow.org",
-            path="/",
-            max_age=int(self.session_duration.total_seconds())
-        )
+        response.set_cookie(**cookie_settings)
         
         return session_id
     
