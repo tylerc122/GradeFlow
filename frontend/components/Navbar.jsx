@@ -151,7 +151,6 @@ const Navbar = () => {
     // Clear the last viewed calculation when logging out
     clearLastViewedCalculation();
     await logout();
-    navigate("/");
   };
 
   const handleDashboard = async () => {
@@ -630,7 +629,16 @@ const Navbar = () => {
           </Box>
         </MenuItem>
         <Divider />
-        <MenuItem onClick={handleDashboard} sx={{ p: 2 }}>
+        <MenuItem 
+          onClick={handleDashboard} 
+          sx={{
+            p: 2,
+            '&:hover': {
+              backgroundColor: alpha(muiTheme.palette.primary.main, 0.08),
+              borderRadius: 2,
+            },
+          }}
+        >
           <ListItemIcon>
             <BarChart size={18} />
           </ListItemIcon>
@@ -638,7 +646,14 @@ const Navbar = () => {
         </MenuItem>
         <MenuItem
           onClick={handleLogout}
-          sx={{ p: 2, color: muiTheme.palette.error.main }}
+          sx={{ 
+            p: 2, 
+            color: muiTheme.palette.error.main,
+            '&:hover': {
+              backgroundColor: alpha(muiTheme.palette.error.main, 0.08),
+              borderRadius: 2,
+            },
+          }}
         >
           <ListItemIcon sx={{ color: "inherit" }}>
             <LogOut size={18} />

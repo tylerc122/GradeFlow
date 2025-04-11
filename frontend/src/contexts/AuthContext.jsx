@@ -163,10 +163,13 @@ export const AuthProvider = ({ children }) => {
       sessionStorage.removeItem('categories');
       sessionStorage.removeItem('hasSeenResults');
       
-      setUser(null);
-      navigate("/");
+      // Force a full page reload to the home route
+      window.location.replace('/'); 
+
     } catch (error) {
       console.error("Logout failed:", error);
+      // Optionally, handle the error without redirecting, or redirect to an error page
+      // If the logout API call itself fails, we might not want to redirect.
     }
   };
 
