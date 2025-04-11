@@ -1,3 +1,7 @@
+/**
+ * Another component of the results screen that shows the user their categories and the grades specific to each category.
+ * Can add hypothetical assignments to a category from here.
+ */
 import React from "react";
 import {
   Paper,

@@ -1,3 +1,7 @@
+/**
+ * Tutorial dialog that shows a guide on how to use Gradeflow.
+ * Pops up when user first opens the calculator and can be accessed again through WelcomeSection.
+ */
 import React, { useState, useEffect } from 'react';
 import {
   Dialog,

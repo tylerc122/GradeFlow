@@ -1,9 +1,14 @@
+/**
+ * THE results screen, pretty much the main screen of the app.
+ * Funny because the regex + openai is the actual 'feature' of GradeFlow but this thing probably has the most lines of code if you include the subcomponents and was the most difficult to implement.
+ * So many moving parts, so many revisions, so many bugs, so many HOURS and yet it's still not what I originally envisioned.
+ * It'll definitely do though, glad i'm done with this page in particular.
+ */
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useSnackbar } from "notistack";
 import {
   Box,
-  Stack,
   Paper,
   Typography,
   Button,

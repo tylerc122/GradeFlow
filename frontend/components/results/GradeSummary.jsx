@@ -1,14 +1,16 @@
+
+/**
+ * Shows grade/gpa summary of the user's final grade for that class.
+ */
 import React from "react";
 import {
   Paper,
   Typography,
   Box,
-  TextField,
   Button,
   Stack,
   alpha,
   Tooltip,
-  Chip,
   useTheme as useMuiTheme,
 } from "@mui/material";
 import { motion } from "framer-motion";
@@ -17,7 +19,6 @@ import {
   Calculator,
   Award,
   Target,
-  AlertCircle,
   CheckCircle,
   Zap,
 } from "lucide-react";

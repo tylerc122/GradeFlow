@@ -1,3 +1,6 @@
+/**
+ * Defines the navigation bar.
+ */
 import React, { useState, useEffect } from "react";
 import {
   AppBar,
@@ -12,7 +15,6 @@ import {
   MenuItem,
   Divider,
   useScrollTrigger,
-  Avatar,
   Tooltip,
   ListItemIcon,
   ListItemText,

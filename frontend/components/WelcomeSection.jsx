@@ -1,3 +1,7 @@
+/**
+ * This component is the welcome section of the Calculator page.
+ * Shows a tutorial guide and how it works. Able to review tutorial again after closing.
+ */
 import React, { useState, useEffect } from "react";
 import {
   Paper,

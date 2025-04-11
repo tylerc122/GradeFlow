@@ -506,105 +506,113 @@ const HomePage = () => {
       <Box
         sx={{
           bgcolor: "background.paper",
-          py: { xs: 6, md: 8 },
+          py: { xs: 8, md: 12 },
           position: "relative",
           zIndex: 1,
           overflow: "hidden",
         }}
       >
-
-      <Box
-        sx={{
-          position: "absolute",
-          bottom: "0%",
-          left: "-5%",
-          width: "250px",
-          height: "250px",
-          borderRadius: "50%",
-          background: alpha(theme.palette.secondary.main, 0.03),
-          filter: "blur(50px)",
-          zIndex: 0,
-        }}
-      />
+        {/* Animated Background Blobs */}
+        <Box
+          sx={{
+            position: "absolute",
+            bottom: "-10%",
+            left: "-5%",
+            width: "300px",
+            height: "300px",
+            borderRadius: "50%",
+            background: alpha(theme.palette.secondary.main, 0.05),
+            filter: "blur(70px)",
+            zIndex: 0,
+            animation: "blobFloat 10s ease-in-out infinite alternate 2s",
+          }}
+        />
+        <Box
+          sx={{
+            position: "absolute",
+            top: "-15%",
+            right: "-10%",
+            width: "350px",
+            height: "350px",
+            borderRadius: "50%",
+            background: alpha(theme.palette.primary.main, 0.04),
+            filter: "blur(80px)",
+            zIndex: 0,
+            animation: "blobFloat 12s ease-in-out infinite alternate",
+          }}
+        />
         <Container maxWidth="md">
           <Paper
-            elevation={3}
+            elevation={isDark ? 6 : 3}
             sx={{
               p: { xs: 4, md: 6 },
-              borderRadius: "24px",
-              background: "var(--gradient-primary)",
+              borderRadius: "28px",
+              background: isDark
+                ? `linear-gradient(145deg, ${alpha(theme.palette.primary.dark, 0.1)}, ${alpha(theme.palette.secondary.dark, 0.05)})`
+                : `linear-gradient(145deg, ${alpha(theme.palette.primary.light, 0.1)}, ${alpha(theme.palette.secondary.light, 0.05)})`,
               position: "relative",
               overflow: "hidden",
+              border: "1px solid",
+              borderColor: alpha(theme.palette.divider, 0.1),
+              backdropFilter: "blur(12px)",
+              boxShadow: isDark
+                ? `0 16px 40px ${alpha(theme.palette.common.black, 0.3)}`
+                : `0 16px 40px ${alpha(theme.palette.primary.main, 0.1)}`,
+              transition: "box-shadow 0.3s ease-in-out",
+              "&:hover": {
+                boxShadow: isDark
+                  ? `0 20px 50px ${alpha(theme.palette.common.black, 0.4)}`
+                  : `0 20px 50px ${alpha(theme.palette.primary.main, 0.15)}`,
+              },
             }}
           >
-            {/* Decorative elements */}
-            <Box
-              sx={{
-                position: "absolute",
-                top: "20%",
-                right: "0%",
-                width: "200px",
-                height: "200px",
-                background: "rgba(255, 255, 255, 0.1)",
-                borderRadius: "50%",
-                filter: "blur(60px)",
-                zIndex: 0,
-              }}
-            />
-            <Box
-              sx={{
-                position: "absolute",
-                bottom: "-10%",
-                left: "5%",
-                width: "150px",
-                height: "150px",
-                background: "rgba(255, 255, 255, 0.05)",
-                borderRadius: "50%",
-                filter: "blur(40px)",
-                zIndex: 0,
-              }}
-            />
-
             <Box sx={{ position: "relative", zIndex: 1, textAlign: "center" }}>
-              <Zap
-                color="white"
-                size={56}
-                strokeWidth={1.5}
-                style={{ marginBottom: "16px" }}
-              />
+              <Box sx={{ animation: "pulse 2.5s infinite ease-in-out", display: 'inline-block', mb: 2 }}>
+                <Zap
+                  color={theme.palette.primary.main}
+                  size={56}
+                  strokeWidth={1.5}
+                />
+              </Box>
               <Typography
                 variant="h3"
-                sx={{ mb: 2, fontWeight: 700, color: "white" }}
+                sx={{
+                  mb: 2,
+                  fontWeight: 700,
+                  color: "text.primary",
+                  background: "var(--gradient-primary)",
+                  backgroundClip: "text",
+                  WebkitBackgroundClip: "text",
+                  WebkitTextFillColor: "transparent",
+                }}
               >
-                Ready to Calculate Your Grades?
+                Ready to Simplify Your Grades?
               </Typography>
               <Typography
                 variant="h6"
-                sx={{ mb: 4, fontWeight: 400, color: "white", opacity: 0.9 }}
+                sx={{ mb: 4, fontWeight: 400, color: "text.secondary" }}
               >
-                Join the students who have simplified their grade
-                calculations with GradeFlow.
+                Join thousands of students simplifying their grade tracking
+                with GradeFlow.
               </Typography>
               <Button
                 variant="contained"
                 size="large"
                 onClick={() => navigate("/calculator")}
+                endIcon={<ChevronRight />}
                 sx={{
                   py: 1.75,
                   px: 5,
                   borderRadius: "14px",
                   fontSize: "1.1rem",
-                  background: "linear-gradient(135deg, rgba(255,255,255,0.2) 0%, rgba(255,255,255,0.1) 100%)",
-                  backdropFilter: "blur(10px)",
+                  background: "var(--gradient-primary)",
                   color: "white",
-                  fontWeight: 700,
-                  border: "1px solid rgba(255,255,255,0.2)",
-                  boxShadow: "0 8px 32px rgba(0,0,0,0.1)",
+                  fontWeight: 600,
+                  boxShadow: `0 8px 25px ${alpha(theme.palette.primary.main, 0.3)}`,
                   transition: "all 0.3s ease",
                   "&:hover": {
-                    background: "linear-gradient(135deg, rgba(255,255,255,0.25) 0%, rgba(255,255,255,0.15) 100%)",
-                    boxShadow: "0 12px 40px rgba(0,0,0,0.15)",
-                    border: "1px solid rgba(255,255,255,0.3)",
+                    transform: "translateY(-2px)",
+                    boxShadow: `0 12px 30px ${alpha(theme.palette.primary.main, 0.4)}`,
                   },
                 }}
               >
@@ -625,6 +633,16 @@ const HomePage = () => {
             "50%": {
               transform: "translateY(-10px)",
             },
+          },
+          "@keyframes pulse": {
+            "0%": { transform: "scale(1)" },
+            "50%": { transform: "scale(1.1)" },
+            "100%": { transform: "scale(1)" },
+          },
+          "@keyframes blobFloat": {
+            "0%": { transform: "translate(0, 0) rotate(0deg)" },
+            "50%": { transform: "translate(20px, -30px) rotate(15deg)" },
+            "100%": { transform: "translate(0, 0) rotate(0deg)" },
           },
         }}
       />

@@ -1,3 +1,6 @@
+/**
+ * Allows user to setup the categories for the grade calculator.
+ */
 import React, { useEffect } from "react";
 import {
   Paper,

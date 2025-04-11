@@ -1,3 +1,7 @@
+/**
+ * Component of the manual grade results screen.
+ * Same as AssignmentTable.jsx but for manual grades, much simpler.
+ */
 import React from "react";
 import {
   Paper,
@@ -9,10 +13,6 @@ import {
   TableRow,
   TextField,
   Typography,
-  FormControl,
-  RadioGroup,
-  FormControlLabel,
-  Radio,
 } from "@mui/material";
 import { isLetterGrade, isPercentage, letterGradeToPoints } from "../../src/utils/letterGradeUtils";
 
@@ -27,19 +27,6 @@ const ManualGradeTable = ({
     if (!manualGrades.length) return null;
     return manualGrades[0].isLetter ? 'letter' : 'percentage';
   }, [manualGrades]);
-
-  const handleInputTypeChange = (event) => {
-    const newType = event.target.value;
-    // Clear all grades when switching input type
-    categories.forEach(category => {
-      onGradeChange({
-        categoryName: category.name,
-        grade: "",
-        isLetter: newType === 'letter',
-        value: 0,
-      });
-    });
-  };
 
   const handleGradeChange = (categoryName, newValue) => {
     // Clean up the input - trim spaces and convert to uppercase for letter grades

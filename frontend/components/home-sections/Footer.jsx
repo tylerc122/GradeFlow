@@ -1,3 +1,7 @@
+/**
+ * Footer of the home page.
+ * Shows some social links, navigation links, etc.
+ */
 import React from "react";
 import {
   Box,
@@ -22,8 +26,6 @@ import {
   Star,
   Home,
   Info,
-  BookOpen,
-  User,
 } from "lucide-react";
 import { Link as RouterLink } from "react-router-dom";
 import { useAuth } from "../../src/contexts/AuthContext"; 
@@ -403,45 +405,6 @@ const Footer = () => {
           </Box>
         </Box>
       </Container>
-    </Box>
-  );
-};
-
-// Helper component for rendering tooltips
-const Tooltip = ({ children, title, component = "div", sx }) => {
-  return (
-    <Box
-      component={component}
-      sx={{
-        position: "relative",
-        "&:hover::before": {
-          content: `"${title}"`,
-          position: "absolute",
-          bottom: "100%",
-          left: "50%",
-          transform: "translateX(-50%) translateY(-8px)",
-          padding: "4px 8px",
-          backgroundColor: "#333",
-          color: "white",
-          borderRadius: "4px",
-          fontSize: "0.75rem",
-          zIndex: 1,
-          whiteSpace: "nowrap",
-          ...sx,
-        },
-        "&:hover::after": {
-          content: '""',
-          position: "absolute",
-          bottom: "100%",
-          left: "50%",
-          transform: "translateX(-50%)",
-          borderWidth: "4px",
-          borderStyle: "solid",
-          borderColor: "#333 transparent transparent transparent",
-        },
-      }}
-    >
-      {children}
     </Box>
   );
 };

@@ -1,3 +1,6 @@
+/**
+ * FAQ section of the home page with some questions I thought would be helpful.
+ */
 import React, { useState } from "react";
 import {
   Box,
@@ -30,7 +33,7 @@ const FAQ = () => {
     setExpanded(isExpanded ? panel : false);
   };
 
-  // FAQs with added icons but original text content preserved
+  // FAQs
   const faqs = [
     {
       question: "Is my grade data secure?",
@@ -238,6 +241,9 @@ const FAQ = () => {
                     },
                     "& .MuiAccordionSummary-content": {
                       margin: 0,
+                      "&.Mui-expanded": {
+                        margin: 0,
+                      },
                     },
                   }}
                 >

@@ -1,3 +1,6 @@
+/**
+ * The grade input screen, either manual or blackboard.
+ */
 import React from "react";
 import {
   Paper,

@@ -1,3 +1,8 @@
+/**
+ * Dialog that pops up when user wants to save their current calculation.
+ * Allows user to enter a name for the calculation and save it.
+ * Shows a preview of what will be saved with some details ab it.
+ */
 import React, { useState, useEffect } from "react";
 import {
   Dialog,
@@ -15,7 +20,7 @@ import {
   useTheme,
   Chip,
 } from "@mui/material";
-import { Save, FileText, X, Copy, Info, CheckCircle2 } from "lucide-react";
+import { Save, FileText, X, Info } from "lucide-react";
 import { motion } from "framer-motion";
 
 const SaveCalculationDialog = ({

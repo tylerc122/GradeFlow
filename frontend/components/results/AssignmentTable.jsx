@@ -1,3 +1,7 @@
+/**
+ * A component of the results screen that shows the user their assignments and their scores.
+ * What-if mode and what not.
+ */
 import React, { useRef, useState, useEffect } from "react";
 import {
   Paper,
@@ -22,8 +26,6 @@ import {
   Tooltip,
   Collapse,
   useTheme,
-  Divider,
-  Switch,
 } from "@mui/material";
 import {
   BarChart2,

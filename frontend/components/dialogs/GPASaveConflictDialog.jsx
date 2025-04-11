@@ -1,3 +1,7 @@
+/**
+ * Dialog that appears when user tries to save GPA while logged out.
+ * Allows user to keep saved GPA or replace it with new data.
+ */
 import React from 'react';
 import {
   Dialog,
@@ -7,14 +11,13 @@ import {
   DialogActions,
   Button,
   Typography,
-  Box,
 } from '@mui/material';
 
 const GPASaveConflictModal = ({ open, onClose, onKeepSaved, onReplaceSaved }) => {
   return (
     <Dialog
       open={open}
-      onClose={onClose} // Closes the modal if clicking outside or pressing Esc
+      onClose={onClose} // Closes the dialog if clicking outside or pressing Esc
       aria-labelledby="gpa-conflict-dialog-title"
       aria-describedby="gpa-conflict-dialog-description"
     >
