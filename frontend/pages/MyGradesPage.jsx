@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import {
   Container,
   Typography,
@@ -15,6 +15,10 @@ import {
   DialogContent,
   DialogActions,
   Button,
+  Select,
+  MenuItem,
+  FormControl,
+  InputLabel,
 } from "@mui/material";
 import { useNavigate } from "react-router-dom";
 import { useSnackbar } from "notistack";
@@ -44,6 +48,8 @@ const MyGradesPage = () => {
   const [refreshTrigger, setRefreshTrigger] = useState(0);
   const [redirectChecked, setRedirectChecked] = useState(false);
   const [readyToRender, setReadyToRender] = useState(false);
+  const [sortField, setSortField] = useState("date"); // 'date', 'grade', 'name'
+  const [sortDirection, setSortDirection] = useState("desc"); // 'asc', 'desc'
   const { user } = useAuth();
 
   useEffect(() => {
@@ -97,10 +103,12 @@ const MyGradesPage = () => {
           return calculation;
         });
         
-        setCalculations(normalizedData);
+        // Sort by id (which represents creation order) initially
+        const sortedData = normalizedData.sort((a, b) => b.id - a.id); 
+        setCalculations(sortedData);
         
-        if (lastViewedCalculation && normalizedData.length > 0 && !showGradesList) {
-          const calculationExists = normalizedData.some(calc => calc.id.toString() === lastViewedCalculation.toString());
+        if (lastViewedCalculation && sortedData.length > 0 && !showGradesList) {
+          const calculationExists = sortedData.some(calc => calc.id.toString() === lastViewedCalculation.toString());
           
           if (calculationExists) {
             navigate(`/grades/${lastViewedCalculation}`);
@@ -159,6 +167,55 @@ const MyGradesPage = () => {
       window.removeEventListener("calculationUpdated", handleCalculationUpdate);
     };
   }, []);
+
+  // Sorting Logic
+  const sortedCalculations = useMemo(() => {
+    let sorted = [...calculations];
+
+    if (sortField === 'grade') {
+      sorted.sort((a, b) => {
+        const gradeA = parseFloat(a.results.overall_grade) || 0;
+        const gradeB = parseFloat(b.results.overall_grade) || 0;
+        return sortDirection === 'asc' ? gradeA - gradeB : gradeB - gradeA;
+      });
+    } else if (sortField === 'name') {
+      sorted.sort((a, b) => {
+        const nameA = a.name.toLowerCase();
+        const nameB = b.name.toLowerCase();
+        if (nameA < nameB) return sortDirection === 'asc' ? -1 : 1;
+        if (nameA > nameB) return sortDirection === 'asc' ? 1 : -1;
+        return 0;
+      });
+    } else { // Default to 'date' (using id as proxy for creation time)
+      sorted.sort((a, b) => {
+        return sortDirection === 'asc' ? a.id - b.id : b.id - a.id;
+      });
+    }
+    return sorted;
+  }, [calculations, sortField, sortDirection]);
+
+  const handleSortChange = (event) => {
+    const value = event.target.value;
+    if (value === 'grade_desc') {
+      setSortField('grade');
+      setSortDirection('desc');
+    } else if (value === 'grade_asc') {
+      setSortField('grade');
+      setSortDirection('asc');
+    } else if (value === 'name_asc') {
+      setSortField('name');
+      setSortDirection('asc');
+    } else if (value === 'name_desc') {
+      setSortField('name');
+      setSortDirection('desc');
+    } else if (value === 'date_asc') { // Oldest first
+      setSortField('date');
+      setSortDirection('asc');
+    } else { // Default: date_desc (Most Recent)
+      setSortField('date');
+      setSortDirection('desc');
+    }
+  };
 
   const handleDelete = async (calculationId) => {
     try {
@@ -257,8 +314,26 @@ const MyGradesPage = () => {
         My Saved Calculations
       </Typography>
 
+      <FormControl fullWidth sx={{ mb: 3 }}>
+        <InputLabel id="sort-by-label">Sort By</InputLabel>
+        <Select
+          labelId="sort-by-label"
+          id="sort-by-select"
+          value={`${sortField}_${sortDirection}`}
+          label="Sort By"
+          onChange={handleSortChange}
+        >
+          <MenuItem value="date_desc">Most Recent</MenuItem>
+          <MenuItem value="date_asc">Oldest</MenuItem>
+          <MenuItem value="grade_desc">Highest Grade</MenuItem>
+          <MenuItem value="grade_asc">Lowest Grade</MenuItem>
+          <MenuItem value="name_asc">Name (A-Z)</MenuItem>
+          <MenuItem value="name_desc">Name (Z-A)</MenuItem>
+        </Select>
+      </FormControl>
+
       <Grid container spacing={3}>
-        {calculations.map((calc) => (
+        {sortedCalculations.map((calc) => (
           <Grid item xs={12} key={calc.id}>
             <Paper
               elevation={2}
@@ -351,7 +426,7 @@ const MyGradesPage = () => {
           </Grid>
         ))}
 
-        {calculations.length === 0 && (
+        {sortedCalculations.length === 0 && (
           <Grid item xs={12}>
             <Paper
               sx={{
@@ -397,6 +472,7 @@ const MyGradesPage = () => {
 };
 
 const getGradeColor = (grade) => {
+  if (isNaN(grade) || !isFinite(grade)) grade = 0;
   if (grade >= 90) return "#4caf50";
   if (grade >= 80) return "#2196f3";
   if (grade >= 70) return "#ff9800";
