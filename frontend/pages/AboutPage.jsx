@@ -62,11 +62,13 @@ const AboutPage = () => {
             </Typography>
             <Typography variant="body1" paragraph>
               Using JSX/React for the frontend and Python FastAPI for the
-              backend, I built a system that could not only parse grades but
-              also intelligently categorize assignments at the click of a
-              button. The project evolved to include features like a GPA calculator
-              (that tracks both general and major GPA) and displaying grade trends over
-              time, making it a comprehensive tool for students facing the same problem as I did.
+              backend, I built a system that could parse grades and
+              intelligently categorize assignments. The core parsing logic uses
+              regular expressions for more standard Blackboard formats and category names, while
+              the OpenAI API provides flexibility for more complex structures.
+              Gradeflow evolved into a comprehensive tool with features like a GPA
+              calculator (tracking general and major GPA) and grade trend
+              visualization, addressing the common frustrations students like me face.
             </Typography>
             <Typography variant="body1" paragraph>
               I hope you find GradeFlow as useful as I do. If you have any

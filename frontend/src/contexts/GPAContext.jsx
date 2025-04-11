@@ -3,19 +3,23 @@ import { useAuth } from "./AuthContext";
 
 const GPAContext = createContext();
 
+// Key for temporary storage before login
+const PENDING_SAVE_KEY = 'pendingGPASave';
+
 export const GPAProvider = ({ children }) => {
   // GPA courses data
   const [courses, setCourses] = useState([]);
-  const [majorCourses, setMajorCourses] = useState([]);
   const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8000";
   const { user } = useAuth();
   
   // Central GPA data
   const [centralGPA, setCentralGPA] = useState({
+    id: null,
     name: "My GPA",
     lastUpdated: new Date().toISOString(),
     overallGPA: "0.00",
-    majorGPA: "0.00"
+    majorGPA: "0.00",
+    courses: []
   });
 
   // Saved GPAs
@@ -32,12 +36,19 @@ export const GPAProvider = ({ children }) => {
   // Editing state
   const [isEditing, setIsEditing] = useState(false);
 
+  // Conflict resolution state
+  const [conflictStatus, setConflictStatus] = useState('idle');
+  const [pendingData, setPendingData] = useState(null);
+
   // Load saved data from backend and localStorage on mount
   useEffect(() => {
     if (user) {
-      fetchSavedGPAs();
+      checkAndResolvePostLogin();
+    } else {
+      if (conflictStatus === 'idle') {
+        loadLocalStorageData(true);
+      }
     }
-    loadLocalStorageData();
   }, [user]);
 
   // React to authentication state changes
@@ -45,63 +56,184 @@ export const GPAProvider = ({ children }) => {
     if (!user) {
       // Reset all state if user logs out
       setCourses([]);
-      setMajorCourses([]);
       setIsEditing(false);
       setCurrentGPAId(null);
       setCentralGPA({
+        id: null,
         name: "My GPA",
         lastUpdated: new Date().toISOString(),
         overallGPA: "0.00",
-        majorGPA: "0.00"
+        majorGPA: "0.00",
+        courses: []
       });
       clearLocalStorageData();
     }
   }, [user]);
 
-  // Save to localStorage whenever courses or majorCourses change
+  // Save to localStorage whenever courses or editing state changes
   useEffect(() => {
-    if (courses.length > 0 || majorCourses.length > 0) {
-      const localData = {
-        courses,
-        majorCourses,
-        centralGPA,
-        hiddenGPAs,
-        lastUpdated: new Date().toISOString()
-      };
-      localStorage.setItem('gpaCalculatorData', JSON.stringify(localData));
-    }
-  }, [courses, majorCourses, centralGPA, hiddenGPAs]);
-
-  // Load data from localStorage
-  const loadLocalStorageData = () => {
-    try {
-      // Only load data from localStorage if user is authenticated
-      if (!user) return;
-      
-      const savedData = localStorage.getItem('gpaCalculatorData');
-      if (savedData) {
-        const { courses: savedCourses, majorCourses: savedMajorCourses, centralGPA: savedCentralGPA, hiddenGPAs: savedHiddenGPAs } = JSON.parse(savedData);
-        
-        // Only load if there's actual data
-        if (savedCourses?.length > 0 || savedMajorCourses?.length > 0) {
-          setCourses(savedCourses || []);
-          setMajorCourses(savedMajorCourses || []);
-          setCentralGPA(savedCentralGPA || centralGPA);
-          setHiddenGPAs(savedHiddenGPAs || { overall: false, major: false });
-        }
+    if (!user || (user && !currentGPAId && isEditing)) {
+      if (!user && isEditing && courses.length > 0) {
+        const localData = {
+          courses,
+          hiddenGPAs,
+          lastUpdated: new Date().toISOString()
+        };
+        localStorage.setItem('gpaCalculatorData', JSON.stringify(localData));
       }
-    } catch (error) {
-      console.error('Error loading GPA data from localStorage:', error);
+    } else {
+      localStorage.removeItem('gpaCalculatorData');
+    }
+  }, [courses, isEditing, user, currentGPAId, hiddenGPAs]);
+
+  // Load data from general localStorage (for guests or resuming sessions)
+  const loadLocalStorageData = (isGuest = false) => {
+    if (localStorage.getItem(PENDING_SAVE_KEY)) {
+      console.log("Pending save key exists, skipping general local storage load.");
+      return;
+    }
+
+    if (isGuest || (user && !currentGPAId)) {
+        try {
+            const savedData = localStorage.getItem('gpaCalculatorData');
+            if (savedData) {
+                const { courses: savedCourses, hiddenGPAs: savedHiddenGPAs } = JSON.parse(savedData);
+
+                if (savedCourses?.length > 0) {
+                    console.log("Loading data from general localStorage.");
+                    setCourses(savedCourses || []);
+                    setHiddenGPAs(savedHiddenGPAs || { overall: false, major: false });
+                    setIsEditing(true);
+                }
+            }
+        } catch (error) {
+            console.error('Error loading general GPA data from localStorage:', error);
+        }
     }
   };
 
-  // Clear localStorage data when saving to backend
+  // Stash current calculator state before navigating to login
+  const stashDataBeforeLogin = () => {
+    if (courses.length > 0) {
+      const dataToStash = {
+        courses: [...courses],
+        timestamp: Date.now()
+      };
+      localStorage.setItem(PENDING_SAVE_KEY, JSON.stringify(dataToStash));
+      console.log("Stashed current courses to localStorage for pending save.");
+    } else {
+      localStorage.removeItem(PENDING_SAVE_KEY);
+    }
+  };
+
+  // Check for stashed data after login and handle potential conflicts
+  const checkAndResolvePostLogin = async () => {
+     if (!user) return;
+
+     const stashedDataString = localStorage.getItem(PENDING_SAVE_KEY);
+     if (!stashedDataString) {
+       console.log("No pending save data found. Fetching saved GPAs.");
+       await fetchSavedGPAs();
+       return;
+     }
+
+     console.log("Pending save data found. Processing...");
+     setConflictStatus('pending');
+     let parsedPendingData;
+     try {
+        parsedPendingData = JSON.parse(stashedDataString);
+        setPendingData(parsedPendingData);
+     } catch (error) {
+        console.error("Error parsing pending save data:", error);
+        localStorage.removeItem(PENDING_SAVE_KEY);
+        setConflictStatus('idle');
+        await fetchSavedGPAs();
+        return;
+     }
+
+     setIsLoading(true);
+     try {
+        const response = await fetch(`${API_URL}/api/grades/gpa/saved`, {
+          method: 'GET',
+          credentials: 'include',
+          headers: {
+            'Content-Type': 'application/json',
+          }
+        });
+        if (response.ok) {
+            const existingSavedGPAs = await response.json();
+            setSavedGPAs(existingSavedGPAs);
+
+            if (existingSavedGPAs.length > 0) {
+                console.log("Conflict detected: Pending data and existing saved GPA(s).");
+                setConflictStatus('conflict');
+            } else {
+                console.log("No conflict: Pending data exists, but no saved GPA. Saving pending data.");
+                await resolveConflictReplaceSaved();
+            }
+        } else {
+            console.error('Failed to load saved GPAs during conflict check.');
+            localStorage.removeItem(PENDING_SAVE_KEY);
+            setConflictStatus('idle');
+            setPendingData(null);
+            await fetchSavedGPAs();
+        }
+     } catch (error) {
+        console.error('Error fetching saved GPAs during conflict check:', error);
+        localStorage.removeItem(PENDING_SAVE_KEY);
+        setConflictStatus('idle');
+        setPendingData(null);
+        await fetchSavedGPAs();
+     } finally {
+        setIsLoading(false);
+     }
+  };
+
+  // Resolve conflict: User chose to keep their existing saved GPA
+  const resolveConflictKeepSaved = async () => {
+    console.log("Resolving conflict: Keeping saved GPA.");
+    localStorage.removeItem(PENDING_SAVE_KEY);
+    setPendingData(null);
+    setConflictStatus('idle');
+    setIsEditing(false);
+    await fetchSavedGPAs();
+  };
+
+  // Resolve conflict: User chose to replace saved GPA with the pending one
+  const resolveConflictReplaceSaved = async () => {
+    console.log("Resolving conflict: Replacing with pending GPA.");
+    if (!pendingData || !pendingData.courses) {
+        console.error("Cannot replace: Pending data is missing.");
+        localStorage.removeItem(PENDING_SAVE_KEY);
+        setPendingData(null);
+        setConflictStatus('idle');
+        await fetchSavedGPAs();
+        return;
+    }
+
+    setCourses(pendingData.courses);
+    setIsEditing(true);
+    setCurrentGPAId(null);
+
+    await updateCentralGPA("My GPA");
+
+    localStorage.removeItem(PENDING_SAVE_KEY);
+    setPendingData(null);
+    setConflictStatus('idle');
+    await fetchSavedGPAs();
+  };
+
+  // Clear general localStorage data
   const clearLocalStorageData = () => {
     localStorage.removeItem('gpaCalculatorData');
   };
 
   // Fetch all saved GPAs from the backend
   const fetchSavedGPAs = async () => {
+    if (conflictStatus === 'conflict' || conflictStatus === 'pending') {
+        console.log("Skipping fetchSavedGPAs due to conflict status:", conflictStatus);
+        return;
+    }
     setIsLoading(true);
     try {
       const response = await fetch(`${API_URL}/api/grades/gpa/saved`, {
@@ -129,7 +261,6 @@ export const GPAProvider = ({ children }) => {
             overallGPA: mostRecent.overallGPA,
             majorGPA: mostRecent.majorGPA,
             courses: mostRecent.courses || [],
-            majorCourses: mostRecent.majorCourses || []
           });
           setCurrentGPAId(mostRecent.id);
           // Ensure we're in view mode, not edit mode
@@ -162,7 +293,7 @@ export const GPAProvider = ({ children }) => {
     if (!courseList || courseList.length === 0) return "0.00";
     
     // Filter out hidden courses
-    const visibleCourses = courseList.filter(course => !course.isHidden);
+    const visibleCourses = courseList.filter(course => !course?.isHidden);
     
     if (visibleCourses.length === 0) return "0.00";
     
@@ -178,7 +309,7 @@ export const GPAProvider = ({ children }) => {
   const calculateOverallGPA = () => calculateGPA(courses);
   const calculateMajorGPA = () => {
     // Only use courses marked as for major
-    const coursesForMajor = courses.filter(course => course.isForMajor && !course.isHidden);
+    const coursesForMajor = courses.filter(course => course?.isForMajor && !course?.isHidden);
     // Check if there are any major courses
     if (coursesForMajor.length === 0) return "0.00";
     return calculateGPA(coursesForMajor);
@@ -187,44 +318,54 @@ export const GPAProvider = ({ children }) => {
   // Toggle whether a course is included in major GPA
   const toggleCourseForMajor = (index) => {
     const updatedCourses = [...courses];
-    updatedCourses[index] = {
-      ...updatedCourses[index],
-      isForMajor: !updatedCourses[index]?.isForMajor
-    };
-    setCourses(updatedCourses);
+    if (updatedCourses[index]) {
+        updatedCourses[index] = {
+            ...updatedCourses[index],
+            isForMajor: !updatedCourses[index]?.isForMajor
+        };
+        setCourses(updatedCourses);
+    }
   };
 
   // Toggle whether a course is hidden from GPA calculation
   const toggleCourseVisibility = (index) => {
     const updatedCourses = [...courses];
-    updatedCourses[index] = {
-      ...updatedCourses[index],
-      isHidden: !updatedCourses[index]?.isHidden
-    };
-    setCourses(updatedCourses);
+    if (updatedCourses[index]) {
+        updatedCourses[index] = {
+            ...updatedCourses[index],
+            isHidden: !updatedCourses[index]?.isHidden
+        };
+        setCourses(updatedCourses);
+    }
   };
 
   // Add new course with isForMajor property initialized to false
   const addCourse = (courseData = {}) => {
-    const newCourse = { 
-      title: courseData.title || "", 
-      credits: courseData.credits || "", 
+    const newCourse = {
+      id: `temp-${Date.now()}-${Math.random()}`,
+      title: courseData.title || "",
+      credits: courseData.credits || "",
       grade: courseData.grade || "A",
       isForMajor: courseData.isForMajor || false,
       isHidden: courseData.isHidden || false
     };
     setCourses([...courses, newCourse]);
+    if (!isEditing) setIsEditing(true);
   };
 
   // Update the central GPA with current calculations and save to backend
   const updateCentralGPA = async (name = "My GPA") => {
+    if (!user) {
+      console.error("Cannot save GPA: User not authenticated.");
+      return;
+    }
     // Calculate GPAs
     const overallGPA = calculateOverallGPA();
     const majorGPA = calculateMajorGPA();
     
     // Create new GPA object
     const updatedGPA = {
-      name: "My GPA", // Always use default name
+      name: "My GPA",
       lastUpdated: new Date().toISOString(),
       overallGPA,
       majorGPA,
@@ -238,7 +379,7 @@ export const GPAProvider = ({ children }) => {
     try {
       // Prepare payload
       const payload = {
-        name: "My GPA", // Always use default name
+        name: "My GPA",
         overallGPA,
         majorGPA,
         courses: [...courses],
@@ -271,7 +412,7 @@ export const GPAProvider = ({ children }) => {
             id: data.id
           });
         }
-        // Clear localStorage data after successful save
+        // Clear general local storage after successful save to backend
         clearLocalStorageData();
         // Refresh saved GPAs
         fetchSavedGPAs();
@@ -280,11 +421,16 @@ export const GPAProvider = ({ children }) => {
       }
     } catch (error) {
       console.error('Error saving GPA calculation:', error);
+      setIsEditing(true);
     }
   };
 
-  // Load a saved GPA for editing
+  // Edit a specific saved GPA
   const editSavedGPA = async (gpaId) => {
+    if (conflictStatus !== 'idle') {
+        console.warn("Cannot edit GPA while conflict resolution is pending.");
+        return;
+    }
     try {
       const response = await fetch(`${API_URL}/api/grades/gpa/${gpaId}`, {
         method: 'GET',
@@ -304,11 +450,9 @@ export const GPAProvider = ({ children }) => {
           overallGPA: data.overallGPA,
           majorGPA: data.majorGPA,
           courses: data.courses || [],
-          majorCourses: data.majorCourses || []
         });
         
         setCourses(data.courses || []);
-        setMajorCourses(data.majorCourses || []);
         setIsEditing(true);
       } else {
         console.error('Failed to load GPA for editing');
@@ -320,6 +464,10 @@ export const GPAProvider = ({ children }) => {
 
   // Delete a saved GPA
   const deleteSavedGPA = async (gpaId) => {
+    if (conflictStatus !== 'idle') {
+        console.warn("Cannot delete GPA while conflict resolution is pending.");
+        return;
+    }
     try {
       const response = await fetch(`${API_URL}/api/grades/gpa/${gpaId}`, {
         method: 'DELETE',
@@ -348,6 +496,10 @@ export const GPAProvider = ({ children }) => {
 
   // Duplicate a saved GPA
   const duplicateGPA = async (gpaId) => {
+    if (conflictStatus !== 'idle') {
+        console.warn("Cannot duplicate GPA while conflict resolution is pending.");
+        return;
+    }
     try {
       // First get the GPA to duplicate
       const response = await fetch(`${API_URL}/api/grades/gpa/${gpaId}`, {
@@ -367,7 +519,6 @@ export const GPAProvider = ({ children }) => {
           overallGPA: data.overallGPA,
           majorGPA: data.majorGPA,
           courses: data.courses || [],
-          majorCourses: data.majorCourses || []
         };
         
         // Save as a new GPA
@@ -394,36 +545,57 @@ export const GPAProvider = ({ children }) => {
     }
   };
 
-  // Load central GPA data for editing
+  // Enter editing mode (for new or existing GPA)
   const editGPA = () => {
-    if (centralGPA.courses) {
-      setCourses([...centralGPA.courses]);
+    if (conflictStatus !== 'idle') {
+        console.warn("Cannot enter edit mode while conflict resolution is pending.");
+        return;
     }
-    if (centralGPA.majorCourses) {
-      setMajorCourses([...centralGPA.majorCourses]);
+
+    if (currentGPAId) {
+      if (centralGPA && centralGPA.courses) {
+          setCourses(centralGPA.courses.map(c => ({...c, id: c.id || `temp-${Date.now()}-${Math.random()}`})));
+      } else {
+          setCourses([]);
+      }
     }
     setIsEditing(true);
   };
 
-  // Cancel editing
+  // Cancel editing mode
   const cancelEditing = () => {
     setIsEditing(false);
-    setCourses([]);
-    setMajorCourses([]);
+    if (currentGPAId) {
+      fetchSavedGPAs();
+    } else {
+      setCourses([]);
+      clearLocalStorageData();
+    }
+    if (conflictStatus !== 'idle') {
+        localStorage.removeItem(PENDING_SAVE_KEY);
+        setPendingData(null);
+        setConflictStatus('idle');
+    }
   };
 
-  // Reset GPA calculator
+  // Reset GPA calculator (e.g., start fresh)
   const resetGPACalculator = () => {
+    if (conflictStatus !== 'idle') {
+        console.warn("Cannot reset calculator while conflict resolution is pending.");
+        return;
+    }
     setCourses([]);
-    setMajorCourses([]);
-    setIsEditing(false);
-    setCurrentGPAId(null);
     setCentralGPA({
+      id: null,
       name: "My GPA",
       lastUpdated: new Date().toISOString(),
       overallGPA: "0.00",
-      majorGPA: "0.00"
+      majorGPA: "0.00",
+      courses: []
     });
+    setCurrentGPAId(null);
+    setIsEditing(false);
+    clearLocalStorageData();
   };
 
   // Toggle visibility of overall GPA
@@ -447,34 +619,33 @@ export const GPAProvider = ({ children }) => {
       value={{
         courses,
         setCourses,
-        majorCourses,
-        setMajorCourses,
         centralGPA,
-        setCentralGPA,
         savedGPAs,
-        setSavedGPAs,
         isLoading,
         currentGPAId,
-        setCurrentGPAId,
-        letterToGPA,
+        hiddenGPAs,
+        isEditing,
+        conflictStatus,
+        pendingData,
         calculateOverallGPA,
         calculateMajorGPA,
+        addCourse,
+        toggleCourseForMajor,
+        toggleCourseVisibility,
         updateCentralGPA,
-        resetGPACalculator,
-        fetchSavedGPAs,
         editSavedGPA,
         deleteSavedGPA,
         duplicateGPA,
-        isEditing,
-        setIsEditing,
         editGPA,
         cancelEditing,
-        toggleCourseForMajor,
-        toggleCourseVisibility,
-        addCourse,
-        hiddenGPAs,
+        resetGPACalculator,
         toggleOverallGPA,
         toggleMajorGPA,
+        fetchSavedGPAs,
+        stashDataBeforeLogin,
+        resolveConflictKeepSaved,
+        resolveConflictReplaceSaved,
+        loadLocalStorageData
       }}
     >
       {children}
@@ -484,8 +655,8 @@ export const GPAProvider = ({ children }) => {
 
 export const useGPA = () => {
   const context = useContext(GPAContext);
-  if (!context) {
-    throw new Error("useGPA must be used within a GPAProvider");
+  if (context === undefined) {
+    throw new Error('useGPA must be used within a GPAProvider');
   }
   return context;
 }; 

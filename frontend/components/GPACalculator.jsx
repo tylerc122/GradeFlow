@@ -24,32 +24,50 @@ import CancelIcon from "@mui/icons-material/Cancel";
 import SchoolIcon from "@mui/icons-material/School";
 import VisibilityIcon from "@mui/icons-material/Visibility";
 import VisibilityOffIcon from "@mui/icons-material/VisibilityOff";
+import LoginIcon from '@mui/icons-material/Login';
 import { useTheme } from "../src/contexts/ThemeContext";
 import { useGPA } from "../src/contexts/GPAContext";
+import { useAuth } from "../src/contexts/AuthContext";
+import { useNavigate } from "react-router-dom";
+import GPASaveConflictModal from "./dialogs/GPASaveConflictDialog";
 
 const GPACalculator = () => {
   const muiTheme = useMuiTheme();
   const { mode, isDark } = useTheme();
+  const { isAuthenticated } = useAuth();
+  const navigate = useNavigate();
   const { 
     courses, 
     setCourses, 
-    majorCourses, 
-    setMajorCourses,
     centralGPA,
     calculateOverallGPA,
     calculateMajorGPA,
     updateCentralGPA,
     isEditing,
+    setIsEditing,
     cancelEditing,
     editGPA,
     toggleCourseForMajor,
     toggleCourseVisibility,
-    addCourse: addCourseContext
+    addCourse: addCourseContext,
+    currentGPAId,
+    stashDataBeforeLogin,
+    conflictStatus,
+    resolveConflictKeepSaved,
+    resolveConflictReplaceSaved
   } = useGPA();
 
   const [isSaving, setIsSaving] = useState(false);
+  const [showConflictModal, setShowConflictModal] = useState(false);
 
-  // Letter grades for dropdown
+  useEffect(() => {
+    if (conflictStatus === 'conflict') {
+      setShowConflictModal(true);
+    } else {
+      setShowConflictModal(false);
+    }
+  }, [conflictStatus]);
+
   const letterGrades = [
     "A+", "A", "A-", 
     "B+", "B", "B-", 
@@ -58,19 +76,10 @@ const GPACalculator = () => {
     "F"
   ];
 
-  // Set initial save name when editing
-  useEffect(() => {
-    if (isEditing) {
-      // No need to set save name anymore
-    }
-  }, [isEditing]);
-
-  const handleCourseChange = (index, field, value, isMajor = false) => {
+  const handleCourseChange = (index, field, value) => {
     if (field === "credits") {
-      // Ensure credits are numeric
       value = value.replace(/[^\d.]/g, "");
       
-      // Enforce one decimal point
       const decimalCount = (value.match(/\./g) || []).length;
       if (decimalCount > 1) {
         value = value.replace(/\./g, (match, idx) => 
@@ -79,31 +88,32 @@ const GPACalculator = () => {
       }
     }
 
-    const updatedCourses = isMajor 
-      ? [...majorCourses]
-      : [...courses];
+    const updatedCourses = [...courses];
     
-    updatedCourses[index][field] = value;
-    
-    if (isMajor) {
-      setMajorCourses(updatedCourses);
-    } else {
-      setCourses(updatedCourses);
+    if (updatedCourses[index]) {
+        updatedCourses[index][field] = value;
+        setCourses(updatedCourses);
     }
   };
 
-  const deleteCourse = (index, isMajor = false) => {
-    if (isMajor) {
-      setMajorCourses(majorCourses.filter((_, i) => i !== index));
-    } else {
-      setCourses(courses.filter((_, i) => i !== index));
-    }
+  const deleteCourse = (index) => {
+    setCourses(courses.filter((_, i) => i !== index));
   };
 
   const handleSaveGPA = async () => {
     setIsSaving(true);
-    await updateCentralGPA("My GPA"); // Use default name
-    setIsSaving(false);
+    try {
+      await updateCentralGPA("My GPA");
+    } catch (error) { 
+      console.error("Save failed in component");
+    } finally {
+       setIsSaving(false);
+    }
+  };
+
+  const handleLoginToSave = () => {
+    stashDataBeforeLogin();
+    navigate('/login');
   };
 
   const handleCancelEditing = () => {
@@ -120,12 +130,21 @@ const GPACalculator = () => {
     });
   };
 
-  const renderCourseInputs = (courseList, isMajor = false) => {
+  const handleModalResolve = async (action) => {
+    setShowConflictModal(false);
+    if (action === 'keep') {
+      await resolveConflictKeepSaved();
+    } else if (action === 'replace') {
+      await resolveConflictReplaceSaved();
+    }
+  };
+
+  const renderCourseInputs = (courseList) => {
     return (
       <Stack spacing={2}>
         {courseList.map((course, index) => (
           <Paper
-            key={index}
+            key={course.id || index}
             elevation={1}
             sx={{
               p: 3,
@@ -155,7 +174,7 @@ const GPACalculator = () => {
                 size="medium"
                 label="Course Title"
                 value={course.title}
-                onChange={(e) => handleCourseChange(index, "title", e.target.value, isMajor)}
+                onChange={(e) => handleCourseChange(index, "title", e.target.value)}
                 sx={{
                   flexGrow: 1,
                   minWidth: {xs: '100%', md: 'auto'},
@@ -168,7 +187,7 @@ const GPACalculator = () => {
                 size="medium"
                 label="Credits"
                 value={course.credits}
-                onChange={(e) => handleCourseChange(index, "credits", e.target.value, isMajor)}
+                onChange={(e) => handleCourseChange(index, "credits", e.target.value)}
                 sx={{
                   width: {xs: '45%', md: '100px'},
                   "& .MuiOutlinedInput-root": {
@@ -188,7 +207,7 @@ const GPACalculator = () => {
                 <Select
                   value={course.grade}
                   label="Grade"
-                  onChange={(e) => handleCourseChange(index, "grade", e.target.value, isMajor)}
+                  onChange={(e) => handleCourseChange(index, "grade", e.target.value)}
                 >
                   {letterGrades.map((grade) => (
                     <MenuItem key={grade} value={grade}>
@@ -197,21 +216,19 @@ const GPACalculator = () => {
                   ))}
                 </Select>
               </FormControl>
-              {!isMajor && (
-                <Tooltip title="Include in Major GPA">
-                  <Chip
-                    label="Major"
-                    color={course.isForMajor ? "primary" : "default"}
-                    variant={course.isForMajor ? "filled" : "outlined"}
-                    onClick={() => toggleCourseForMajor(index)}
-                    sx={{
-                      cursor: 'pointer',
-                      fontWeight: 500,
-                      transition: 'all 0.2s',
-                    }}
-                  />
-                </Tooltip>
-              )}
+              <Tooltip title="Include in Major GPA">
+                <Chip
+                  label="Major"
+                  color={course.isForMajor ? "primary" : "default"}
+                  variant={course.isForMajor ? "filled" : "outlined"}
+                  onClick={() => toggleCourseForMajor(index)}
+                  sx={{
+                    cursor: 'pointer',
+                    fontWeight: 500,
+                    transition: 'all 0.2s',
+                  }}
+                />
+              </Tooltip>
               <Tooltip title={course.isHidden ? "Show Course" : "Hide Course"}>
                 <IconButton
                   onClick={() => toggleCourseVisibility(index)}
@@ -240,7 +257,7 @@ const GPACalculator = () => {
                 </IconButton>
               </Tooltip>
               <IconButton
-                onClick={() => deleteCourse(index, isMajor)}
+                onClick={() => deleteCourse(index)}
                 sx={{
                   color: "error.main",
                   "&:hover": {
@@ -301,16 +318,28 @@ const GPACalculator = () => {
                   >
                     Cancel
                   </Button>
-                  <Button
-                    variant="contained"
-                    color="primary"
-                    startIcon={<SaveIcon />}
-                    onClick={handleSaveGPA}
-                    disabled={isSaving}
-                    sx={{ borderRadius: 2 }}
-                  >
-                    {isSaving ? "Saving..." : "Save GPA"}
-                  </Button>
+                  {isAuthenticated ? (
+                    <Button
+                      variant="contained"
+                      color="primary"
+                      startIcon={<SaveIcon />}
+                      onClick={handleSaveGPA}
+                      disabled={isSaving}
+                      sx={{ borderRadius: 2 }}
+                    >
+                      {isSaving ? "Saving..." : (currentGPAId ? "Update GPA" : "Save GPA")}
+                    </Button>
+                  ) : (
+                    <Button
+                      variant="contained"
+                      color="primary"
+                      startIcon={<LoginIcon />}
+                      onClick={handleLoginToSave}
+                      sx={{ borderRadius: 2 }}
+                    >
+                      Login to Save
+                    </Button>
+                  )}
                 </>
               ) : (
                 <Button
@@ -318,22 +347,26 @@ const GPACalculator = () => {
                   color="primary"
                   startIcon={<EditIcon />}
                   onClick={() => {
-                    // If we have a centralGPA with courses, we'll use those, otherwise nothing to edit
-                    if (!centralGPA.id) {
-                      // No GPA to edit, just switch to editing mode
-                      setIsEditing(true);
+                    if (currentGPAId) {
+                       editGPA();
                     } else {
-                      // Use the edit function from context
-                      editGPA();
+                       setIsEditing(true); 
                     }
                   }}
                   sx={{ borderRadius: 2 }}
+                  disabled={conflictStatus === 'conflict' || conflictStatus === 'pending'}
                 >
-                  {centralGPA.id ? "Edit GPA" : "Create GPA"}
+                  {currentGPAId ? "Edit Saved GPA" : "Create New GPA"}
                 </Button>
               )}
             </Box>
           </Box>
+
+          {conflictStatus === 'pending' && (
+            <Typography color="text.secondary" sx={{ textAlign: 'center', my: 2}}>
+              Checking for saved data...
+            </Typography>
+          )}
 
           {isEditing ? (
             <>
@@ -443,12 +476,31 @@ const GPACalculator = () => {
           ) : (
             <Box sx={{ textAlign: "center", py: 6 }}>
               <Typography variant="h6" color="text.secondary">
-                Click "Edit GPA" to start calculating your grade point average
+                {isAuthenticated 
+                  ? (currentGPAId ? `Loaded GPA: ${centralGPA.name || 'My GPA'}. Click 'Edit Saved GPA' to modify.` : "Click 'Create New GPA' to start.")
+                  : "Click 'Create New GPA' to start calculating. Login to save your progress."
+                }
               </Typography>
+              {!isAuthenticated && !isEditing && (
+                <Button 
+                  variant="outlined"
+                  onClick={() => setIsEditing(true)} 
+                  sx={{ mt: 2 }}
+                >
+                  Start Calculating (Unsaved)
+                </Button>
+              )}
             </Box>
           )}
         </Stack>
       </Paper>
+
+      <GPASaveConflictModal
+        open={showConflictModal}
+        onClose={() => handleModalResolve('keep')}
+        onKeepSaved={() => handleModalResolve('keep')}
+        onReplaceSaved={() => handleModalResolve('replace')}
+      />
     </>
   );
 };
