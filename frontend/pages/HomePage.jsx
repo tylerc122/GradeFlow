@@ -532,12 +532,12 @@ const HomePage = () => {
         <Box
           sx={{
             position: "absolute",
-            top: "-15%",
+            top: "50%",
             right: "-10%",
             width: "350px",
             height: "350px",
             borderRadius: "50%",
-            background: alpha(theme.palette.primary.main, 0.04),
+            background: alpha(theme.palette.primary.main, 0.05),
             filter: "blur(80px)",
             zIndex: 0,
             animation: "blobFloat 12s ease-in-out infinite alternate",

@@ -531,8 +531,8 @@ const Calculator = () => {
                 borderRadius: 2,
                 mb: 2,
                 bgcolor: "background.default",
-                ml: { xs: 0, sm: 2 },
-                width: { xs: '100%', sm: 'calc(100% - 0.8%)' }
+                ml: { xs: 0, sm: 2.7 },
+                width: { xs: '100%', sm: 'calc(100% - 0.7%)' }
               }}
             >
               <Stepper activeStep={activeStep}>
