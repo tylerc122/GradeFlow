@@ -29,27 +29,60 @@ const ManualGradeTable = ({
   }, [manualGrades]);
 
   const handleGradeChange = (categoryName, newValue) => {
-    // Clean up the input - trim spaces and convert to uppercase for letter grades
-    const cleanedValue = newValue.trim().toUpperCase();
+    // Clean differently for percentage vs letter
+    const trimmedValue = newValue.trim();
 
-    // Validate based on input type
-    if (cleanedValue) {
-      if (inputType === 'letter' && !isLetterGrade(cleanedValue)) {
+    if (inputType === 'letter') {
+      const cleanedValue = trimmedValue.toUpperCase();
+      // Allow typing invalid intermediate chars, but don't update state if invalid
+      if (cleanedValue && !isLetterGrade(cleanedValue)) {
+        return; 
+      }
+      onGradeChange({
+        categoryName,
+        grade: cleanedValue,
+        isLetter: true,
+        value: cleanedValue ? letterGradeToPoints(cleanedValue) : 0,
+      });
+    } else if (inputType === 'percentage') {
+      // Allow empty string through
+      if (trimmedValue === '') {
+        onGradeChange({ categoryName, grade: "", isLetter: false, value: 0 });
         return;
       }
-      if (inputType === 'percentage' && !isPercentage(cleanedValue)) {
-        return;
+
+      // Check 1: Invalid characters (allow only digits and one optional dot)
+      const validPattern = /^[0-9]*\.?[0-9]*$/; 
+      if (!validPattern.test(trimmedValue)) {
+        return; // Prevent update if invalid characters are present
       }
+
+      // Check 2: Length of integer part (max 3 digits)
+      const parts = trimmedValue.split('.');
+      if (parts[0].length > 3) {
+        return; // Prevent update if more than 3 digits before decimal
+      }
+
+      // Check 3: Value range (0-100) using isPercentage
+      // Allow potentially valid intermediate values like "9." or "100."
+      if (!isPercentage(trimmedValue)) {
+         const endsWithDot = trimmedValue.endsWith('.');
+         const numberWithoutDot = endsWithDot ? trimmedValue.slice(0, -1) : trimmedValue;
+         // Re-check if the number part is valid IF it ends with a dot
+         if (!endsWithDot || !isPercentage(numberWithoutDot)) {
+             return; // Not a valid number and not a valid intermediate ending in '.'
+         }
+         // If it's like "9.", proceed, parseFloat will handle it in onGradeChange call
+      }
+
+      // If validation passes or it's a valid intermediate state, update
+      onGradeChange({
+        categoryName,
+        grade: trimmedValue, // Keep the raw valid input
+        isLetter: false,
+        value: parseFloat(trimmedValue) || 0, // Calculate numeric value
+      });
     }
-
-    onGradeChange({
-      categoryName,
-      grade: cleanedValue,
-      isLetter: inputType === 'letter',
-      value: inputType === 'letter'
-        ? (cleanedValue ? letterGradeToPoints(cleanedValue) : 0)
-        : (cleanedValue ? parseFloat(cleanedValue) : 0),
-    });
   };
 
   const handleGradeBlur = (categoryName, currentGrade) => {
@@ -113,6 +146,7 @@ const ManualGradeTable = ({
                         handleGradeChange(category.name, e.target.value)
                       }
                       onBlur={() => handleGradeBlur(category.name, gradeData.grade)}
+                      onFocus={(event) => event.target.select()}
                       error={!!getGradeError(gradeData.grade)}
                       helperText={getGradeError(gradeData.grade)}
                       disabled={!inputType}
@@ -123,25 +157,7 @@ const ManualGradeTable = ({
                         inputMode: "decimal",
                         pattern: inputType === 'letter' 
                           ? "^[A-Za-z][+-]?$"
-                          : "^[0-9]+(?:\\.[0-9]+)?$",
-                        onKeyPress: (e) => {
-                          const value = e.target.value + e.key;
-                          if (value && inputType === 'letter' && !isLetterGrade(value)) {
-                            e.preventDefault();
-                          }
-                          if (value && inputType === 'percentage' && !isPercentage(value)) {
-                            e.preventDefault();
-                          }
-                        },
-                        onPaste: (e) => {
-                          const pastedValue = e.clipboardData.getData('text').trim().toUpperCase();
-                          if (pastedValue && inputType === 'letter' && !isLetterGrade(pastedValue)) {
-                            e.preventDefault();
-                          }
-                          if (pastedValue && inputType === 'percentage' && !isPercentage(pastedValue)) {
-                            e.preventDefault();
-                          }
-                        }
+                          : "^[0-9]+(?:\.[0-9]+)?$",
                       }}
                     />
                   ) : (
