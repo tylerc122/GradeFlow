@@ -594,32 +594,52 @@ const HomePage = () => {
                 variant="h6"
                 sx={{ mb: 4, fontWeight: 400, color: "text.secondary" }}
               >
-                Join thousands of students simplifying their grade tracking
-                with GradeFlow.
+                Create a free account to save your calculations, track your progress, 
+                and unlock powerful grade prediction features.
               </Typography>
-              <Button
-                variant="contained"
-                size="large"
-                onClick={() => navigate("/calculator")}
-                endIcon={<ChevronRight />}
-                sx={{
-                  py: 1.75,
-                  px: 5,
-                  borderRadius: "14px",
-                  fontSize: "1.1rem",
-                  background: "var(--gradient-primary)",
-                  color: "white",
-                  fontWeight: 600,
-                  boxShadow: `0 8px 25px ${alpha(theme.palette.primary.main, 0.3)}`,
-                  transition: "all 0.3s ease",
-                  "&:hover": {
-                    transform: "translateY(-2px)",
-                    boxShadow: `0 12px 30px ${alpha(theme.palette.primary.main, 0.4)}`,
-                  },
-                }}
-              >
-                Get Started Now
-              </Button>
+              <Box sx={{ display: 'flex', gap: 2, justifyContent: 'center', flexWrap: { xs: 'wrap', sm: 'nowrap' } }}>
+                <Button
+                  variant="contained"
+                  size="large"
+                  onClick={() => navigate("/register")}
+                  endIcon={<ChevronRight />}
+                  sx={{
+                    py: 1.75,
+                    px: 5,
+                    borderRadius: "14px",
+                    fontSize: "1.1rem",
+                    background: "var(--gradient-primary)",
+                    color: "white",
+                    fontWeight: 600,
+                    boxShadow: `0 8px 25px ${alpha(theme.palette.primary.main, 0.3)}`,
+                    transition: "all 0.3s ease",
+                    "&:hover": {
+                      transform: "translateY(-2px)",
+                      boxShadow: `0 12px 30px ${alpha(theme.palette.primary.main, 0.4)}`,
+                    },
+                  }}
+                >
+                  Create Free Account
+                </Button>
+                <Button
+                  variant="outlined"
+                  size="large"
+                  onClick={() => navigate("/calculator")}
+                  sx={{
+                    py: 1.75,
+                    px: 5,
+                    borderRadius: "14px",
+                    fontSize: "1.1rem",
+                    fontWeight: 600,
+                    transition: "all 0.3s ease",
+                    "&:hover": {
+                      backgroundColor: alpha(theme.palette.primary.main, 0.05),
+                    },
+                  }}
+                >
+                  Try Calculator First
+                </Button>
+              </Box>
             </Box>
           </Paper>
         </Container>

@@ -13,17 +13,22 @@ import {
   Chip,
   IconButton,
   Tooltip,
+  Button,
 } from "@mui/material";
-import { Copy, Calculator, BarChart2, Award, Sparkles, HelpCircle } from "lucide-react";
+import { Copy, Calculator, BarChart2, Award, Sparkles, HelpCircle, Save, History, ChevronRight } from "lucide-react";
 import { useTheme } from "../src/contexts/ThemeContext";
 import TutorialDialog from "./dialogs/TutorialDialog";
 import { useUserPreferences } from "../src/contexts/UserPreferencesContext";
+import { useAuth } from "../src/contexts/AuthContext";
+import { useNavigate } from "react-router-dom";
 
 const WelcomeSection = () => {
   const theme = useMuiTheme();
+  const navigate = useNavigate();
   const { mode, isDark } = useTheme();
   const { hasSeenTutorial, markTutorialAsSeen } = useUserPreferences();
   const [showTutorial, setShowTutorial] = useState(false);
+  const { user } = useAuth();
 
   // Show tutorial automatically on first visit
   useEffect(() => {
@@ -64,6 +69,28 @@ const WelcomeSection = () => {
       icon: <Calculator size={20} />,
       title: "Get instant calculations and grade predictions",
       color: theme.palette.warning.main,
+    },
+  ];
+
+  // The benefits of signing up
+  const accountBenefits = [
+    {
+      icon: <Save size={20} />,
+      title: "Save your calculations",
+      description: "Store all your grade data securely across sessions",
+      color: theme.palette.primary.main,
+    },
+    {
+      icon: <History size={20} />,
+      title: "Track progress over time",
+      description: "Monitor how your grades evolve throughout the semester",
+      color: theme.palette.secondary.main,
+    },
+    {
+      icon: <BarChart2 size={20} />,
+      title: "What-if scenarios",
+      description: "Create and save different grade scenarios for future assignments",
+      color: theme.palette.success.main,
     },
   ];
 
@@ -248,8 +275,8 @@ const WelcomeSection = () => {
                 </Box>
                 <Typography
                   sx={{
-                    color: theme.palette.text.secondary,
-                    fontWeight: 500,
+                    fontWeight: 600,
+                    fontSize: "1rem",
                   }}
                 >
                   {step.title}
@@ -259,6 +286,132 @@ const WelcomeSection = () => {
           </Stack>
         </Box>
       </Paper>
+
+      {/* Account Benefits Section - Only show if user is not logged in */}
+      {!user && (
+        <Paper
+          elevation={3}
+          sx={{
+            p: 4,
+            borderRadius: "20px",
+            background: isDark 
+              ? `linear-gradient(145deg, ${alpha(theme.palette.primary.dark, 0.15)}, ${alpha(theme.palette.secondary.dark, 0.1)})` 
+              : `linear-gradient(145deg, ${alpha(theme.palette.primary.light, 0.15)}, ${alpha(theme.palette.secondary.light, 0.1)})`,
+            border: "1px solid",
+            borderColor: alpha(theme.palette.divider, 0.1),
+            position: "relative",
+            overflow: "hidden",
+          }}
+        >
+          <Box sx={{ position: "relative", zIndex: 1 }}>
+            <Typography
+              variant="h5"
+              sx={{
+                fontWeight: 700,
+                color: theme.palette.text.primary,
+                display: "flex",
+                alignItems: "center",
+                gap: 1.5,
+                mb: 3,
+              }}
+            >
+              <Box
+                sx={{
+                  width: 30,
+                  height: 30,
+                  borderRadius: "8px",
+                  background: alpha(theme.palette.primary.main, 0.1),
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  color: theme.palette.primary.main,
+                }}
+              >
+                <Sparkles size={18} />
+              </Box>
+              Create an Account for More Benefits
+            </Typography>
+
+            <Stack spacing={3} sx={{ mb: 4 }}>
+              {accountBenefits.map((benefit, index) => (
+                <Box
+                  key={index}
+                  sx={{
+                    display: "flex",
+                    gap: 2,
+                    padding: 2,
+                    borderRadius: "12px",
+                    border: "1px solid",
+                    borderColor: alpha(benefit.color, 0.2),
+                    backgroundColor: alpha(benefit.color, 0.03),
+                    transition: "all 0.2s ease",
+                    "&:hover": {
+                      transform: "translateY(-4px)",
+                      boxShadow: `0 4px 12px ${alpha(benefit.color, 0.1)}`,
+                      backgroundColor: alpha(benefit.color, 0.06),
+                    },
+                  }}
+                >
+                  <Box
+                    sx={{
+                      width: 40,
+                      height: 40,
+                      borderRadius: "10px",
+                      backgroundColor: alpha(benefit.color, 0.1),
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      color: benefit.color,
+                      flexShrink: 0,
+                    }}
+                  >
+                    {benefit.icon}
+                  </Box>
+                  <Box>
+                    <Typography
+                      sx={{
+                        fontWeight: 600,
+                        fontSize: "1.05rem",
+                        mb: 0.5,
+                      }}
+                    >
+                      {benefit.title}
+                    </Typography>
+                    <Typography
+                      variant="body2"
+                      color="text.secondary"
+                    >
+                      {benefit.description}
+                    </Typography>
+                  </Box>
+                </Box>
+              ))}
+            </Stack>
+
+            <Button
+              variant="contained"
+              size="large"
+              onClick={() => navigate("/register")}
+              endIcon={<ChevronRight size={18} />}
+              sx={{
+                py: 1.5,
+                px: 3,
+                borderRadius: "14px",
+                fontSize: "1rem",
+                background: "var(--gradient-primary)",
+                boxShadow: `0 8px 20px ${alpha(theme.palette.primary.main, 0.2)}`,
+                transition: "all 0.3s ease",
+                "&:hover": {
+                  transform: "translateY(-2px)",
+                  boxShadow: `0 12px 25px ${alpha(theme.palette.primary.main, 0.3)}`,
+                },
+              }}
+            >
+              Create Free Account
+            </Button>
+          </Box>
+        </Paper>
+      )}
 
       {/* Sample Format */}
       <Paper
