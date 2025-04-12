@@ -1,3 +1,6 @@
+/**
+ * Controls context for the calculator.
+ */
 import React, { createContext, useContext, useState, useEffect } from "react";
 
 const CalculatorContext = createContext();

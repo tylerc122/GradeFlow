@@ -1,5 +1,5 @@
 /**
- * The grade input screen, either manual or blackboard.
+ * Parent component of the grade input screen. Choose manual or blackboard.
  */
 import React from "react";
 import {

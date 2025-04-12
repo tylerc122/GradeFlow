@@ -1,3 +1,6 @@
+/**
+ * Controls context for theme i.e light/dark mode.
+ */
 import React, { createContext, useContext, useState, useEffect } from "react";
 import { ThemeProvider as MuiThemeProvider } from "@mui/material/styles";
 import createAppTheme from "../theme";

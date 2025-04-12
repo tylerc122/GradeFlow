@@ -1,3 +1,7 @@
+/**
+ * The page where the user can view their specific saved calculations.
+ * Uses Results.jsx as a child component so it was HELL to get working.
+ */
 import React, { useState, useEffect, useRef, useCallback, Suspense } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useSnackbar } from "notistack";
@@ -12,10 +16,8 @@ import {
   Container,
   CircularProgress,
   Alert,
-  Box,
   Button,
   Typography,
-  Paper,
   Dialog,
   DialogTitle,
   DialogContent,
@@ -46,7 +48,6 @@ const SavedCalculation = () => {
     setHiddenAssignments,
     manualGrades,
     setManualGrades,
-    resetCalculator,
     setIsResultsView,
     setLastViewedCalculation,
     clearLastViewedCalculation,
@@ -64,7 +65,6 @@ const SavedCalculation = () => {
   // State management
   const [dialogOpen, setDialogOpen] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState(null);
-  const [saveDialogOpen, setSaveDialogOpen] = useState(false);
   const [duplicateDialogOpen, setDuplicateDialogOpen] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [retryCount, setRetryCount] = useState(0);
@@ -205,7 +205,6 @@ const SavedCalculation = () => {
       updatedCategories.forEach(category => {
         if (category.assignments) {
           category.assignments.forEach(assignment => {
-            const scoreKey = `${category.name}-${assignment.name}`;
             // If this assignment has a saved hypothetical score, apply it
             if (assignment.hasHypotheticalScore && assignment.originalScore !== undefined) {
               assignment.score = assignment.savedHypotheticalScore;
@@ -225,7 +224,6 @@ const SavedCalculation = () => {
       updatedCategories.forEach(category => {
         if (category.assignments) {
           category.assignments.forEach(assignment => {
-            const scoreKey = `${category.name}-${assignment.name}`;
             // If this assignment has a saved hypothetical score, revert to original
             if (assignment.hasHypotheticalScore && assignment.originalScore !== undefined) {
               assignment.score = assignment.originalScore;
@@ -787,11 +785,6 @@ const SavedCalculation = () => {
       }
     }
   }, [hypotheticalScores, hypotheticalAssignments, hiddenAssignments, manualGrades, saveStatus, whatIfMode, mode]);
-
-  // Enhanced function to check for unsaved changes
-  const hasUnsavedChanges = useCallback(() => {
-    return saveStatus === "unsaved";
-  }, [saveStatus]);
 
   if (loading) {
     return (

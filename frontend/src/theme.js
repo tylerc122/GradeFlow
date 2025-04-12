@@ -1,3 +1,6 @@
+/**
+ * The theme for the app, handles light and dark mode.
+ */
 import { createTheme } from "@mui/material/styles";
 
 // Create a function to generate theme based on mode

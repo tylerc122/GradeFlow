@@ -1,3 +1,6 @@
+/**
+ * Subcomponent of GradeInput.jsx. Let's user input grades manually #LAME.
+ */
 import React, { useState, useEffect } from "react";
 import {
   Paper,

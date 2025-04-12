@@ -1,3 +1,6 @@
+/**
+ * The login page, users can sign in with email or Google.
+ */
 import React, { useState, useEffect } from "react";
 import {
   Container,

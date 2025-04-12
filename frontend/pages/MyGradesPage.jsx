@@ -1,3 +1,6 @@
+/**
+ * Users can view their saved calculations here. New sorting feature!
+ */
 import React, { useState, useEffect, useMemo } from "react";
 import {
   Container,
@@ -38,7 +41,6 @@ const MyGradesPage = () => {
     clearLastViewedCalculation, 
     setLastViewedCalculation,
     showGradesList,
-    setShowGradesList
   } = useCalculator();
   const [calculations, setCalculations] = useState([]);
   const [loading, setLoading] = useState(true);

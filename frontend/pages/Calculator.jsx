@@ -1,10 +1,12 @@
-import React, { useState, useEffect } from "react";
+/**
+ * The orchestrator of the app. Surprisingly, had less trouble coding this than the results page.
+ */
+import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useSnackbar } from "notistack";
 import { useAuth } from "../src/contexts/AuthContext";
 import SaveIcon from "@mui/icons-material/Save";
 import {
-  Box,
   Stepper,
   Step,
   StepLabel,
@@ -13,7 +15,6 @@ import {
   Paper,
   Container,
   useTheme as useMuiTheme,
-  alpha,
 } from "@mui/material";
 import Grid from "@mui/material/Grid";
 import GradeInput from "../components/step2/GradeInput";
@@ -29,7 +30,6 @@ import {
   letterGradeToPoints,
   isLetterGrade,
 } from "../src/utils/letterGradeUtils";
-import { RefreshCw } from "lucide-react";
 
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8000";
 
@@ -74,99 +74,12 @@ const Calculator = () => {
     setUncategorizedAssignments,
     manualGrades,
     setManualGrades,
-    whatIfMode,
-    setWhatIfMode,
-    targetGrade,
-    setTargetGrade,
     hypotheticalScores,
-    setHypotheticalScores,
     hypotheticalAssignments,
-    setHypotheticalAssignments,
-    dialogOpen,
-    setDialogOpen,
-    selectedCategory,
-    setSelectedCategory,
     hiddenAssignments,
     setHiddenAssignments,
-    resetCalculator,
-    activeStep: contextActiveStep,
-    setActiveStep: setContextActiveStep,
     setIsResultsView,
-    showCalculateAnotherButton,
   } = useCalculator();
-
-  // Update calculation function to use hidden assignments
-  const calculateCategoryGrade = (assignments, categoryName) => {
-    // console.log(`\nCalculating grade for ${categoryName}`);
-    // console.log("Hidden assignments:", hiddenAssignments);
-
-    if (!assignments || !assignments.length) return 0;
-
-    // Filter out hidden assignments first
-    const visibleAssignments = assignments.filter(
-      (assignment) =>
-        !hiddenAssignments.includes(`${categoryName}-${assignment.name}`)
-    );
-
-    // console.log(`Total assignments: ${assignments.length}`);
-    // console.log(`Visible assignments: ${visibleAssignments.length}`);
-
-    if (!visibleAssignments.length) return 0;
-
-    const totalEarned = visibleAssignments.reduce((sum, a) => {
-      const scoreKey = `${categoryName}-${a.name}`;
-      const score = hypotheticalScores[scoreKey]?.score ?? a.score;
-      return sum + score;
-    }, 0);
-
-    const totalPossible = visibleAssignments.reduce(
-      (sum, a) => sum + a.total_points,
-      0
-    );
-
-    const grade = totalPossible > 0 ? (totalEarned / totalPossible) * 100 : 0;
-    // console.log(`Category grade: ${grade}%\n`);
-    return grade;
-  };
-
-  // Update the original calculateCategoryGrade function
-  const originalCalculateCategoryGrade = calculateCategoryGrade;
-
-  // Wrap the calculation to include hidden assignments
-  const wrappedCalculateCategoryGrade = (assignments, categoryName) => {
-    // console.log(
-    //   "Current hidden assignments in calculation:",
-    //   hiddenAssignments
-    // );
-
-    // Filter out hidden assignments
-    const visibleAssignments = assignments.filter(
-      (assignment) =>
-        !hiddenAssignments.includes(`${categoryName}-${assignment.name}`)
-    );
-
-    // console.log(`Category ${categoryName}:`);
-    // console.log("- Original assignments:", assignments.length);
-    // console.log("- Visible assignments:", visibleAssignments.length);
-
-    // Use the original calculation function with filtered assignments
-    return originalCalculateCategoryGrade(visibleAssignments, categoryName);
-  };
-
-  const handleToggleAssignmentVisibility = (categoryName, assignmentName) => {
-    // console.log(
-    //   "Toggling visibility for:",
-    //   `${categoryName}-${assignmentName}`
-    // );
-    setHiddenAssignments((prev) => {
-      const assignmentKey = `${categoryName}-${assignmentName}`;
-      const newHidden = prev.includes(assignmentKey)
-        ? prev.filter((key) => key !== assignmentKey)
-        : [...prev, assignmentKey];
-      // console.log("Updated hidden assignments:", newHidden);
-      return newHidden;
-    });
-  };
 
   const handleProcessGrades = async () => {
     try {
@@ -225,59 +138,6 @@ const Calculator = () => {
     } finally {
       setIsLoading(false);
     }
-  };
-
-  const calculateWeightedGrade = () => {
-    // console.log("\nCalculating final weighted grade");
-    if (calculatorMode === "manual") {
-      let totalWeightedPoints = 0;
-      let totalWeight = 0;
-      let hasLetterGrades = false;
-
-      categories.forEach((category) => {
-        const grade = manualGrades.find(
-          (g) => g.categoryName === category.name
-        );
-        if (grade) {
-          if (grade.isLetter && isLetterGrade(grade.grade)) {
-            hasLetterGrades = true;
-            // Get GPA points directly
-            const points = letterGradeToPoints(grade.grade);
-            totalWeightedPoints += points * category.weight;
-          } else {
-            totalWeightedPoints += grade.value * category.weight;
-          }
-          totalWeight += category.weight;
-        }
-      });
-
-      return {
-        percentage: totalWeight > 0 ? totalWeightedPoints / totalWeight : 0,
-        hasLetterGrades
-      };
-    }
-
-    return categories.reduce((total, category) => {
-      const categoryHypotheticals = hypotheticalAssignments.filter(
-        (a) => a.categoryName === category.name
-      );
-
-      const allAssignments = [
-        ...(category.assignments || []),
-        ...categoryHypotheticals,
-      ];
-
-      const categoryGrade = calculateCategoryGrade(
-        allAssignments,
-        category.name
-      );
-      const weightedGrade = categoryGrade * (category.weight / 100);
-      // console.log(
-      //   `${category.name}: ${categoryGrade}% * ${category.weight}% = ${weightedGrade}%`
-      // );
-
-      return total + weightedGrade;
-    }, 0);
   };
 
   const handleSave = async (saveData) => {
@@ -443,7 +303,7 @@ const Calculator = () => {
     }
   };
 
-  // Add this helper function to calculate grade from manual input
+  // helper function to calculate grade from manual input
   const calculateManualGradePercentage = () => {
     let totalWeightedPoints = 0;
     let totalWeight = 0;

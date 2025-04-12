@@ -1,3 +1,6 @@
+/**
+ * Controls context for user preferences i.e tutorial status.
+ */
 import React, { createContext, useContext, useState, useEffect } from 'react';
 
 // Define the context

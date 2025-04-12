@@ -1,3 +1,6 @@
+/**
+ * Utility functions for letter grades.
+ */
 export const LETTER_GRADES = {
   "A+": { points: 4.0, minPercent: 97 },
   A: { points: 4.0, minPercent: 93 },

@@ -1,3 +1,6 @@
+/**
+ * Controls context for GPA calculator.
+ */
 import React, { createContext, useContext, useState, useEffect } from "react";
 import { useAuth } from "./AuthContext";
 
@@ -189,7 +192,7 @@ export const GPAProvider = ({ children }) => {
      }
   };
 
-  // Resolve conflict: User chose to keep their existing saved GPA
+  // If user chose to keep their existing saved GPA
   const resolveConflictKeepSaved = async () => {
     console.log("Resolving conflict: Keeping saved GPA.");
     localStorage.removeItem(PENDING_SAVE_KEY);
@@ -199,7 +202,7 @@ export const GPAProvider = ({ children }) => {
     await fetchSavedGPAs();
   };
 
-  // Resolve conflict: User chose to replace saved GPA with the pending one
+  // If user chose to replace saved GPA with the pending one
   const resolveConflictReplaceSaved = async () => {
     console.log("Resolving conflict: Replacing with pending GPA.");
     if (!pendingData || !pendingData.courses) {

@@ -1,3 +1,6 @@
+/**
+ * The home page, introductory page.
+ */
 import React from "react";
 import {
   Container,
@@ -20,10 +23,7 @@ import {
   Copy,
   BarChart3,
   Sparkles,
-  School,
   Layers,
-  Sigma,
-  Users,
   Zap,
   Upload,
   Gauge,
@@ -44,7 +44,7 @@ const HomePage = () => {
       icon: <Layers strokeWidth={1.5} size={38} />,
       title: "Smart Categories",
       description:
-        "Our AI automatically sorts your assignments into the right categories so you don't have to manually categorize everything.",
+        "Our algorithm automatically sorts your assignments into the right categories so you don't have to manually categorize everything.", // Maybe one day it'll be our 'AI
       color: theme.palette.primary.main,
     },
     {
@@ -72,6 +72,8 @@ const HomePage = () => {
 
   const stats = []
 
+
+  // Hella manifesting
   // // Stats for the social proof section
   // const stats = [
   //   {

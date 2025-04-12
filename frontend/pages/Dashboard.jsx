@@ -1,3 +1,6 @@
+/**
+ * The dashboard page, where the user can see their stats. GPA, latest grade, etc.
+ */
 import React, { useState, useEffect } from "react";
 import {
   Container,
@@ -12,8 +15,6 @@ import {
   useTheme,
   Button,
   alpha,
-  Tooltip,
-  IconButton,
   Chip,
   Skeleton,
   LinearProgress,
@@ -34,8 +35,6 @@ import {
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import {
-  LineChart,
-  Line,
   XAxis,
   YAxis,
   CartesianGrid,
@@ -55,8 +54,6 @@ const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8000";
 const Dashboard = () => {
   const theme = useTheme();
   const navigate = useNavigate();
-  const { mode } = useTheme();
-  const isDark = mode === "dark";
   const { enqueueSnackbar } = useSnackbar();
   const { setLastViewedCalculation } = useCalculator();
   const { user } = useAuth();
