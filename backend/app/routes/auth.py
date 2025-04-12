@@ -1,3 +1,6 @@
+"""
+Controls authentication routes.
+"""
 from fastapi import APIRouter, Depends, HTTPException, Request, Response, BackgroundTasks
 from sqlalchemy.orm import Session
 from pydantic import BaseModel, EmailStr
@@ -9,7 +12,6 @@ import os
 from authlib.integrations.starlette_client import OAuth
 from starlette.config import Config
 from starlette.responses import RedirectResponse
-import json
 
 router = APIRouter()
 
@@ -90,7 +92,7 @@ async def login(
     db: Session = Depends(get_db)
 ):
     # Apply stricter rate limiting for login attempts
-    # Only 5 login attempts per minute
+    # Only 5 login attempts per minute (not actually it's far more lenient in production)
     session_manager.rate_limiter.limit_request(request, max_requests=LOGIN_RATE_LIMIT_MAX, period=LOGIN_RATE_LIMIT_PERIOD)
     
     # Find user

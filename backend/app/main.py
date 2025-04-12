@@ -1,3 +1,6 @@
+"""
+Main entry point for the API.
+"""
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from starlette.middleware.sessions import SessionMiddleware
@@ -7,7 +10,7 @@ from .routes.grades import router as grades_router
 from .routes.auth import router as auth_router
 from .routes.users import router as users_router
 from .auth.session_manager import session_manager
-from fastapi import Request, HTTPException
+from fastapi import Request
 from starlette.middleware.base import BaseHTTPMiddleware
 import subprocess
 import sys

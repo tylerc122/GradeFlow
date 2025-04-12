@@ -1,3 +1,6 @@
+"""
+Attempts to categorize assignments based on regex patterns.
+"""
 from dataclasses import dataclass
 from typing import List, Dict, Optional, Set
 import re
@@ -28,6 +31,7 @@ class CategoryMatcher:
         # Add compound category recognition
         self.compound_separator_pattern = re.compile(r'[/&+-]|\s+and\s+|\s+or\s+')
         
+        # Top 10 most common categories
         self.category_patterns: Dict[str, CategoryPattern] = {
             "Lab Quizzes": CategoryPattern(
                 prefixes=["lab", "laboratory"],

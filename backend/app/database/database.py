@@ -1,8 +1,10 @@
+"""
+Controls database connection.
+"""
 from sqlalchemy import create_engine
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 import os
-from sqlalchemy.orm import Session
 
 # Get database URL from environment variable with fallback for development
 database_url_raw = os.getenv("DATABASE_URL", "sqlite:///./grades.db")

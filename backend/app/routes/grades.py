@@ -1,3 +1,6 @@
+"""
+Controls grade routes.
+"""
 from fastapi import APIRouter, HTTPException, Request, Body, Header, Depends
 from fastapi.responses import JSONResponse
 from typing import List, Optional

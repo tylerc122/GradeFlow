@@ -1,3 +1,6 @@
+"""
+Controls database models.
+"""
 from sqlalchemy import Boolean, Column, ForeignKey, Integer, String, Float, DateTime, JSON
 from sqlalchemy.orm import relationship
 from datetime import datetime

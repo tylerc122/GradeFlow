@@ -1,14 +1,11 @@
 from openai import OpenAI
-from fastapi import HTTPException
 from dotenv import load_dotenv
-from typing import List, Optional, Dict, Tuple, Any
+from typing import List, Optional, Tuple
 import os
 import asyncio
 import re
 import time
-import json
 import pickle
-from pathlib import Path
 from datetime import datetime, timedelta
 
 load_dotenv()

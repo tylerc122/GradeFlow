@@ -1,3 +1,6 @@
+/**
+ * Dialog that pops up when user wants to add a hypothetical assignment.
+ */
 import React, { useState } from "react";
 import {
   Dialog,

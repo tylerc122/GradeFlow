@@ -1,3 +1,6 @@
+"""
+Controls session management i.e login, logout, etc.
+"""
 from typing import Optional
 import redis
 from fastapi import HTTPException, Request, Response

@@ -1,9 +1,11 @@
+"""
+Controls user routes.
+"""
 from fastapi import APIRouter, Depends, HTTPException, Body
 from sqlalchemy.orm import Session
 from ..database.database import get_db
 from ..database.models import User
 from ..auth.session_manager import session_manager
-from typing import Optional
 
 router = APIRouter()
 

@@ -1,13 +1,14 @@
-from datetime import datetime
-from typing import List, Optional, Tuple
+"""
+The main component of GradeFlow, controls the parsing of raw Blackboard data and the categorization of assignments.
+Attempts to use category_matcher first, using rule based regex patterns.
+If that fails, uses OpenAI to categorize.
+"""
+
+from typing import List, Optional
 from ..models.grade_models import Assignment
 from .category_matcher import CategoryMatcher
-from .openai_integration import OpenAICategorizer
 from .shared_services import openai_categorizer
 import re
-
-# Remove this local instance
-# openai_categorizer = OpenAICategorizer()
 
 async def parse_blackboard_grades(raw_text: str, available_categories: Optional[List[str]] = None) -> list[Assignment]:
     assignments = []
@@ -15,7 +16,6 @@ async def parse_blackboard_grades(raw_text: str, available_categories: Optional[
     
     # Initialize categorizers
     category_matcher = CategoryMatcher(available_categories=available_categories)
-    # Using the shared instance from shared_services
     
     # Clean up the text - normalize newlines and remove extra spaces
     clean_text = '\n'.join(line.strip() for line in raw_text.splitlines() if line.strip())
