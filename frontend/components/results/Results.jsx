@@ -363,6 +363,30 @@ const Results = ({
   const handleReset = () => {
     // If we're in a saved calculation view, we should navigate back to the grades list
     if (isSavedCalculation) {
+      // Try to restore original calculator state from session storage before navigating away
+      try {
+        const savedState = sessionStorage.getItem('originalCalculatorState');
+        if (savedState) {
+          const stateToRestore = JSON.parse(savedState);
+          
+          // Reset the calculator state with the original values
+          setCategories(JSON.parse(JSON.stringify(stateToRestore.categories)));
+          setMode(stateToRestore.mode);
+          setRawGradeData(stateToRestore.rawGradeData);
+          setWhatIfMode(stateToRestore.whatIfMode);
+          setTargetGrade(stateToRestore.targetGrade);
+          setHypotheticalScores(JSON.parse(JSON.stringify(stateToRestore.hypotheticalScores)));
+          setHypotheticalAssignments(JSON.parse(JSON.stringify(stateToRestore.hypotheticalAssignments)));
+          setHiddenAssignments([...stateToRestore.hiddenAssignments]);
+          setManualGrades(JSON.parse(JSON.stringify(stateToRestore.manualGrades)));
+          
+          // Clean up session storage
+          sessionStorage.removeItem('originalCalculatorState');
+        }
+      } catch (e) {
+        console.error('Failed to restore calculator state from session storage:', e);
+      }
+      
       // Clear the last viewed calculation when resetting
       clearLastViewedCalculation();
       navigate("/grades");

@@ -12,6 +12,8 @@ export function cleanResetCalculator() {
   sessionStorage.removeItem("isResultsView");
   sessionStorage.removeItem("calculatorData");
   sessionStorage.removeItem("categories");
+  sessionStorage.removeItem("originalCalculatorState");
+  sessionStorage.removeItem("lastViewedCalculation");
 
   // Clear all local storage related to calculator
   localStorage.removeItem("categories");
