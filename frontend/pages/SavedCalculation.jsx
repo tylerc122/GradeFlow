@@ -71,6 +71,13 @@ const SavedCalculation = () => {
   const [saveStatus, setSaveStatus] = useState("saved");
   const [lastSaved, setLastSaved] = useState(null);
 
+  // Simple local state to track initial data for change detection
+  const [initialData, setInitialData] = useState({
+    manualGrades: [],
+    hypotheticalScores: {},
+    hiddenAssignments: []
+  });
+
   // Redirect to login if not authenticated
   useEffect(() => {
     if (!user) {
@@ -95,13 +102,8 @@ const SavedCalculation = () => {
       manualGrades: JSON.parse(JSON.stringify(manualGrades || []))
     };
     
-    // Store the original state in session storage as a backup
-    // This provides an additional layer of safety if component state gets corrupted
-    try {
-      sessionStorage.setItem('originalCalculatorState', JSON.stringify(originalCalculatorState.current));
-    } catch (e) {
-      console.warn('Failed to store calculator state in session storage:', e);
-    }
+    // Set a flag in sessionStorage to indicate we're storing a calculator state
+    sessionStorage.setItem('hasStoredCalculatorState', 'true');
     
     // Set that we're in the results view for a saved calculation
     setIsResultsView(true);
@@ -110,36 +112,26 @@ const SavedCalculation = () => {
     setLastViewedCalculation(id);
     
     return () => {
-      // Restore original calculator state when component unmounts
-      let stateToRestore = originalCalculatorState.current;
-      
-      // If something happened to our ref, try to recover from session storage
-      if (!stateToRestore) {
+      // Only restore if we have stored state and the flag is still set
+      if (originalCalculatorState.current && sessionStorage.getItem('hasStoredCalculatorState') === 'true') {
         try {
-          const savedState = sessionStorage.getItem('originalCalculatorState');
-          if (savedState) {
-            stateToRestore = JSON.parse(savedState);
-          }
+          // Deep restore all objects to ensure changes don't leak between components
+          setCategories(JSON.parse(JSON.stringify(originalCalculatorState.current.categories)));
+          setMode(originalCalculatorState.current.mode);
+          setRawGradeData(originalCalculatorState.current.rawGradeData);
+          setWhatIfMode(originalCalculatorState.current.whatIfMode);
+          setTargetGrade(originalCalculatorState.current.targetGrade);
+          setHypotheticalScores(JSON.parse(JSON.stringify(originalCalculatorState.current.hypotheticalScores)));
+          setHypotheticalAssignments(JSON.parse(JSON.stringify(originalCalculatorState.current.hypotheticalAssignments)));
+          setHiddenAssignments([...originalCalculatorState.current.hiddenAssignments]);
+          setManualGrades(JSON.parse(JSON.stringify(originalCalculatorState.current.manualGrades)));
+          
+          // Remove the flag after restoration
+          sessionStorage.removeItem('hasStoredCalculatorState');
         } catch (e) {
-          console.error('Failed to restore calculator state from session storage:', e);
+          console.error('Failed to restore calculator state:', e);
         }
       }
-      
-      if (stateToRestore) {
-        // Deep restore all objects to ensure changes don't leak between components
-        setCategories(JSON.parse(JSON.stringify(stateToRestore.categories)));
-        setMode(stateToRestore.mode);
-        setRawGradeData(stateToRestore.rawGradeData);
-        setWhatIfMode(stateToRestore.whatIfMode);
-        setTargetGrade(stateToRestore.targetGrade);
-        setHypotheticalScores(JSON.parse(JSON.stringify(stateToRestore.hypotheticalScores)));
-        setHypotheticalAssignments(JSON.parse(JSON.stringify(stateToRestore.hypotheticalAssignments)));
-        setHiddenAssignments([...stateToRestore.hiddenAssignments]);
-        setManualGrades(JSON.parse(JSON.stringify(stateToRestore.manualGrades)));
-      }
-      
-      // Clean up session storage
-      sessionStorage.removeItem('originalCalculatorState');
       
       // Clear that we're in results view when leaving
       setIsResultsView(false);
@@ -171,41 +163,9 @@ const SavedCalculation = () => {
       setShowPrompt(true);
       setPendingNavigation("/grades");
     } else {
-      // Restore original calculator state explicitly before navigating
-      let stateToRestore = originalCalculatorState.current;
-      
-      // If something happened to our ref, try to recover from session storage
-      if (!stateToRestore) {
-        try {
-          const savedState = sessionStorage.getItem('originalCalculatorState');
-          if (savedState) {
-            stateToRestore = JSON.parse(savedState);
-          }
-        } catch (e) {
-          console.error('Failed to restore calculator state from session storage:', e);
-        }
-      }
-      
-      if (stateToRestore) {
-        // Completely reset the calculator state with the original values
-        setCategories(JSON.parse(JSON.stringify(stateToRestore.categories)));
-        setMode(stateToRestore.mode);
-        setRawGradeData(stateToRestore.rawGradeData);
-        setWhatIfMode(stateToRestore.whatIfMode);
-        setTargetGrade(stateToRestore.targetGrade);
-        setHypotheticalScores(JSON.parse(JSON.stringify(stateToRestore.hypotheticalScores)));
-        setHypotheticalAssignments(JSON.parse(JSON.stringify(stateToRestore.hypotheticalAssignments)));
-        setHiddenAssignments([...stateToRestore.hiddenAssignments]);
-        setManualGrades(JSON.parse(JSON.stringify(stateToRestore.manualGrades)));
-      }
-      
-      // Clean up session storage
-      sessionStorage.removeItem('originalCalculatorState');
-      
-      // Clear the last viewed calculation to actually show the grades list
+      // Simply clear the last viewed calculation and navigate
+      // The cleanup function in the mount useEffect will handle state restoration
       clearLastViewedCalculation();
-      
-      // Now navigate to the grades page
       navigate("/grades");
     }
   };
@@ -213,37 +173,6 @@ const SavedCalculation = () => {
   // Handle prompt confirmation (leave without saving)
   const handleConfirmNavigation = () => {
     setShowPrompt(false);
-    
-    // Restore original calculator state before navigating away
-    let stateToRestore = originalCalculatorState.current;
-    
-    // If something happened to our ref, try to recover from session storage
-    if (!stateToRestore) {
-      try {
-        const savedState = sessionStorage.getItem('originalCalculatorState');
-        if (savedState) {
-          stateToRestore = JSON.parse(savedState);
-        }
-      } catch (e) {
-        console.error('Failed to restore calculator state from session storage:', e);
-      }
-    }
-    
-    if (stateToRestore) {
-      // Reset the calculator state with the original values
-      setCategories(JSON.parse(JSON.stringify(stateToRestore.categories)));
-      setMode(stateToRestore.mode);
-      setRawGradeData(stateToRestore.rawGradeData);
-      setWhatIfMode(stateToRestore.whatIfMode);
-      setTargetGrade(stateToRestore.targetGrade);
-      setHypotheticalScores(JSON.parse(JSON.stringify(stateToRestore.hypotheticalScores)));
-      setHypotheticalAssignments(JSON.parse(JSON.stringify(stateToRestore.hypotheticalAssignments)));
-      setHiddenAssignments([...stateToRestore.hiddenAssignments]);
-      setManualGrades(JSON.parse(JSON.stringify(stateToRestore.manualGrades)));
-    }
-    
-    // Clean up session storage
-    sessionStorage.removeItem('originalCalculatorState');
     
     if (pendingNavigation) {
       // Clear the last viewed calculation before navigating
@@ -262,38 +191,6 @@ const SavedCalculation = () => {
   const handleSaveAndNavigate = async () => {
     try {
       await handleSaveChanges();
-      
-      // After saving, restore the original calculator state
-      // This ensures we don't leak any changes to the main calculator
-      let stateToRestore = originalCalculatorState.current;
-      
-      // If something happened to our ref, try to recover from session storage
-      if (!stateToRestore) {
-        try {
-          const savedState = sessionStorage.getItem('originalCalculatorState');
-          if (savedState) {
-            stateToRestore = JSON.parse(savedState);
-          }
-        } catch (e) {
-          console.error('Failed to restore calculator state from session storage:', e);
-        }
-      }
-      
-      if (stateToRestore) {
-        // Reset calculator state to prevent any leaking
-        setCategories(JSON.parse(JSON.stringify(stateToRestore.categories)));
-        setMode(stateToRestore.mode);
-        setRawGradeData(stateToRestore.rawGradeData);
-        setWhatIfMode(stateToRestore.whatIfMode);
-        setTargetGrade(stateToRestore.targetGrade);
-        setHypotheticalScores(JSON.parse(JSON.stringify(stateToRestore.hypotheticalScores)));
-        setHypotheticalAssignments(JSON.parse(JSON.stringify(stateToRestore.hypotheticalAssignments)));
-        setHiddenAssignments([...stateToRestore.hiddenAssignments]);
-        setManualGrades(JSON.parse(JSON.stringify(stateToRestore.manualGrades)));
-      }
-      
-      // Clean up session storage
-      sessionStorage.removeItem('originalCalculatorState');
       
       if (pendingNavigation) {
         // Clear the last viewed calculation before navigating
@@ -347,12 +244,20 @@ const SavedCalculation = () => {
       
       // Update categories state with original scores
       setCategories(updatedCategories);
+      
+      // Reset to initial state
+      const revertedHiddenAssignments = [...initialData.hiddenAssignments];
+      const revertedHypotheticalScores = JSON.parse(JSON.stringify(initialData.hypotheticalScores));
+      
+      // Reset all state to match initial values
+      setHiddenAssignments(revertedHiddenAssignments);
+      setHypotheticalScores(revertedHypotheticalScores);
+      setHypotheticalAssignments([]);
+      
       setWhatIfMode(false);
       
-      // If we have unsaved changes but turn off what-if mode, consider it saved
-      if (saveStatus === "unsaved") {
-        setSaveStatus("saved");
-      }
+      // Since we've reverted to the initial state, mark as saved
+      setSaveStatus("saved");
     }
   };
 
@@ -518,13 +423,17 @@ const SavedCalculation = () => {
 
       // Reset hypothetical scores and assignments completely
       // But only for this saved calculation view
+      const newHypotheticalScores = {};
+      setHypotheticalScores(newHypotheticalScores);
       setHypotheticalAssignments([]);
-      setHypotheticalScores({});
-      
-      // Don't modify originalCalculatorState - it should remain exactly as it was
-      // when the component was mounted, to ensure proper restoration on unmount
-      // Remove any code that updates originalCalculatorState
 
+      // Update the initial data to match the saved state
+      setInitialData({
+        manualGrades: JSON.parse(JSON.stringify(manualGrades)),
+        hypotheticalScores: newHypotheticalScores,
+        hiddenAssignments: [...hiddenAssignments]
+      });
+      
       setSaveStatus("saved");
       setLastSaved(new Date());
 
@@ -812,10 +721,18 @@ const SavedCalculation = () => {
         setMode(calculationMode);
         
         // If it's a manual mode calculation, load the manual grades
+        let loadedManualGrades = [];
         if (calculationMode === "manual" && transformedData.results?.manual_grades) {
-          const loadedManualGrades = transformedData.results.manual_grades;
+          loadedManualGrades = transformedData.results.manual_grades;
           setManualGrades(JSON.parse(JSON.stringify(loadedManualGrades)));
         }
+
+        // Store initial data for change detection
+        setInitialData({
+          manualGrades: JSON.parse(JSON.stringify(loadedManualGrades)),
+          hypotheticalScores: JSON.parse(JSON.stringify(loadedHypotheticalScores)),
+          hiddenAssignments: [...loadedHiddenAssignments]
+        });
 
         setError(null);
         setSaveStatus("saved");
@@ -845,39 +762,35 @@ const SavedCalculation = () => {
     setWhatIfMode,
   ]);
 
-  // Only track changes after the user has made modifications
-  // This prevents a saved calculation from being marked as unsaved immediately when opened
+  // Only track changes against the initial data loaded from the saved calculation
   useEffect(() => {
     // Only track changes if what-if mode has been enabled by the user OR this is a manual calculation
-    if (whatIfMode || mode === "manual") {
-      // Get snapshot of state from when component was mounted
-      const originalHypotheticalScores = originalCalculatorState.current?.hypotheticalScores || {};
-      const originalHiddenAssignments = originalCalculatorState.current?.hiddenAssignments || [];
-      const originalManualGrades = originalCalculatorState.current?.manualGrades || [];
-      
-      // Check if there are actual changes compared to the original loaded state
-      const scoresChanged = Object.keys(hypotheticalScores).length !== Object.keys(originalHypotheticalScores).length ||
+    if (whatIfMode || mode === 'manual') {
+      const scoresChanged = Object.keys(hypotheticalScores).length !== Object.keys(initialData.hypotheticalScores).length ||
         Object.entries(hypotheticalScores).some(([key, value]) => {
-          const originalValue = originalHypotheticalScores[key];
+          const originalValue = initialData.hypotheticalScores[key];
           return !originalValue || originalValue.score !== value.score;
         });
       
       const hiddenAssignmentsChanged = 
-        hiddenAssignments.length !== originalHiddenAssignments.length ||
-        hiddenAssignments.some(key => !originalHiddenAssignments.includes(key)) ||
-        originalHiddenAssignments.some(key => !hiddenAssignments.includes(key));
+        hiddenAssignments.length !== initialData.hiddenAssignments.length ||
+        hiddenAssignments.some(key => !initialData.hiddenAssignments.includes(key)) ||
+        initialData.hiddenAssignments.some(key => !hiddenAssignments.includes(key));
       
       // Check for changes in manual grades
       const manualGradesChanged = 
-        manualGrades.length !== originalManualGrades.length ||
-        JSON.stringify(manualGrades) !== JSON.stringify(originalManualGrades);
+        manualGrades.length !== initialData.manualGrades.length ||
+        JSON.stringify(manualGrades) !== JSON.stringify(initialData.manualGrades);
       
-      // Only mark as unsaved if there are real user changes
+      // Only mark as unsaved if there are real user changes and we're not in the process of saving
       if ((scoresChanged || hiddenAssignmentsChanged || manualGradesChanged) && saveStatus !== "saving") {
         setSaveStatus("unsaved");
+      } else if (saveStatus !== "saving" && !scoresChanged && !hiddenAssignmentsChanged && !manualGradesChanged) {
+        // If there are no changes and we're not in the process of saving, mark as saved
+        setSaveStatus("saved");
       }
     }
-  }, [hypotheticalScores, hypotheticalAssignments, hiddenAssignments, manualGrades, saveStatus, whatIfMode, mode]);
+  }, [hypotheticalScores, hiddenAssignments, manualGrades, whatIfMode, mode, saveStatus, initialData]);
 
   if (loading) {
     return (
@@ -1039,3 +952,5 @@ const SavedCalculation = () => {
 };
 
 export default SavedCalculation;
+
+
