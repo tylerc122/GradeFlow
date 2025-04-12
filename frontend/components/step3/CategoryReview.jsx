@@ -10,6 +10,16 @@ import {
   Collapse,
   IconButton,
   Button,
+  Select,
+  MenuItem,
+  FormControl,
+  InputLabel,
+  Checkbox,
+  ListItemText,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
 } from "@mui/material";
 import DragIndicatorIcon from "@mui/icons-material/DragIndicator";
 import CategoryIcon from "@mui/icons-material/Category";
@@ -18,6 +28,7 @@ import KeyboardArrowDownIcon from "@mui/icons-material/KeyboardArrowDown";
 import KeyboardArrowUpIcon from "@mui/icons-material/KeyboardArrowUp";
 import AutoFixHighIcon from "@mui/icons-material/AutoFixHigh";
 import DeleteIcon from "@mui/icons-material/Delete";
+import GroupWorkIcon from "@mui/icons-material/GroupWork";
 
 const CategoryReview = ({
   parsedGrades,
@@ -31,6 +42,9 @@ const CategoryReview = ({
   const [autoCategorizationApplied, setAutoCategorizationApplied] =
     useState(false);
   const [confidenceThreshold, setConfidenceThreshold] = useState(0.7);
+  const [bulkDialogOpen, setBulkDialogOpen] = useState(false);
+  const [selectedAssignments, setSelectedAssignments] = useState([]);
+  const [selectedCategoryForBulk, setSelectedCategoryForBulk] = useState("");
 
   const toggleCategory = (categoryIndex) => {
     setExpandedCategories((prev) => ({
@@ -96,6 +110,55 @@ const CategoryReview = ({
     setAutoCategorizationApplied(true);
   };
 
+  const openBulkCategorizeDialog = () => {
+    setSelectedAssignments([]);
+    setSelectedCategoryForBulk("");
+    setBulkDialogOpen(true);
+  };
+
+  const handleBulkCategorize = () => {
+    if (!selectedCategoryForBulk || selectedAssignments.length === 0) {
+      return;
+    }
+
+    // Find the category index
+    const categoryIndex = categories.findIndex(
+      (cat) => cat.name === selectedCategoryForBulk
+    );
+
+    if (categoryIndex === -1) {
+      return;
+    }
+
+    // Create new state
+    let newUncategorized = [...uncategorizedAssignments];
+    let newCategories = [...categories];
+
+    // Move selected assignments to the category
+    const assignmentsToMove = newUncategorized.filter((assignment) =>
+      selectedAssignments.includes(assignment.name)
+    );
+
+    // Add assignments to the selected category
+    newCategories[categoryIndex] = {
+      ...newCategories[categoryIndex],
+      assignments: [
+        ...(newCategories[categoryIndex].assignments || []),
+        ...assignmentsToMove,
+      ],
+    };
+
+    // Remove from uncategorized
+    newUncategorized = newUncategorized.filter(
+      (assignment) => !selectedAssignments.includes(assignment.name)
+    );
+
+    // Update state
+    setCategories(newCategories);
+    setUncategorizedAssignments(newUncategorized);
+    setBulkDialogOpen(false);
+  };
+
   if (!parsedGrades || !uncategorizedAssignments) {
     return (
       <Paper elevation={2} sx={{ p: 4, mb: 3, borderRadius: 3 }}>
@@ -126,17 +189,30 @@ const CategoryReview = ({
             </Typography>
           </Box>
 
-          {!autoCategorizationApplied &&
-            uncategorizedAssignments.length > 0 && (
-              <Button
-                variant="contained"
-                startIcon={<AutoFixHighIcon />}
-                onClick={applyAutoCategories}
-                sx={{ px: 3, py: 1 }}
-              >
-                Auto-Categorize
-              </Button>
+          <Box sx={{ display: "flex", gap: 2 }}>
+            {uncategorizedAssignments.length > 0 && (
+              <>
+                <Button
+                  variant="outlined"
+                  startIcon={<GroupWorkIcon />}
+                  onClick={openBulkCategorizeDialog}
+                  sx={{ px: 3, py: 1 }}
+                >
+                  Bulk Categorize
+                </Button>
+                {!autoCategorizationApplied && (
+                  <Button
+                    variant="contained"
+                    startIcon={<AutoFixHighIcon />}
+                    onClick={applyAutoCategories}
+                    sx={{ px: 3, py: 1 }}
+                  >
+                    Auto-Categorize
+                  </Button>
+                )}
+              </>
             )}
+          </Box>
         </Box>
 
         <Alert
@@ -149,8 +225,8 @@ const CategoryReview = ({
           }}
         >
           {autoCategorizationApplied
-            ? "Assignments have been automatically categorized. You can still drag and drop to make adjustments."
-            : "Click 'Auto-Categorize' to automatically sort assignments, or manually drag and drop them into categories."}
+            ? "Assignments have been automatically categorized. You can still drag and drop to make adjustments or use Bulk Categorize for multiple assignments."
+            : "Click 'Auto-Categorize' to automatically sort assignments, use 'Bulk Categorize' to categorize multiple assignments at once, or manually drag and drop them into categories."}
         </Alert>
 
         <DragDropContext onDragEnd={handleDragEnd}>
@@ -314,6 +390,68 @@ const CategoryReview = ({
           </Box>
         </DragDropContext>
       </Stack>
+
+      {/* Bulk Categorization Dialog */}
+      <Dialog open={bulkDialogOpen} onClose={() => setBulkDialogOpen(false)} maxWidth="sm" fullWidth>
+        <DialogTitle>Bulk Categorize Assignments</DialogTitle>
+        <DialogContent>
+          <Stack spacing={3} sx={{ mt: 1 }}>
+            <FormControl fullWidth>
+              <InputLabel id="assignment-select-label">Select Assignments</InputLabel>
+              <Select
+                labelId="assignment-select-label"
+                multiple
+                value={selectedAssignments}
+                onChange={(e) => setSelectedAssignments(e.target.value)}
+                renderValue={(selected) => 
+                  selected.length === 1 
+                    ? selected[0] 
+                    : `${selected.length} assignments selected`
+                }
+              >
+                {uncategorizedAssignments.map((assignment) => (
+                  <MenuItem key={assignment.name} value={assignment.name}>
+                    <Checkbox checked={selectedAssignments.includes(assignment.name)} />
+                    <ListItemText 
+                      primary={assignment.name} 
+                      secondary={
+                        assignment.suggested_category
+                          ? `Suggested: ${assignment.suggested_category}`
+                          : "No suggestion"
+                      }
+                    />
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+
+            <FormControl fullWidth>
+              <InputLabel id="category-select-label">Select Category</InputLabel>
+              <Select
+                labelId="category-select-label"
+                value={selectedCategoryForBulk}
+                onChange={(e) => setSelectedCategoryForBulk(e.target.value)}
+              >
+                {categories.map((category) => (
+                  <MenuItem key={category.name} value={category.name}>
+                    {category.name} ({category.weight}%)
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+          </Stack>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setBulkDialogOpen(false)}>Cancel</Button>
+          <Button 
+            onClick={handleBulkCategorize} 
+            variant="contained" 
+            disabled={!selectedCategoryForBulk || selectedAssignments.length === 0}
+          >
+            Categorize
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Paper>
   );
 };
