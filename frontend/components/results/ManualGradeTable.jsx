@@ -29,15 +29,19 @@ const ManualGradeTable = ({
   }, [manualGrades]);
 
   const handleGradeChange = (categoryName, newValue) => {
-    // Clean differently for percentage vs letter
-    const trimmedValue = newValue.trim();
-
+    // Validate differently based on input type
     if (inputType === 'letter') {
-      const cleanedValue = trimmedValue.toUpperCase();
-      // Allow typing invalid intermediate chars, but don't update state if invalid
-      if (cleanedValue && !isLetterGrade(cleanedValue)) {
-        return; 
+      const trimmedValue = newValue.trim();
+      
+      // For letter grades, only allow valid letter grade characters (A-F plus +/-)
+      const validLetterPattern = /^[A-Fa-f][-+]?$/i;
+      if (trimmedValue && !validLetterPattern.test(trimmedValue)) {
+        return; // Don't update state if invalid letter format
       }
+      
+      // Convert to uppercase for consistency
+      const cleanedValue = trimmedValue.toUpperCase();
+      
       onGradeChange({
         categoryName,
         grade: cleanedValue,
@@ -46,41 +50,37 @@ const ManualGradeTable = ({
       });
     } else if (inputType === 'percentage') {
       // Allow empty string through
-      if (trimmedValue === '') {
+      if (newValue === '') {
         onGradeChange({ categoryName, grade: "", isLetter: false, value: 0 });
         return;
       }
 
-      // Check 1: Invalid characters (allow only digits and one optional dot)
+      // Check 1: Strict pattern for percentage input - only digits and one optional decimal point
       const validPattern = /^[0-9]*\.?[0-9]*$/; 
-      if (!validPattern.test(trimmedValue)) {
-        return; // Prevent update if invalid characters are present
+      if (!validPattern.test(newValue)) {
+        return; // Reject any input with invalid characters
       }
 
       // Check 2: Length of integer part (max 3 digits)
-      const parts = trimmedValue.split('.');
+      const parts = newValue.split('.');
       if (parts[0].length > 3) {
-        return; // Prevent update if more than 3 digits before decimal
+        return; // Reject more than 3 digits before decimal
       }
 
-      // Check 3: Value range (0-100) using isPercentage
-      // Allow potentially valid intermediate values like "9." or "100."
-      if (!isPercentage(trimmedValue)) {
-         const endsWithDot = trimmedValue.endsWith('.');
-         const numberWithoutDot = endsWithDot ? trimmedValue.slice(0, -1) : trimmedValue;
-         // Re-check if the number part is valid IF it ends with a dot
-         if (!endsWithDot || !isPercentage(numberWithoutDot)) {
-             return; // Not a valid number and not a valid intermediate ending in '.'
-         }
-         // If it's like "9.", proceed, parseFloat will handle it in onGradeChange call
+      // Check 3: Check numeric range (allow intermediate values like "9.")
+      if (!newValue.endsWith('.')) {
+        const numValue = parseFloat(newValue);
+        if (!isNaN(numValue) && (numValue < 0 || numValue > 100)) {
+          return; // Reject values outside 0-100 range
+        }
       }
 
-      // If validation passes or it's a valid intermediate state, update
+      // If validation passes, update the state
       onGradeChange({
         categoryName,
-        grade: trimmedValue, // Keep the raw valid input
+        grade: newValue, // Keep the raw valid input
         isLetter: false,
-        value: parseFloat(trimmedValue) || 0, // Calculate numeric value
+        value: parseFloat(newValue) || 0, // Calculate numeric value
       });
     }
   };
@@ -154,7 +154,7 @@ const ManualGradeTable = ({
                       placeholder={inputType === 'letter' ? "A-" : "95"}
                       inputProps={{
                         type: "text",
-                        inputMode: "decimal",
+                        inputMode: inputType === 'letter' ? "text" : "decimal",
                         pattern: inputType === 'letter' 
                           ? "^[A-Za-z][+-]?$"
                           : "^[0-9]+(?:\.[0-9]+)?$",

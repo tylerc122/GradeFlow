@@ -52,23 +52,44 @@ const ManualInput = ({ categories, setGrades }) => {
 
   const handleGradeChange = (categoryName, value) => {
     // Allow empty strings during editing (only update local state)
-    const newValue = value;
+    const trimmedValue = value.trim();
     
-    // Only validate non-empty values
-    if (newValue !== "" && newValue.trim() !== "") {
-      const trimmedValue = newValue.trim().toUpperCase();
-      // Validation for non-empty strings
-      if (inputType === "letter" && !isLetterGrade(trimmedValue)) {
-        return;
-      } else if (inputType === "percentage" && !isPercentage(trimmedValue)) {
-        return;
+    // Validate input based on input type
+    if (inputType === "letter") {
+      // For letter grades, only allow valid letter grade characters (A-F plus +/-)
+      const validLetterPattern = /^[A-Fa-f][-+]?$/;
+      if (trimmedValue && !validLetterPattern.test(trimmedValue)) {
+        return; // Reject invalid letter grade formats
+      }
+    } else if (inputType === "percentage") {
+      // For percentages, only allow numbers and one decimal point
+      const validPercentagePattern = /^[0-9]*\.?[0-9]*$/;
+      if (!validPercentagePattern.test(value)) {
+        return; // Reject any input with invalid characters
+      }
+      
+      // Additional percentage validation checks
+      if (trimmedValue) {
+        // Check for max 3 digits before decimal
+        const parts = value.split('.');
+        if (parts[0].length > 3) {
+          return; // Reject more than 3 digits before decimal
+        }
+        
+        // Check valid numeric range (allow intermediate values like "9.")
+        if (!value.endsWith('.')) {
+          const numValue = parseFloat(value);
+          if (!isNaN(numValue) && (numValue < 0 || numValue > 100)) {
+            return; // Reject values outside 0-100 range
+          }
+        }
       }
     }
     
-    // Update local state only
+    // Update local state only if validation passed
     setCategoryGrades((prev) => ({
       ...prev,
-      [categoryName]: newValue,
+      [categoryName]: value,
     }));
   };
 
@@ -197,28 +218,10 @@ const ManualInput = ({ categories, setGrades }) => {
               placeholder={inputType === 'letter' ? "A-" : "95"}
               inputProps={{
                 type: "text",
-                inputMode: "decimal",
+                inputMode: inputType === 'letter' ? "text" : "decimal",
                 pattern: inputType === 'letter' 
                   ? "^[A-Za-z][+-]?$"
                   : "^[0-9]+(?:\\.[0-9]+)?$",
-                onKeyPress: (e) => {
-                  const value = e.target.value + e.key;
-                  if (value && inputType === 'letter' && !isLetterGrade(value)) {
-                    e.preventDefault();
-                  }
-                  if (value && inputType === 'percentage' && !isPercentage(value)) {
-                    e.preventDefault();
-                  }
-                },
-                onPaste: (e) => {
-                  const pastedValue = e.clipboardData.getData('text').trim().toUpperCase();
-                  if (pastedValue && inputType === 'letter' && !isLetterGrade(pastedValue)) {
-                    e.preventDefault();
-                  }
-                  if (pastedValue && inputType === 'percentage' && !isPercentage(pastedValue)) {
-                    e.preventDefault();
-                  }
-                }
               }}
             />
           </Box>
