@@ -1,11 +1,13 @@
 /**
  * The orchestrator of the app. Surprisingly, had less trouble coding this than the results page.
  */
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { useSnackbar } from "notistack";
 import { useAuth } from "../src/contexts/AuthContext";
 import SaveIcon from "@mui/icons-material/Save";
+import NavigateNextIcon from '@mui/icons-material/NavigateNext';
+import NavigateBeforeIcon from '@mui/icons-material/NavigateBefore';
 import {
   Stepper,
   Step,
@@ -15,6 +17,8 @@ import {
   Paper,
   Container,
   useTheme as useMuiTheme,
+  Fab,
+  Zoom,
 } from "@mui/material";
 import Grid from "@mui/material/Grid";
 import GradeInput from "../components/step2/GradeInput";
@@ -80,6 +84,34 @@ const Calculator = () => {
     setHiddenAssignments,
     setIsResultsView,
   } = useCalculator();
+
+  // State and Ref for floating button visibility
+  const [showFloatingNext, setShowFloatingNext] = useState(false);
+  const bottomNavRef = useRef(null);
+
+  // Effect to observe the original navigation buttons
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        // Show floating button when original is NOT intersecting (out of view)
+        setShowFloatingNext(!entry.isIntersecting);
+      },
+      { threshold: 0.1 } // Trigger when less than 10% is visible
+    );
+
+    const currentRef = bottomNavRef.current;
+
+    if (currentRef) {
+      observer.observe(currentRef);
+    }
+
+    // Cleanup observer on component unmount or when ref changes
+    return () => {
+      if (currentRef) {
+        observer.unobserve(currentRef);
+      }
+    };
+  }, [bottomNavRef.current]); // Rerun if the ref changes
 
   const handleProcessGrades = async () => {
     try {
@@ -613,7 +645,7 @@ const Calculator = () => {
         display: "flex",
         flexDirection: "column",
         background: muiTheme.palette.background.default,
-        paddingTop: "32px", 
+        paddingTop: "32px",
         paddingBottom: "32px",
       }}
     >
@@ -623,7 +655,7 @@ const Calculator = () => {
         <div
           style={{
             display: "flex",
-            flexDirection: "column", 
+            flexDirection: "column",
             alignItems: activeStep === 3 ? "center" : "stretch",
             width: "100%",
             transition: "all 0.3s ease-in-out",
@@ -667,17 +699,19 @@ const Calculator = () => {
           {/* Main Content */}
           {renderMainContent()}
 
-          {/* Navigation Buttons - align based on step */}
+          {/* Original Navigation Buttons - Add ref here */}
           <div
+            ref={bottomNavRef}
             style={{
               display: "flex",
               justifyContent: "flex-end",
-              gap: "16px", 
+              gap: "16px",
               marginTop: "32px",
               marginBottom: "32px",
               width: activeStep === 3 ? "150%" : "100%",
               maxWidth: activeStep === 3 ? "95vw" : "100%",
               transition: "all 0.3s ease-in-out",
+              minHeight: '50px',
             }}
           >
             {activeStep > 0 && (
@@ -685,10 +719,7 @@ const Calculator = () => {
                 variant="outlined"
                 onClick={handleBack}
                 size="large"
-                sx={{
-                  px: 4,
-                  minWidth: 120,
-                }}
+                sx={{ px: 4, minWidth: 120 }}
               >
                 Back
               </Button>
@@ -755,9 +786,55 @@ const Calculator = () => {
             categories,
             hypotheticalAssignments,
             rawGradeData,
+            manualGrades,
+            mode: calculatorMode,
           }}
         />
       </Container>
+
+      {/* Floating Action Buttons */}
+      {/* Back Button FAB */}
+      <Zoom
+         in={showFloatingNext && activeStep > 0} // Show when original buttons hidden AND not on first step
+         timeout={300}
+         unmountOnExit
+      >
+        <Fab
+          color="secondary"
+          aria-label="previous step"
+          onClick={handleBack}
+          sx={{
+            position: 'fixed',
+            bottom: 32,
+            right: 32 + 56 + 16, // Place it to the left of the Next FAB (based on large size)
+            zIndex: 1200,
+          }}
+        >
+          <NavigateBeforeIcon />
+        </Fab>
+      </Zoom>
+
+      {/* Next Button FAB */}
+      <Zoom
+        in={showFloatingNext && activeStep < 3}
+        timeout={300}
+        unmountOnExit
+      >
+        <Fab
+          color="primary"
+          aria-label="next step"
+          onClick={handleNext}
+          sx={{
+            position: 'fixed',
+            bottom: 32,
+            right: 32, // Stays in the corner
+            zIndex: 1200,
+          }}
+        >
+          <NavigateNextIcon />
+        </Fab>
+      </Zoom>
+
     </div>
   );
 };
