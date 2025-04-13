@@ -41,6 +41,8 @@ import {
   Award,
   CheckCircle,
   RefreshCw,
+  Save,
+  LogIn,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -56,6 +58,10 @@ export const AssignmentTable = ({
   onDeleteAssignment,
   onCalculateAnother,
   showCalculateAnotherButton,
+  showSaveButton,
+  onSaveClick,
+  showLoginButton,
+  onLoginClick,
 }) => {
   const inputRef = useRef(null);
   const theme = useTheme();
@@ -285,20 +291,50 @@ export const AssignmentTable = ({
             </Typography>
           </Box>
           
-          {/* Add Calculate Another button */}
-          {showCalculateAnotherButton && (
-            <Button
-              variant="outlined"
-              onClick={onCalculateAnother}
-              startIcon={<RefreshCw size={18} />}
-              size="medium"
-              sx={{
-                borderRadius: "12px",
-              }}
-            >
-              Calculate Another
-            </Button>
-          )}
+          {/* Add buttons */}
+          <Box sx={{ display: "flex", gap: 2 }}>
+            {showLoginButton && (
+              <Button
+                variant="contained"
+                onClick={onLoginClick}
+                startIcon={<LogIn size={18} />}
+                size="medium"
+                sx={{
+                  borderRadius: "12px",
+                }}
+              >
+                Login to Save
+              </Button>
+            )}
+            
+            {showSaveButton && (
+              <Button
+                variant="contained"
+                onClick={onSaveClick}
+                startIcon={<Save size={18} />}
+                size="medium"
+                sx={{
+                  borderRadius: "12px",
+                }}
+              >
+                Save Calculation
+              </Button>
+            )}
+            
+            {showCalculateAnotherButton && (
+              <Button
+                variant="outlined"
+                onClick={onCalculateAnother}
+                startIcon={<RefreshCw size={18} />}
+                size="medium"
+                sx={{
+                  borderRadius: "12px",
+                }}
+              >
+                Calculate Another
+              </Button>
+            )}
+          </Box>
         </Box>
 
         {categories.map((category, categoryIndex) => (

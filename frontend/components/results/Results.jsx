@@ -621,6 +621,10 @@ const Results = ({
                 onDeleteAssignment={handleDeleteAssignment}
                 showCalculateAnotherButton={showCalculateAnotherButton}
                 onCalculateAnother={handleReset}
+                showSaveButton={!!user && !isSavedCalculation}
+                onSaveClick={() => setSaveDialogOpen(true)}
+                showLoginButton={!user && !isSavedCalculation}
+                onLoginClick={() => navigate("/login")}
               />
             </Box>
           )}
