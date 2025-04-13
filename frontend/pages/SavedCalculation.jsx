@@ -293,33 +293,55 @@ const SavedCalculation = () => {
               scoreValue = 0;
             }
                  
-            // console.log(`Saving score for ${assignment.name}: ${scoreValue} (original: ${hypotheticalScore.score})`);
+            // Save the original score if it doesn't already exist
+            const originalScore = assignment.originalScore !== undefined ? 
+              assignment.originalScore : 
+              assignment.score;
                  
             return {
               ...assignment,
               score: scoreValue,
               status: "GRADED",
               hidden: hiddenAssignments.includes(scoreKey),
+              // Mark that this assignment has a hypothetical score
+              hasHypotheticalScore: true, 
+              // Store original score to enable toggling what-if mode
+              originalScore: originalScore,
+              // Store the saved hypothetical score
+              savedHypotheticalScore: scoreValue
             };
           }
+          
           return {
             ...assignment,
             // Ensure all scores are valid numbers
             score: Number(assignment.score) || 0,
             hidden: hiddenAssignments.includes(scoreKey),
+            // Preserve the hypothetical flag and original score if they exist
+            hasHypotheticalScore: assignment.hasHypotheticalScore || false,
+            originalScore: assignment.originalScore,
+            savedHypotheticalScore: assignment.savedHypotheticalScore
           };
         });
 
         // Add new hypothetical assignments
         const newAssignments = hypotheticalAssignments
           .filter((a) => a.categoryName === category.name)
-          .map((assignment) => ({
-            name: assignment.name,
-            score: Number(assignment.score) || 0, // Ensure score is a valid number
-            total_points: Number(assignment.total_points) || 1, // Ensure total_points is valid
-            status: "GRADED",
-            hidden: false,
-          }));
+          .map((assignment) => {
+            const assignmentScore = Number(assignment.score) || 0;
+            return {
+              name: assignment.name,
+              score: assignmentScore,
+              total_points: Number(assignment.total_points) || 1,
+              status: "GRADED",
+              hidden: false,
+              // Mark as having a hypothetical score since it was added in what-if mode
+              hasHypotheticalScore: true,
+              // For new assignments, the original and saved scores are the same
+              originalScore: assignmentScore,
+              savedHypotheticalScore: assignmentScore
+            };
+          });
 
         return {
           ...category,

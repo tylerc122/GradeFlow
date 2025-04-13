@@ -283,27 +283,92 @@ const Results = ({
     setSavingError(null);
 
     try {
+      // Process assignments and apply hypothetical scores to existing assignments
+      const processedCategories = categories.map(category => {
+        // Get a deep copy of the category's assignments to avoid modifying the original
+        const processedAssignments = (category.assignments || []).map(assignment => {
+          // Check if this assignment has a hypothetical score
+          const scoreKey = `${category.name}-${assignment.name}`;
+          const hypothetical = hypotheticalScores[scoreKey];
+          
+          // If there's a hypothetical score, use it in the processed assignment
+          if (hypothetical) {
+            // Calculate the score value
+            const scoreValue = hypothetical.numericScore !== undefined && hypothetical.numericScore !== null
+              ? hypothetical.numericScore
+              : (typeof hypothetical.score === 'string' 
+                 ? Number(hypothetical.score) || 0 
+                 : hypothetical.score || 0);
+            
+            return {
+              ...assignment,
+              // Use the modified score
+              score: scoreValue,
+              // Mark that this has a modified score
+              hasHypotheticalScore: true,
+              // Store original score to enable toggling what-if mode
+              originalScore: assignment.score,
+              // Store the hypothetical score as well
+              savedHypotheticalScore: scoreValue
+            };
+          }
+          
+          // Otherwise return the original assignment
+          return { ...assignment };
+        });
+        
+        // Add hypothetical assignments to this category
+        const categoryHypotheticals = hypotheticalAssignments.filter(
+          a => a.categoryName === category.name
+        ).map(hypoAssignment => {
+          const assignmentScore = Number(hypoAssignment.score) || 0;
+          return {
+            ...hypoAssignment,
+            name: hypoAssignment.name,
+            score: assignmentScore,
+            total_points: Number(hypoAssignment.total_points) || 1,
+            status: "GRADED", 
+            // Mark as having a hypothetical score since it was added in what-if mode
+            hasHypotheticalScore: true,
+            // For new assignments, the original and saved scores are the same
+            originalScore: assignmentScore,
+            savedHypotheticalScore: assignmentScore,
+            // Remove categoryName as it's not needed in the backend
+            categoryName: undefined
+          };
+        });
+        
+        return {
+          name: category.name,
+          weight: category.weight,
+          assignments: [...processedAssignments, ...categoryHypotheticals]
+        };
+      });
+      
+      // Include all current state, including hypothetical assignments and scores
       const calculationData = {
         ...saveData,
         raw_data: rawGradeData,
-        categories: categories.map((category) => ({
-          name: category.name,
-          weight: category.weight,
-          assignments: [
-            ...(category.assignments || []),
-            ...hypotheticalAssignments.filter(
-              (a) => a.categoryName === category.name
-            ),
-          ],
-        })),
+        what_if_mode: whatIfMode,
+        hypothetical_scores: hypotheticalScores,
+        hidden_assignments: hiddenAssignments,
+        categories: processedCategories,
         overall_grade: calculateWeightedGrade().percentage,
         has_letter_grades: calculateWeightedGrade().hasLetterGrades,
         total_points_earned: categories.reduce((total, category) => {
+          // Include hypothetical scores in the calculation
           return (
             total +
             (category.assignments || []).reduce((sum, assignment) => {
               if (assignment.status === "GRADED") {
-                return sum + assignment.score;
+                const scoreKey = `${category.name}-${assignment.name}`;
+                const hypothetical = hypotheticalScores[scoreKey];
+                const score = hypothetical ? 
+                  (hypothetical.numericScore !== undefined ? 
+                    hypothetical.numericScore : Number(hypothetical.score) || 0) : 
+                  Number(assignment.score) || 0;
+                
+                return sum + score;
               }
               return sum;
             }, 0)
@@ -515,6 +580,9 @@ const Results = ({
               calculationData={{
                 categories,
                 hypotheticalAssignments,
+                hypotheticalScores,
+                hiddenAssignments,
+                whatIfMode,
                 rawGradeData,
               }}
             />

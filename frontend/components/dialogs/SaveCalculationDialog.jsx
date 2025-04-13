@@ -66,7 +66,12 @@ const SaveCalculationDialog = ({
     try {
       await onSave({
         name,
-        ...calculationData,
+        categories: calculationData.categories,
+        hypotheticalAssignments: calculationData.hypotheticalAssignments,
+        hypotheticalScores: calculationData.hypotheticalScores,
+        hiddenAssignments: calculationData.hiddenAssignments,
+        whatIfMode: calculationData.whatIfMode,
+        rawGradeData: calculationData.rawGradeData,
       });
       setName("");
       setNameTouched(false);
