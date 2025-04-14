@@ -1,3 +1,6 @@
+"""
+Utility function for timezone conversions, mainly for appearances in the frontend, dashboard, etc.
+"""
 from datetime import datetime
 import pytz
 

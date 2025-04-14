@@ -1,3 +1,7 @@
+"""
+A fallback to category_matcher.py, if regex patterns are not sufficient, 4o mini will attempt to categorize the assignment
+Also utlizes caching to improve performance for repeated categorization requests
+"""
 from openai import OpenAI
 from dotenv import load_dotenv
 from typing import List, Optional, Tuple
