@@ -70,17 +70,17 @@ const ManualInput = ({ categories, setGrades }) => {
       
       // Additional percentage validation checks
       if (trimmedValue) {
-        // Check for max 3 digits before decimal
+        // Check for max 4 digits before decimal
         const parts = value.split('.');
-        if (parts[0].length > 3) {
-          return; // Reject more than 3 digits before decimal
+        if (parts[0].length > 4) {
+          return; // Reject more than 4 digits before decimal
         }
         
-        // Check valid numeric range (allow intermediate values like "9.")
+        // Check valid numeric range (allow intermediate values like "9.", "99.", "999.")
         if (!value.endsWith('.')) {
           const numValue = parseFloat(value);
-          if (!isNaN(numValue) && (numValue < 0 || numValue > 100)) {
-            return; // Reject values outside 0-100 range
+          if (!isNaN(numValue) && (numValue < 0 || numValue > 1000)) {
+            return; // Reject values outside 0-1000 range
           }
         }
       }
@@ -145,7 +145,7 @@ const ManualInput = ({ categories, setGrades }) => {
     if (inputType === 'percentage' && isPercentage(value)) return "";
     return inputType === 'letter' 
       ? "Please enter a valid letter grade (A+, A, A-, etc.)"
-      : "Please enter a valid percentage (0-100)";
+      : "Please enter a valid percentage (0-1000)";
   };
 
   return (
@@ -176,7 +176,7 @@ const ManualInput = ({ categories, setGrades }) => {
           <FormControlLabel
             value="percentage"
             control={<Radio />}
-            label="Percentages (0-100)"
+            label="Percentages (0-1000)"
           />
         </RadioGroup>
       </FormControl>

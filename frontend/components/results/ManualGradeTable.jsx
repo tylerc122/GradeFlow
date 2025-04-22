@@ -61,17 +61,17 @@ const ManualGradeTable = ({
         return; // Reject any input with invalid characters
       }
 
-      // Check 2: Length of integer part (max 3 digits)
+      // Check 2: Length of integer part (max 4 digits to allow 1000)
       const parts = newValue.split('.');
-      if (parts[0].length > 3) {
-        return; // Reject more than 3 digits before decimal
+      if (parts[0].length > 4) {
+        return; // Reject more than 4 digits before decimal
       }
 
-      // Check 3: Check numeric range (allow intermediate values like "9.")
+      // Check 3: Check numeric range (allow intermediate values like "9.", "99.", "999.")
       if (!newValue.endsWith('.')) {
         const numValue = parseFloat(newValue);
-        if (!isNaN(numValue) && (numValue < 0 || numValue > 100)) {
-          return; // Reject values outside 0-100 range
+        if (!isNaN(numValue) && (numValue < 0 || numValue > 1000)) {
+          return; // Reject values outside 0-1000 range
         }
       }
 
@@ -103,7 +103,7 @@ const ManualGradeTable = ({
     if (inputType === 'percentage' && isPercentage(value)) return "";
     return inputType === 'letter' 
       ? "Please enter a valid letter grade (A+, A, A-, etc.)"
-      : "Please enter a valid percentage (0-100)";
+      : "Please enter a valid percentage (0-1000)";
   };
 
   return (
@@ -151,7 +151,7 @@ const ManualGradeTable = ({
                       helperText={getGradeError(gradeData.grade)}
                       disabled={!inputType}
                       sx={{ width: "100px" }}
-                      placeholder={inputType === 'letter' ? "A-" : "95"}
+                      placeholder={inputType === 'letter' ? "A-" : "950"}
                       inputProps={{
                         type: "text",
                         inputMode: inputType === 'letter' ? "text" : "decimal",

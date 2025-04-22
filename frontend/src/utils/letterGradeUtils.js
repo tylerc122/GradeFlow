@@ -23,11 +23,27 @@ export const isLetterGrade = (value) => {
   return Object.keys(LETTER_GRADES).includes(value.trim().toUpperCase());
 };
 
-// Check if input is a valid percentage
+// Check if input is a valid percentage (now 0-1000)
 export const isPercentage = (value) => {
   if (value === null || value === undefined) return false;
+  // Allow empty string or just a decimal point as intermediate valid states during input
+  if (value === "" || value === ".") return true;
+
   const num = parseFloat(value);
-  return !isNaN(num) && num >= 0 && num <= 100;
+
+  // Handle intermediate states like "9." or "99." or "999."
+  if (typeof value === "string" && value.endsWith(".")) {
+    const beforeDecimal = value.slice(0, -1);
+    const numBeforeDecimal = parseFloat(beforeDecimal);
+    return (
+      !isNaN(numBeforeDecimal) &&
+      numBeforeDecimal >= 0 &&
+      numBeforeDecimal <= 1000
+    );
+  }
+
+  // Final check for complete numbers
+  return !isNaN(num) && num >= 0 && num <= 1000;
 };
 
 // Convert letter grade to points

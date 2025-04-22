@@ -45,6 +45,9 @@ async def parse_blackboard_grades(raw_text: str, available_categories: Optional[
     for match in pattern.finditer(clean_text):
         name = match.group('name').strip()
         
+        # Remove prefixes like '-Needs Grading', '-In Progress' etc.
+        name = re.sub(r'^-\\s*(Needs Grading|In Progress|Submitted|Graded)\\s*', '', name, flags=re.IGNORECASE).strip()
+        
         # Skip if it's just metadata
         if name in ['Test', 'Assignment', 'Graded', 'Upcoming']:
             continue
