@@ -164,8 +164,11 @@ export const AuthProvider = ({ children }) => {
       sessionStorage.removeItem('categories');
       sessionStorage.removeItem('hasSeenResults');
       
-      // Force a full page reload to the home route
-      window.location.replace('/'); 
+      // Clear the user state *before* redirecting
+      setUser(null);
+
+      // Force a full page reload to the home route using href
+      window.location.href = '/';
 
     } catch (error) {
       console.error("Logout failed:", error);
@@ -178,6 +181,7 @@ export const AuthProvider = ({ children }) => {
     <AuthContext.Provider
       value={{
         user,
+        setUser,
         loading,
         login,
         googleLogin,

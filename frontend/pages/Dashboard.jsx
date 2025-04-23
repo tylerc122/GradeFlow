@@ -19,6 +19,12 @@ import {
   Skeleton,
   LinearProgress,
   Divider,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogContentText,
+  DialogTitle,
+  TextField
 } from "@mui/material";
 import {
   BarChart,
@@ -56,7 +62,7 @@ const Dashboard = () => {
   const navigate = useNavigate();
   const { enqueueSnackbar } = useSnackbar();
   const { setLastViewedCalculation } = useCalculator();
-  const { user } = useAuth();
+  const { user, setUser } = useAuth();
 
   // State for different data sections
   const [stats, setStats] = useState(null);
@@ -72,6 +78,13 @@ const Dashboard = () => {
   const [error, setError] = useState(null);
   const [refreshing, setRefreshing] = useState(false);
 
+  // State for delete account dialog
+  const [openDeleteDialog, setOpenDeleteDialog] = useState(false);
+  const [deleteFeedback, setDeleteFeedback] = useState("");
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [deleteConfirmationInput, setDeleteConfirmationInput] = useState("");
+  const CONFIRMATION_PHRASE = "DELETE MY ACCOUNT";
+
   // Handle unauthorized or forbidden responses
   const handleAuthError = (response) => {
     if (response.status === 401 || response.status === 403) {
@@ -80,6 +93,74 @@ const Dashboard = () => {
       return true;
     }
     return false;
+  };
+
+  // Handle delete account
+  const handleDeleteAccount = async () => {
+    setIsDeleting(true);
+    try {
+      const response = await fetch(`${API_URL}/api/users/me`, {
+        method: "DELETE",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        credentials: "include",
+        body: JSON.stringify({ feedback: deleteFeedback }),
+      });
+
+      if (response.status === 401 || response.status === 403) {
+        enqueueSnackbar("Session expired. Please log in again.", { variant: "error" });
+        setUser(null);
+        localStorage.removeItem('gpaCalculatorData');
+        localStorage.removeItem('calculatorState');
+        localStorage.removeItem('categories');
+        localStorage.removeItem('grades');
+        localStorage.removeItem('gradeCategories');
+        sessionStorage.removeItem('isResultsView');
+        sessionStorage.removeItem('lastViewedCalculation');
+        sessionStorage.removeItem('calculatorState');
+        sessionStorage.removeItem('calculatorData');
+        sessionStorage.removeItem('categories');
+        sessionStorage.removeItem('hasSeenResults');
+        window.location.href = '/';
+        return;
+      }
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.detail || "Failed to delete account");
+      }
+
+      enqueueSnackbar("Account deleted successfully", { variant: "success" });
+      setOpenDeleteDialog(false);
+      
+      // Clear user state directly
+      if (setUser) {
+          setUser(null);
+      }
+      
+      // Clear storage
+      localStorage.removeItem('gpaCalculatorData');
+      localStorage.removeItem('calculatorState');
+      localStorage.removeItem('categories');
+      localStorage.removeItem('grades');
+      localStorage.removeItem('gradeCategories');
+    
+      sessionStorage.removeItem('isResultsView');
+      sessionStorage.removeItem('lastViewedCalculation');
+      sessionStorage.removeItem('calculatorState');
+      sessionStorage.removeItem('calculatorData');
+      sessionStorage.removeItem('categories');
+      sessionStorage.removeItem('hasSeenResults');
+
+      // Redirect to home page with reload
+      window.location.href = '/';
+
+    } catch (err) {
+      enqueueSnackbar(err.message, { variant: "error" });
+    } finally {
+      setIsDeleting(false);
+    }
   };
 
   // Fetch all dashboard data
@@ -824,6 +905,91 @@ const Dashboard = () => {
           </Paper>
         </Grid>
       </Grid>
+
+      {/* Delete Account Section */}
+      <Paper
+        elevation={1}
+        sx={{ mt: 4, p: 3, borderRadius: "20px", bgcolor: alpha(theme.palette.error.main, 0.05) }}
+      >
+        <Typography variant="h6" sx={{ fontWeight: 600, mb: 1, color: theme.palette.error.dark }}>
+          Danger Zone
+        </Typography>
+        <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+          Deleting your account is permanent and cannot be undone. All your saved calculations and data will be lost.
+        </Typography>
+        <Button
+          variant="contained"
+          color="error"
+          onClick={() => setOpenDeleteDialog(true)}
+          sx={{ borderRadius: '12px' }}
+        >
+          Delete My Account
+        </Button>
+      </Paper>
+
+      {/* Delete Account Confirmation Dialog */}
+      <Dialog open={openDeleteDialog} onClose={() => setOpenDeleteDialog(false)} maxWidth="sm" fullWidth>
+        <DialogTitle sx={{ fontWeight: 600 }}>Confirm Account Deletion</DialogTitle>
+        <DialogContent>
+          <DialogContentText sx={{ mb: 2 }}>
+            Are you absolutely sure you want to delete your account?
+            This action is irreversible and will remove all your data, including saved calculations.
+          </DialogContentText>
+          <TextField
+            autoFocus
+            margin="dense"
+            id="feedback"
+            label="Reason for leaving (Optional)"
+            type="text"
+            fullWidth
+            variant="outlined"
+            multiline
+            rows={3}
+            value={deleteFeedback}
+            onChange={(e) => setDeleteFeedback(e.target.value)}
+            sx={{ mb: 2 }}
+          />
+          <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 1 }}>
+            To confirm, please type "<strong>{CONFIRMATION_PHRASE}</strong>" in the box below.
+          </Typography>
+          <TextField
+            required
+            margin="dense"
+            id="delete-confirm"
+            label={`Type "${CONFIRMATION_PHRASE}" to confirm`}
+            type="text"
+            fullWidth
+            variant="outlined"
+            value={deleteConfirmationInput}
+            onChange={(e) => setDeleteConfirmationInput(e.target.value)}
+            error={deleteConfirmationInput.length > 0 && deleteConfirmationInput !== CONFIRMATION_PHRASE}
+            helperText={deleteConfirmationInput.length > 0 && deleteConfirmationInput !== CONFIRMATION_PHRASE ? "Confirmation text does not match." : ""}
+          />
+        </DialogContent>
+        <DialogActions sx={{ p: 2 }}>
+          <Button 
+            onClick={() => {
+              setOpenDeleteDialog(false);
+              setDeleteConfirmationInput("");
+              setDeleteFeedback("");
+            }}
+            color="inherit" 
+            sx={{ borderRadius: '8px' }}
+          >
+            Cancel
+          </Button>
+          <Button
+            onClick={handleDeleteAccount}
+            variant="contained"
+            color="error"
+            disabled={isDeleting || deleteConfirmationInput !== CONFIRMATION_PHRASE}
+            sx={{ borderRadius: '8px' }}
+          >
+            {isDeleting ? <CircularProgress size={20} color="inherit" /> : "Permanently Delete Account"}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
     </Container>
   );
 };
