@@ -10,8 +10,9 @@ from .routes.grades import router as grades_router
 from .routes.auth import router as auth_router
 from .routes.users import router as users_router
 from .auth.session_manager import session_manager
-from fastapi import Request
+from fastapi import Request, HTTPException
 from starlette.middleware.base import BaseHTTPMiddleware
+from starlette.responses import PlainTextResponse
 import subprocess
 import sys
 
@@ -27,6 +28,14 @@ def run_migrations():
 
 # Run migrations
 run_migrations()
+
+# block requests to hidden files/directories
+class BlockDotFilesMiddleware(BaseHTTPMiddleware):
+    async def dispatch(self, request: Request, call_next):
+        if request.url.path.startswith('/.'):
+            return PlainTextResponse("Forbidden", status_code=403)
+        response = await call_next(request)
+        return response
 
 # Rate limiting middleware
 class RateLimitMiddleware(BaseHTTPMiddleware):
@@ -47,6 +56,9 @@ app = FastAPI(title="Grade Calculator API")
 
 # Generate a random secret key for session middleware
 SECRET_KEY = os.getenv("SECRET_KEY", secrets.token_urlsafe(32))
+
+# Add Middleware to block dot files/directories
+app.add_middleware(BlockDotFilesMiddleware)
 
 # Add SessionMiddleware - required for OAuth
 app.add_middleware(SessionMiddleware, secret_key=SECRET_KEY)
